@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "SimpleLink™ Connect",
+    "slug": "SimplelinkConnect",
+    "version": "1.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "myapp",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "fill",
+      "backgroundColor": "#cc0000"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ti.connectivity.simplelinkconnect"
+    },
+    "android": {
+      "package": "com.ti.connectivity.simplelinkconnect"
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    }
+  }
+}

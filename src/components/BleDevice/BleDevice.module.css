@@ -1,0 +1,12 @@
+/**
+ * Copyright 2023 Texas Instruments. All rights reserved.
+ * Use of this source code is governed by a BSD-style
+ * license that can be found in the LICENSE file.
+ */
+
+.BleDevice {
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  }
+}
