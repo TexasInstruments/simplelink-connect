@@ -2,9 +2,9 @@
 Setup react-native and its dependancies by following https://reactnative.dev/docs/environment-setup
 
 # Install node packages
-install node packages
+Install node packages
 ```
-npm instal
+npm install
 ```
 
 # Configure and run the Android app
@@ -36,7 +36,7 @@ Open xcode and set the signing certificates
 Only needed once
 ```
 cd ios
-pon install
+pod install
 ```
 
 ### Install ReactNative tools
@@ -52,9 +52,7 @@ Insure your phone is connected over USB and on the same WiFi network and run
 react-native run-ios --device "Name of iPhone"
 ```
 
-You will see an error first time you launch "No Bundle URL Present". There will also be a popup to allow the app to find and connect to devices on your local network. Click allow, then click "Reload JS" in the error window.
-​
-The app will request to use Bluetooth, click OK.
+You will see an error first time you launch "No Bundle URL Present". There will also be a popup to allow the app to find and connect to devices on your local network. Click allow, then click "Reload JS" in the error window. The app will request to use Bluetooth, click OK.
 ​
 ## Build and realese the iOS app
 Refer to:

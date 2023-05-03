@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018, Texas Instruments Incorporated
+ * Copyright (c) 2023, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -71,6 +71,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   const [updating, setUpdating] = useState<boolean>(false);
   const [blockNum, setBlockNum] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
+  const [imgVersionStr, setImgVersionStr] = useState<String>('');
+  const [imgLength, setImgLength] = useState<number>(0);
 
   let fakeUpdateInterval = useRef<ReturnType<typeof setInterval>>();
 
@@ -174,11 +176,12 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   const OAD_EXT_CTRL_BLK_RSP_DL_COMPLETE = 14;
 
   let fwImageByteArray: Uint8Array;
-  let fwImageByteArrayLength = 0;
   let blockSize = 20;
   let numBlocks = 0;
 
   let blockEventSubstription: any = undefined
+
+  console.log('FWUpdate_Modal', peripheralId)
 
   useEffect(() => {
     /* component mounting, disable lock screen sleep */
@@ -257,7 +260,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   };
 
   async function asyncStartFwUpdate(peripheralId: string) {
-    console.log('calling getFwUdateImage');
+    console.log('calling getFwUdateImage: ', peripheralId);
     fwImageByteArray = await getFwUdateImage();
 
     let oadService = await checkOadServices(peripheralId);
@@ -386,8 +389,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
             }
           );
         })
-        .catch(() => {
-          console.log('device does not have OadServiceUuid');
+        .catch((e) => {
+          console.log('device does not have OadServiceUuid ', e);
 
           let oadResetCmd = new Uint8Array([OadResetCharOadResetCmdStartOad]);
           var oadResetCmdArray = Array.from(oadResetCmd);
@@ -455,7 +458,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
             })
             .catch(() => {
               console.log('device not reset in to app containing OadServiceUuid');
-              setStatus('No OAD Services Found');
+              setStatus('OAD Service Reset Failed');
               reject();
             });
 
@@ -515,14 +518,15 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     /* Prepare Image identify command */
     const buffer = new ArrayBuffer(18);
     let imgIdentifyPayload = new Uint8Array(buffer);
+
+    let imgTotLength = fwImageByteArray.length;
+    
     if (firmwares.find((fw) => fw.value === selectedFW)?.imageType === 'mcuboot') {
       console.log('sendiImagUpdateReq: Mcuboot image');
       /* Copy image header */
-      //imgIdentifyPayload.set(fwImageByteArray.slice(0, 20))
       imgIdentifyPayload.set(fwImageByteArray.slice(0, 18));
 
       console.log('fwImageByteArray[0]: ', fwImageByteArray[0]);
-      console.log('fwImageByteArray[0]: epected', 0x3d);
       console.log('fwImageByteArray[1]: ', fwImageByteArray[1]);
       console.log('fwImageByteArray[2]: ', fwImageByteArray[2]);
       console.log('fwImageByteArray[3]: ', fwImageByteArray[3]);
@@ -538,21 +542,6 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
         alert('Not an MCU Boot image');
       }
 
-      /* Length must include header */
-      let imgTotLength =
-        fwImageByteArray[12] +
-        (fwImageByteArray[13] << 8) +
-        (fwImageByteArray[14] << 16) +
-        (fwImageByteArray[15] << 24);
-
-      console.log('imgLength: ', imgTotLength);
-
-      let headerLen =
-        fwImageByteArray[8] +
-        (fwImageByteArray[9] << 8) +
-        (fwImageByteArray[10] << 16) +
-        (fwImageByteArray[11] << 24);
-
       let imgVersionMajor = fwImageByteArray[20];
       let imgVersionMinor = fwImageByteArray[21];
       let imgRevision = fwImageByteArray[22] + (fwImageByteArray[23] << 8);
@@ -562,41 +551,83 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
         (fwImageByteArray[26] << 16) +
         (fwImageByteArray[27] << 24);
 
-      let imgVersionStr =
-        imgVersionMajor + '.' + imgVersionMinor + '.' + imgRevision + '.' + imgBuildNum;
+      setImgVersionStr(
+              imgVersionMajor + '.' + 
+              imgVersionMinor + '.' + 
+              imgRevision + '.' + 
+              imgBuildNum)
 
       console.log('mcuboot img version: ', imgVersionStr);
 
-      console.log('tlv magic 0', fwImageByteArray[imgTotLength + headerLen]);
-      console.log('tlv magic 1', fwImageByteArray[imgTotLength + headerLen + 1]);
+      let mcuBootMapgicSwap = 
+        fwImageByteArray[fwImageByteArray.length - 16].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 15].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 14].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 13].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 12].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 11].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 10].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 9].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 8].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 7].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 6].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 5].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 4].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 3].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 2].toString(16) +
+        fwImageByteArray[fwImageByteArray.length - 1].toString(16)
 
-      /* check TLV header Magic */
-      if (
-        fwImageByteArray[imgTotLength + headerLen + 1] != 0x69 ||
-        (fwImageByteArray[imgTotLength + headerLen] != 0x07 &&
-          fwImageByteArray[imgTotLength + headerLen] != 0x08)
-      ) {
-        cancel();
-        alert('Bad TLV Magic');
+      console.log('MCUBoot Swap Magic: ', mcuBootMapgicSwap);
+
+      if( mcuBootMapgicSwap != '77c295f360d2ef7f355250f2cb67980') {
+        console.log('Not swap image');
+
+        /* Length is read from header and must include header */
+        imgTotLength =
+          fwImageByteArray[12] +
+          (fwImageByteArray[13] << 8) +
+          (fwImageByteArray[14] << 16) +
+          (fwImageByteArray[15] << 24);
+
+        console.log('MCUBoot imgLength: ', imgTotLength);
+
+        let headerLen =
+          fwImageByteArray[8] +
+          (fwImageByteArray[9] << 8) +
+          (fwImageByteArray[10] << 16) +
+          (fwImageByteArray[11] << 24);
+
+        console.log('tlv magic 0', fwImageByteArray[imgTotLength + headerLen]);
+        console.log('tlv magic 1', fwImageByteArray[imgTotLength + headerLen + 1]);
+
+        /* check TLV header Magic */
+        if (
+          fwImageByteArray[imgTotLength + headerLen + 1] != 0x69 ||
+          (fwImageByteArray[imgTotLength + headerLen] != 0x07 &&
+            fwImageByteArray[imgTotLength + headerLen] != 0x08)
+        ) {
+          cancel();
+          alert('Bad TLV Magic');
+        }
+
+        let tlvLength =
+          fwImageByteArray[imgTotLength + headerLen + 2] +
+          (fwImageByteArray[imgTotLength + headerLen + 3] << 8);
+
+        console.log('headerLen: ', headerLen);
+        console.log('tlvLength: ', tlvLength);
+
+        /* add MCU Boot header and trailer size */
+        imgTotLength += headerLen + tlvLength;
+        console.log('imgTotLength: ', imgTotLength);
+        imgIdentifyPayload[12] = imgTotLength & 0x000000ff;
+        imgIdentifyPayload[13] = (imgTotLength & 0x0000ff00) >> 8;
+        imgIdentifyPayload[14] = (imgTotLength & 0x00ff0000) >> 16;
+        imgIdentifyPayload[15] = (imgTotLength & 0xff000000) >> 24;
+
+        fwImageByteArray = fwImageByteArray.slice(0, imgTotLength);
       }
 
-      let tlvLength =
-        fwImageByteArray[imgTotLength + headerLen + 2] +
-        (fwImageByteArray[imgTotLength + headerLen + 3] << 8);
-
-      console.log('headerLen: ', headerLen);
-      console.log('tlvLength: ', tlvLength);
-
-      /* add MCU Boot header and trailer size */
-      imgTotLength += headerLen + tlvLength;
-      console.log('imgTotLength: ', imgTotLength);
-      imgIdentifyPayload[12] = imgTotLength & 0x000000ff;
-      imgIdentifyPayload[13] = (imgTotLength & 0x0000ff00) >> 8;
-      imgIdentifyPayload[14] = (imgTotLength & 0x00ff0000) >> 16;
-      imgIdentifyPayload[15] = (imgTotLength & 0xff000000) >> 24;
-
-      fwImageByteArray = fwImageByteArray.slice(0, imgTotLength);
-      fwImageByteArrayLength = imgTotLength;
     } else {
       console.log('sendiImagUpdateReq: TI image');
       /* Send Image identify command */
@@ -608,9 +639,10 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
       imgIdentifyPayload.set(fwImageByteArray.slice(16, 20), 10);
       /* Length */
       imgIdentifyPayload.set(fwImageByteArray.slice(24, 28), 14);
-
-      fwImageByteArrayLength = fwImageByteArray.length;
     }
+
+    setImgLength(imgTotLength)
+    console.log('imgLength:', imgTotLength)
 
     /* Read the Block Size */
     blockSize = 20;
@@ -629,7 +661,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
       /* Store block size */
       blockSize = rsp[1] + (rsp[2] << 8) - 4;
       console.log('blockSize ', blockSize);
-      numBlocks = Math.floor(fwImageByteArrayLength / blockSize);
+      numBlocks = Math.floor(imgTotLength / blockSize);
       console.log('numBlocks ', numBlocks);
     } else {
       console.log('Error: Block size response not for block size command');
@@ -750,7 +782,10 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
             //   await writeWaitNtfy(peripheralId, OadServiceUuid, ImageControlPointUuid, true, ImgControlPointCmd, 1);
             // }
           } else {
-            console.log('unknown  OAD_EXT_CTRL_BLK_RSP_NOTIF response ' + value[1]);
+            console.log('unknown  OAD_EXT_CTRL_BLK_RSP_NOTIF response ' + value[1])
+            alert('OAD Failed')
+            setStatus('Found selected FW image')
+            setProgress(0);
           }
         } else if (
           characteristic.toUpperCase() === ImageControlPointUuid &&

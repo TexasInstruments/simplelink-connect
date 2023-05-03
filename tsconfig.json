@@ -2,7 +2,8 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "module": "ESNext"
+    "module": "ESNext",
+    "jsx": "react-jsx"
   },
   "exclude": ["node_modules", "local_server"]
 }

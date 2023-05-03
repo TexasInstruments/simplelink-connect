@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018, Texas Instruments Incorporated
+ * Copyright (c) 2023, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -57,7 +57,7 @@ export default [
       type: 'font-awesome-5',
       iconName: 'download',
     },
-    serviceSpecificScreen: 'FwUpdateServiceModel',
+    serviceSpecificScreen: 'ModalScreen',
   },
   {
     serviceName: 'TI OAD Reset',
@@ -66,7 +66,7 @@ export default [
       type: 'font-awesome-5',
       iconName: 'sync-alt',
     },
-    serviceSpecificScreen: 'FwUpdateServiceModel',
+    serviceSpecificScreen: 'ModalScreen',
   },
   {
     serviceName: 'TI Terminal',
