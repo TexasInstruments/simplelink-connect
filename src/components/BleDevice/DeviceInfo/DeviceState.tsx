@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018, Texas Instruments Incorporated
+ * Copyright (c) 2023, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -56,14 +56,17 @@ interface Props {
 }
 
 const DeviceState: React.FC<Props> = ({ deviceState, discover, connect, hasOadserviceUuid, peripheralId }) => {
+
+  console.log('DeviceState peripheralId', peripheralId)
   let theme = useColorScheme();
 
   let navigation = useNavigation<DeviceScreenNavigationProp>();
   let route = useRoute<DeviceScreenRouteProp>();
 
-  const openFWUpdateModal = useCallback(() => {
-    navigation.navigate('FwUpdateServiceModel', { peripheralId: peripheralId });
-  }, []);
+  const openFWUpdateModal = () => {
+    console.log('DeviceState openFWUpdateModal peripheralId', peripheralId)
+    navigation.navigate('ModalScreen', { peripheralId: peripheralId });
+  };
 
 
   const startConnectionCheckTimer = (() => {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018, Texas Instruments Incorporated
+ * Copyright (c) 2023, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +49,8 @@ interface Props {
   peripheralId: string
 }
 const DeviceInfo: React.FC<Props> = ({ peripheralInfo, deviceState, discover, connect, peripheralId }) => {
+
+  console.log('DeviceInfo: peripheralId', peripheralId)
   let navigation = useNavigation<DeviceScreenNavigationProp>();
   
   const OadServiceUuid = 'F000FFC0-0451-4000-B000-000000000000';

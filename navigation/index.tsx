@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018, Texas Instruments Incorporated
+ * Copyright (c) 2023, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -70,7 +70,7 @@ import { Text, TouchableOpacity } from '../components/Themed';
 import BleManager from 'react-native-ble-manager';
 import SettingsModal from '../screens/SettingsModal';
 import FilterSortProvider from '../context/FilterSortContext';
-import FwUpdateServiceModel from '../screens/ServiceSpecificViews/FwUpdateServiceModel';
+import ModalScreen from '../screens/ModalScreen';
 import TutorialScreen from '../screens/TutorialScreen';
 
 let DefaultThemeExtended: Theme = {
@@ -148,8 +148,8 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
       <Stack.Screen name="Tutorial" component={TutorialScreen} options={{ headerShown: false }} />
       <Stack.Group screenOptions={{ presentation: 'modal' }}>
         <Stack.Screen
-          name="FwUpdateServiceModel"
-          component={FwUpdateServiceModel}
+          name="ModalScreen"
+          component={ModalScreen}
           options={{ title: 'Firmware Update' }}
         />
       </Stack.Group>

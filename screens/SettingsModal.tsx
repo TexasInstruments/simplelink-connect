@@ -1,5 +1,38 @@
+/*
+ * Copyright (c) 2023, Texas Instruments Incorporated
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *
+ * *  Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * *  Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * *  Neither the name of Texas Instruments Incorporated nor the names of
+ *    its contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+ * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+ * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 import { useCallback, useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Switch, TouchableOpacity, View } from '../components/Themed';
 import { Text } from '@rneui/themed';
 import { FilterSortDispatch, FilterSortState } from '../context/FilterSortContext';
@@ -77,12 +110,7 @@ const SettingsModal: React.FC<Props> = () => {
   const saveRepository = async (value: string) => {
     if (!value || value == '' || value.length == 0) {
       AsyncStorage.removeItem('@repository');
-      setRepository('https://github.com/TexasInstruments/simplelink-connect/raw/master/fw-images');
-      return;
-    }
-    if (!value || value == '.' || value.length == 1) {
-      AsyncStorage.removeItem('@repository');
-      setRepository('https://github.com/Bluwbee/ti-simplelink-connect-fw-bins/raw/master/');
+      setRepository('https://github.com/TexasInstruments/simplelink-connect/raw/main/fw-images');
       return;
     }
     AsyncStorage.setItem('@repository', value);
@@ -91,6 +119,7 @@ const SettingsModal: React.FC<Props> = () => {
 
   return (
     <SafeAreaView style={{ marginHorizontal: 20, height: '100%' }}>
+      <KeyboardAwareScrollView>
       <View style={{ paddingTop: 5 }}>
         <Separator text="Settings" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
         <View
@@ -238,10 +267,11 @@ const SettingsModal: React.FC<Props> = () => {
           This application connects your SimpleLink(TM) devices to your smartphone with Bluetooth Low Energy support.
           Support for Over-the-Air upgrades for the CC23xx LaunchPad development kits are included.
         </Text>
-        <Text style={{textAlign:'center', paddingTop: 10}}><Text style={{color:Colors.blue}}>Version: </Text>1.1.0</Text>
+        <Text style={{textAlign:'center', paddingTop: 10}}><Text style={{color:Colors.blue}}>Version: </Text>1.1.1</Text>
         <Text style={{textAlign:'center', paddingTop: 10}}><Text style={{color:Colors.blue}}>Developed by: </Text>Texas Instruments</Text>
         <Text style={{textAlign:'center', paddingTop: 10}}><Text style={{color:Colors.blue}}>Credits: </Text>Tony Cave (Bluwbee LTD)</Text>
       </View>
+      </KeyboardAwareScrollView>
     </SafeAreaView>
   );
 };
