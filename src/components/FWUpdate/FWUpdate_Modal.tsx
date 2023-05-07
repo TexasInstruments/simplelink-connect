@@ -210,7 +210,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     let userRepo = await AsyncStorage.getItem('@repository');
     return userRepo
       ? userRepo
-      : 'https://github.com/Bluwbee/ti-simplelink-connect-fw-bins/raw/master/';
+      : 'https://github.com/TexasInstruments/simplelink-connect/raw/main/fw-images';
+         
   };
 
   useEffect(() => {
@@ -334,7 +335,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     return new Promise((resolve, reject) => {
       console.log('getFwUdateImage');
 
-      fetch( repository + (selectedFW??''), {
+      fetch( repository + '/' + (selectedFW??''), {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
