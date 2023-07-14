@@ -36,24 +36,24 @@ export type MappedCharacteristic = {
 };
 
 export default [
-  { /* TI SImple Peripheral CHAR1 */
-    characteristicName: 'Characteristic 1',
+  {
+    /* TI SImple Peripheral CHAR1 */ characteristicName: 'Characteristic 1',
     characteristicUuid: 'FFF1',
   },
-  { /* TI SImple Peripheral CHAR2 */
-    characteristicName: 'Characteristic 2',
+  {
+    /* TI SImple Peripheral CHAR2 */ characteristicName: 'Characteristic 2',
     characteristicUuid: 'FFF2',
   },
-  { /* TI SImple Peripheral CHAR3 */
-    characteristicName: 'Characteristic 3',
+  {
+    /* TI SImple Peripheral CHAR3 */ characteristicName: 'Characteristic 3',
     characteristicUuid: 'FFF3',
   },
-  { /* TI SImple Peripheral CHAR4 */
-    characteristicName: 'Characteristic 4',
+  {
+    /* TI SImple Peripheral CHAR4 */ characteristicName: 'Characteristic 4',
     characteristicUuid: 'FFF4',
   },
-  { /* TI SImple Peripheral CHAR5 */
-    characteristicName: 'Characteristic 5',
+  {
+    /* TI SImple Peripheral CHAR5 */ characteristicName: 'Characteristic 5',
     characteristicUuid: 'FFF5',
   },
   {
@@ -836,4 +836,25 @@ export default [
     characteristicName: 'Wind Chill',
     characteristicUuid: '2A79',
   },
+  {
+    characteristicName: 'Data',
+    characteristicUuid: 'f000aa65-0451-4000-b000-000000000000',
+  },
+  {
+    characteristicName: 'Configuration',
+    characteristicUuid: 'f000aa66-0451-4000-b000-000000000000',
+  },
+  {
+    characteristicName: 'Configuration',
+    characteristicUuid: 'f000aa02-0451-4000-b000-000000000000',
+  },
+  {
+    characteristicName: 'Period',
+    characteristicUuid: 'f000aa03-0451-4000-b000-000000000000',
+  },
+  {
+    characteristicName: 'Data',
+    characteristicUuid: 'ffe1',
+  },
+  { characteristicName: 'Data', characteristicUuid: 'f000aa01-0451-4000-b000-000000000000' },
 ] as MappedCharacteristic[];

@@ -32,14 +32,16 @@
 
 import {
   View,
-  Text,
   NativeEventEmitter,
   NativeModules,
   NativeSyntheticEvent,
   Switch,
   TextInputSubmitEditingEventData,
   StyleSheet,
+  InteractionManager
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
+import { Text } from '../../../../components/Themed';
 import React, { useCallback, useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import Layout from '../../../../constants/Layout';
 import BleManager from 'react-native-ble-manager';
@@ -108,6 +110,8 @@ const CharacteristicService: React.FC<Props> = ({
   const [notifyResponse, setNotifyResponse] = useState<Response[]>([]);
 
   const writeTextInputRef = useRef({})
+
+  let initialFocus = useRef<boolean>(true);
   
   console.log(char.properties);
 
@@ -122,43 +126,65 @@ const CharacteristicService: React.FC<Props> = ({
     charNameSize = 15;
   }
 
+  useFocusEffect(
+    useCallback(() => {
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (initialFocus.current) {
+          console.log('initial focuse');
+          initialFocus.current = false;
+        } else {
+          console.log('refocuse');
+        }
+
+        console.log('CharacteristicService: addListener')
+        bleManagerEmitter.addListener(
+          'BleManagerDidUpdateValueForCharacteristic',
+          ({ value, peripheral, characteristic, service }) => {
+            console.log('notification: ', value);
+            let hexString = ''
+              
+            if(selectedFormat === 'UTF-8') {
+              hexString = Buffer.from(value).toString('utf8');          
+             console.log('notification: converted to UTF-8 ', hexString);
+            }
+            else if(selectedFormat === 'Dec') {
+              hexString = value;
+              console.log('notification: converted to Dec ', hexString); 
+            }
+            else { // must be hex
+              hexString = Buffer.from(value).toString('hex');
+              console.log('notification: converted to Hex ', hexString); 
+            }        
+    
+            /* Check include string and not dirrect match to ork around issue 
+               switching between SimplePeripheral and PersistantApp */
+            if (characteristic.toLowerCase().includes(char.characteristic.toLowerCase())) {
+              setNotifyResponse((prev) => [
+                { data: hexString, time: new Date().toTimeString().split(' ')[0] },
+                ...prev.slice(0,4),
+              ]);
+            }
+          }
+        );
+      });
+
+      return () => {
+        task.cancel();
+        console.log('CharacteristicService: removeAllListeners')
+        bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+        if (Object.values(char.properties).indexOf('Notify') > -1) {
+          //Cleaning up notification
+          BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
+        }
+      }
+    }, [])
+  );
 
   useEffect(() => {
     console.log('selectedFormat ', selectedFormat)
   }, [selectedFormat]);
 
   useEffect(() => {
-    console.log('addListener for BleManagerDidUpdateValueForCharacteristic')
-    bleManagerEmitter.addListener(
-      'BleManagerDidUpdateValueForCharacteristic',
-      ({ value, peripheral, characteristic, service }) => {
-        console.log('notification: ', value);
-        let hexString = ''
-          
-        if(selectedFormat === 'UTF-8') {
-          hexString = Buffer.from(value).toString('utf8');          
-         console.log('notification: converted to UTF-8 ', hexString);
-        }
-        else if(selectedFormat === 'Dec') {
-          hexString = value;
-          console.log('notification: converted to Dec ', hexString); 
-        }
-        else { // must be hex
-          hexString = Buffer.from(value).toString('hex');
-          console.log('notification: converted to Hex ', hexString); 
-        }        
-
-        /* Check include string and not dirrect match to ork around issue 
-           switching between SimplePeripheral and PersistantApp */
-        if (characteristic.toLowerCase().includes(char.characteristic.toLowerCase())) {
-          setNotifyResponse((prev) => [
-            { data: hexString, time: new Date().toTimeString().split(' ')[0] },
-            ...prev.slice(0,4),
-          ]);
-        }
-      }
-    );
-
     let checkIfCharacteristicNameAvailable = async () => {
       try {
         let check = await uuidToCharacteristicName({ uuid: char.characteristic });
@@ -172,12 +198,12 @@ const CharacteristicService: React.FC<Props> = ({
     checkIfCharacteristicNameAvailable();
 
     return () => {
-      console.log('remove all listeners');
-      bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
-      if (Object.values(char.properties).indexOf('Notify') > -1) {
-        //Cleaning up notification
-        BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
-      }
+      // console.log('remove all listeners');
+      // bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+      // if (Object.values(char.properties).indexOf('Notify') > -1) {
+      //   //Cleaning up notification
+      //   BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
+      // }
     };
   }, [notificationSwitch, selectedFormat]);
 

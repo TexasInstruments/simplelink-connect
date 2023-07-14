@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import React, {Dispatch, SetStateAction} from 'react';
 import BleManager from 'react-native-ble-manager';
 import CharacteristicService from '../CharacteristicService';

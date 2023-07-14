@@ -30,47 +30,23 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, StyleSheet, Animated, useWindowDimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Text } from '../../../../components/Themed';
-import React, { memo, useEffect, useRef, useState } from 'react';
-import BleManager from 'react-native-ble-manager';
+import React, { memo } from 'react';
 import { Icon } from '@rneui/themed';
+import { ScanScreenNavigationProp } from '../../../../types';
 import { TouchableOpacity } from '../../../../components/Themed';
-import ScannedDeviceInfo from './ScannedDeviceInfo';
 import Colors from '../../../../constants/Colors';
+import { Peripheral } from 'react-native-ble-manager';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 
 interface Device {
-  peripheral: BleManager.Peripheral;
+  peripheral: Peripheral;
+  disconnect: (peripheral: Peripheral) => void;
   requestConnect: (peripheralId: string) => void;
-  toggleAdvertising: (peripheralId: string) => void;
 }
 
-const ScannedDevice: React.FC<Device> = ({ peripheral, requestConnect, toggleAdvertising }) => {
-  const lastPeripheralId = useRef(peripheral.id ?? '');
-  const [visibleInfo, setVisibleInfo] = useState<boolean>(peripheral.showAdvertising);
-
-  if (peripheral && peripheral.id !== lastPeripheralId.current) {
-    lastPeripheralId.current = peripheral.id;
-    setVisibleInfo(peripheral.showAdvertising);
-  }
-
-  let isConnectable = () => {
-    if (
-      !peripheral.advertising.isConnectable ||
-      typeof peripheral.advertising.isConnectable == undefined
-    )
-      return false;
-
-    return true;
-  };
-
-  const expand = () => {
-    setVisibleInfo((prev) => !prev);
-    toggleAdvertising(peripheral.id);
-  };
-
-  let { fontScale } = useWindowDimensions();
-
+const ScannedDevice: React.FC<Device> = ({ peripheral, disconnect, requestConnect }) => {
   if (peripheral === undefined) {
     /* there is an issue where a device is removed from the
        sortedFilteredPeripherals list while the device is 
@@ -84,11 +60,21 @@ const ScannedDevice: React.FC<Device> = ({ peripheral, requestConnect, toggleAdv
     return null;
   }
 
+  let navigation = useNavigation<ScanScreenNavigationProp>();
+
+  const reconnect = () => {
+    console.log('Reconnect:', peripheral.id);
+
+    navigation.dispatch(
+      CommonActions.navigate({ name: 'DeviceTab', params: { peripheralId: peripheral.id } })
+    );
+  };
+
   return (
     <View style={[styles.container]}>
       <View style={[styles.deviceContainer]}>
         <Icon name="devices" type="fontawesome" />
-        <TouchableOpacity style={[styles.perInfoWrapper]} onPress={expand}>
+        <TouchableOpacity style={[styles.perInfoWrapper]} onPress={reconnect}>
           <Text
             style={{ fontWeight: 'bold' }}
             allowFontScaling={true}
@@ -99,23 +85,15 @@ const ScannedDevice: React.FC<Device> = ({ peripheral, requestConnect, toggleAdv
           </Text>
           <Text>ID: {peripheral.id || 'unknown'}</Text>
         </TouchableOpacity>
-        {isConnectable() && (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Icon name="signal" type="font-awesome" onPress={() => requestConnect(peripheral.id)} />
-            <Text style={{ width: 35, textAlign: 'center' }}> {peripheral.rssi} </Text>
-            <TouchableOpacity onPress={() => requestConnect(peripheral.id)}>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => disconnect(peripheral)}>
+            <Icon name="trash" type="evilicon" size={30} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={reconnect}>
               <Icon name="chevron-right" type="evilicon" size={40} />
             </TouchableOpacity>
-          </View>
-        )}
-        {!isConnectable() && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 40 }}>
-            <Icon name="signal" type="font-awesome" onPress={() => requestConnect(peripheral.id)} />
-            <Text style={{ width: 30, textAlign: 'center' }}> {peripheral.rssi} </Text>
-          </View>
-        )}
+        </View>
       </View>
-      <ScannedDeviceInfo peripheral={peripheral} isVisible={visibleInfo} />
     </View>
   );
 };

@@ -181,6 +181,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
   let blockEventSubstription: any = undefined
 
+  const dropdownListMode = Platform.OS === 'android' ? 'MODAL' : 'SCROLLVIEW';
+
   console.log('FWUpdate_Modal', peripheralId)
 
   useEffect(() => {
@@ -210,8 +212,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     let userRepo = await AsyncStorage.getItem('@repository');
     return userRepo
       ? userRepo
-      : 'https://github.com/TexasInstruments/simplelink-connect/raw/main/fw-images';
-         
+      : 'https://github.com/TexasInstruments/simplelink-connect-fw-bins/raw/main';
   };
 
   useEffect(() => {
@@ -910,8 +911,9 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
           }}
         >
           Select Firmware Image
-        </Text>
+        </Text>        
         <DropDownPicker
+          listMode={dropdownListMode}
           disabled={updating}
           zIndex={100}
           containerStyle={[styles.dropDownPickerContainer]}
@@ -922,8 +924,19 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
           setItems={setFirmwares}
           value={selectedFW}
           setValue={setSelectedFW}
-          theme={theme === 'dark' ? 'DARK' : 'LIGHT'}
+          // theme={theme === 'dark' ? 'DARK' : 'LIGHT'}
         />
+ {/* keyboardProps = Platform.select({
+    android: {
+      enabled: true,
+      keyboardVerticalOffset: 0
+    },
+    ios: {
+      enabled: true,
+      keyboardVerticalOffset: 64,
+      behavior: 'height',
+    },
+  }); */}
       </View>
       <View style={{ paddingTop: 40, marginVertical: 20 }}>
         <Text

@@ -83,6 +83,8 @@ export function Text(props: TextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
 
   return <DefaultText style={[{ color }, style]} {...otherProps} />;
+  /* Change font here:
+  return <DefaultText style={[{ color, fontFamily: 'Courier New' }, style]} {...otherProps} />; */
 }
 
 export function View(props: ViewProps) {

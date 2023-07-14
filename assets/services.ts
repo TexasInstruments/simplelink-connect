@@ -41,7 +41,7 @@ export type MappedService = {
 };
 
 export default [
-/* Known TI Services */
+  /* Known TI Services */
   {
     serviceName: 'TI Simple Peripheral Service',
     serviceUuid: 'FFF0',
@@ -57,7 +57,7 @@ export default [
       type: 'font-awesome-5',
       iconName: 'download',
     },
-    serviceSpecificScreen: 'ModalScreen',
+    serviceSpecificScreen: 'FwUpdateServiceModel',
   },
   {
     serviceName: 'TI OAD Reset',
@@ -66,7 +66,7 @@ export default [
       type: 'font-awesome-5',
       iconName: 'sync-alt',
     },
-    serviceSpecificScreen: 'ModalScreen',
+    serviceSpecificScreen: 'FwUpdateServiceModel',
   },
   {
     serviceName: 'TI Terminal',
@@ -75,6 +75,7 @@ export default [
       type: 'font-awesome-5',
       iconName: 'tv',
     },
+    serviceSpecificScreen: 'TerminalServiceModel',
   },
   /* Known Standard Services */
   {
@@ -372,5 +373,85 @@ export default [
       type: 'font-awesome-5',
       iconName: 'file-alt',
     },
+  },
+  {
+    serviceName: 'Temperature Service',
+    serviceUuid: 'f000aa00-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'thermometer-empty',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
+  },
+  {
+    serviceName: 'Humidity Service',
+    serviceUuid: 'f000aa20-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'tint',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
+  },
+  {
+    serviceName: 'Barometer Service',
+    serviceUuid: 'f000aa40-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'tachometer-alt',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
+  },
+  {
+    serviceName: 'Movement Service',
+    serviceUuid: 'f000aa80-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'street-view',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
+  },
+  {
+    serviceName: 'Light Sensor Service',
+    serviceUuid: 'f000aa70-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'adjust',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
+  },
+  {
+    serviceName: 'Simple Keys Service',
+    serviceUuid: 'ffe0',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'key',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
+  },
+  {
+    serviceName: 'I/O Service',
+    serviceUuid: 'f000aa64-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'keyboard',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
+  },
+  {
+    serviceName: 'Register Service',
+    serviceUuid: 'f000ac00-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'list-alt',
+    },
+  },
+  {
+    serviceName: 'Control Service',
+    serviceUuid: 'f000ccc0-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'tools',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
   },
 ] as MappedService[];

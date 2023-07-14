@@ -31,7 +31,8 @@
  */
 
 import { StyleProp, TextStyle, View } from 'react-native';
-import { Text, TextProps } from '@rneui/themed';
+import { TextProps } from '@rneui/themed';
+import { Text } from '../../../components/Themed';
 import React from 'react';
 import { ViewProps } from '../../../components/Themed';
 import Colors from '../../../constants/Colors';

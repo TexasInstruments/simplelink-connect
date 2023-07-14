@@ -34,7 +34,7 @@ import { useCallback, useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Switch, TouchableOpacity, View } from '../components/Themed';
-import { Text } from '@rneui/themed';
+import { Text } from '../components/Themed';
 import { FilterSortDispatch, FilterSortState } from '../context/FilterSortContext';
 import { TextInput as Input, StyleSheet } from 'react-native';
 import Separator from '../src/components/Separator';
@@ -48,7 +48,7 @@ interface Props extends DrawerContentComponentProps {}
 const SettingsModal: React.FC<Props> = () => {
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [repository, setRepository] = useState<string>(
-    'https://github.com/TexasInstruments/simplelink-connect/raw/main/fw-images'
+    'https://github.com/TexasInstruments/simplelink-connect-fw-bins/raw/main'
   );
 
   useEffect(() => {
@@ -72,7 +72,7 @@ const SettingsModal: React.FC<Props> = () => {
 
         setRepository(data);
       } catch (error) {
-        setRepository('https://github.com/TexasInstruments/simplelink-connect/raw/main/fw-images');
+        setRepository('https://github.com/TexasInstruments/simplelink-connect-fw-bins/raw/main');
       }
     };
 
@@ -110,7 +110,7 @@ const SettingsModal: React.FC<Props> = () => {
   const saveRepository = async (value: string) => {
     if (!value || value == '' || value.length == 0) {
       AsyncStorage.removeItem('@repository');
-      setRepository('https://github.com/TexasInstruments/simplelink-connect/raw/main/fw-images');
+      setRepository('https://github.com/TexasInstruments/simplelink-connect-fw-bins/raw/main');
       return;
     }
     AsyncStorage.setItem('@repository', value);
@@ -267,7 +267,7 @@ const SettingsModal: React.FC<Props> = () => {
           This application connects your SimpleLink(TM) devices to your smartphone with Bluetooth Low Energy support.
           Support for Over-the-Air upgrades for the CC23xx LaunchPad development kits are included.
         </Text>
-        <Text style={{textAlign:'center', paddingTop: 10}}><Text style={{color:Colors.blue}}>Version: </Text>1.1.2</Text>
+        <Text style={{textAlign:'center', paddingTop: 10}}><Text style={{color:Colors.blue}}>Version: </Text>1.2.2</Text>
         <Text style={{textAlign:'center', paddingTop: 10}}><Text style={{color:Colors.blue}}>Developed by: </Text>Texas Instruments</Text>
         <Text style={{textAlign:'center', paddingTop: 10}}><Text style={{color:Colors.blue}}>Credits: </Text>Tony Cave (Bluwbee LTD)</Text>
       </View>

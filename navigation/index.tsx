@@ -37,22 +37,11 @@
  */
 import { FontAwesome } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import {
-  NavigationContainer,
-  DefaultTheme,
-  DarkTheme,
-  Theme,
-  CommonActions,
-} from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme, Theme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import * as React from 'react';
-import { 
-  ColorSchemeName, 
-  Platform,
-  NativeEventEmitter,
-  NativeModules 
-} from 'react-native';
+import { ColorSchemeName, Platform, NativeEventEmitter, NativeModules } from 'react-native';
 import Colors from '../constants/Colors';
 import useColorScheme from '../hooks/useColorScheme';
 import NotFoundScreen from '../screens/NotFoundScreen';
@@ -67,11 +56,12 @@ import {
 import LinkingConfiguration from './LinkingConfiguration';
 import CharacteristicScreen from '../screens/CharacteristicScreen';
 import { Text, TouchableOpacity } from '../components/Themed';
-import BleManager from 'react-native-ble-manager';
 import SettingsModal from '../screens/SettingsModal';
 import FilterSortProvider from '../context/FilterSortContext';
-import ModalScreen from '../screens/ModalScreen';
+import FwUpdateServiceModel from '../screens/ServiceSpecificViews/FwUpdateServiceModel';
 import TutorialScreen from '../screens/TutorialScreen';
+import TerminalServiceModel from '../screens/ServiceSpecificViews/TerminalServiceModel';
+import SensorTagServiceModel from '../screens/ServiceSpecificViews/SensorTagServiceModel';
 
 let DefaultThemeExtended: Theme = {
   dark: false,
@@ -148,11 +138,33 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
       <Stack.Screen name="Tutorial" component={TutorialScreen} options={{ headerShown: false }} />
       <Stack.Group screenOptions={{ presentation: 'modal' }}>
         <Stack.Screen
-          name="ModalScreen"
-          component={ModalScreen}
+          name="FwUpdateServiceModel"
+          component={FwUpdateServiceModel}
           options={{ title: 'Firmware Update' }}
         />
+        <Stack.Screen
+          name="TerminalServiceModel"
+          component={TerminalServiceModel}
+        options={({ navigation }) => ({
+          title: 'Terminal',
+          headerLeft: ({}) => {
+            return (
+              <TouchableOpacity onPress={() => navigation.pop()}>
+                <Text>Back</Text>
+              </TouchableOpacity>
+            );
+          },
+        })}
+        />
       </Stack.Group>
+      <Stack.Screen
+        name="SensorTagModel"
+        component={SensorTagServiceModel}
+        options={({ navigation }) => ({
+          title: 'SensorTag',
+          headerTintColor: 'black',
+        })}
+      />
     </Stack.Navigator>
   );
 }
@@ -208,29 +220,19 @@ function BottomTabNavigator() {
         component={DeviceDetailsScreen}
         options={({ route, navigation }: RootTabScreenProps<'DeviceTab'>) => ({
           title: 'Services',
+          // headerTitleStyle: {fontFamily:'Cochin'}, 
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
           headerLeft: (props) => {
-            const disconnect = () => {
+            const goBack = () => {
               const BleManagerModule = NativeModules.BleManager;
               const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
-              bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral')
-
-              BleManager.getConnectedPeripherals([])
-                .then((peripherals) => {
-                  peripherals.forEach((per, i) => {
-                    console.log('disconnect')
-                    BleManager.disconnect(per.id);
-                  });
-                  navigation.goBack()
-                })
-                .catch((error) => {
-                  console.log('connected per error,', error);
-                });
+              bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
+              navigation.goBack();
             };
 
             return (
-              <TouchableOpacity {...props} style={{ paddingLeft: 15 }} onPress={disconnect}>
-                <Text>Disconnect</Text>
+              <TouchableOpacity {...props} style={{ paddingLeft: 15 }} onPress={goBack}>
+                <Text>Back</Text>
               </TouchableOpacity>
             );
           },

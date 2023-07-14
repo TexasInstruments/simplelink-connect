@@ -30,122 +30,47 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import {
-  View,
-  Text,
-  StyleSheet,
-} from 'react-native';
-import React, { useCallback, useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '../../../../components/Themed';
+import React, { useCallback } from 'react';
 import { TouchableOpacity } from '../../../../components/Themed';
-import useColorScheme from '../../../../hooks/useColorScheme';
 import Colors from '../../../../constants/Colors';
-import {
-  DeviceScreenNavigationProp,
-  DeviceScreenRouteProp,
-} from '../../../../types';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import BleManager from 'react-native-ble-manager';
-
+import { DeviceScreenNavigationProp } from '../../../../types';
+import { useNavigation } from '@react-navigation/native';
 
 interface Props {
   deviceState: string;
   discover: (peripheralId: string) => void;
   connect: (peripheralId: string) => void;
   hasOadserviceUuid: boolean;
-  peripheralId: string
+  peripheralId: string;
 }
 
-const DeviceState: React.FC<Props> = ({ deviceState, discover, connect, hasOadserviceUuid, peripheralId }) => {
-
-  console.log('DeviceState peripheralId', peripheralId)
-  let theme = useColorScheme();
-
+const DeviceState: React.FC<Props> = ({ deviceState, hasOadserviceUuid, peripheralId, connect }) => {
   let navigation = useNavigation<DeviceScreenNavigationProp>();
-  let route = useRoute<DeviceScreenRouteProp>();
 
   const openFWUpdateModal = () => {
-    console.log('DeviceState openFWUpdateModal peripheralId', peripheralId)
-    navigation.navigate('ModalScreen', { peripheralId: peripheralId });
-  };
-
-
-  const startConnectionCheckTimer = (() => {
-    return setTimeout(() => {
-      console.log("DeviceState-focus: check peripheral ", peripheralId);
-      BleManager.isPeripheralConnected(
-        peripheralId,
-        []
-      ).then((isConnected) => {
-        if (isConnected) {
-          console.log("DeviceState-focus: Peripheral is connected!");
-        } else {
-          console.log('navigation.canGoBack', navigation.canGoBack())
-          // Check we are not already back on the scan screen
-          if(navigation.canGoBack()) {
-            console.log("DeviceState-focus: Peripheral is NOT connected!");
-            alert('Peripheral connection lost')
-            navigation.goBack()
-          }
-        }
-      });
-    }, 5000);
-  })
-
-  useEffect(() => {
-
-    const unsubscribe = navigation.addListener('focus', () => {
-      //if(peripheralInfo !== undefined)
-      {
-        // The screen is focused
-        // Call any action
-        console.log('focus:', peripheralId)
-        console.log('focus: deviceState', deviceState)
-
-        let timeout = startConnectionCheckTimer()
-
-        console.log("focus: check connected");
-        BleManager.isPeripheralConnected(
-          peripheralId,
-          []
-        ).then((isConnected) => {
-          if (isConnected) {
-            console.log("focus: Peripheral is connected!");
-            clearTimeout(timeout)
-          } else {
-            console.log("focus: Not connect, connect");
-            console.log('navigation.canGoBack', navigation.canGoBack())
-            connect(peripheralId);
-          }
-        });
-      }
-    });
-
-    return unsubscribe;
-  }, [navigation, peripheralId]);
+    navigation.navigate('FwUpdateServiceModel', { peripheralId: peripheralId });
+  }
 
   return (
     <View style={[styles.container]}>
-      {/* Rediscover devices services feature requested to be removed. May add back later
-      <TouchableOpacity onPress={() => discover(peripheralId)}>
+      {/* Rediscover devices services feature */}
+      <TouchableOpacity onPress={() => connect(peripheralId)}>
         <Text>
-          State: <Text style={{ color: Colors.blue, fontWeight: 'bold' }}>{deviceState}</Text>
+          State: <Text style={{fontWeight: 'bold' }}>{deviceState}</Text>
         </Text>
       </TouchableOpacity> 
-      */}
-      <Text>
-        State: <Text style={{ fontWeight: 'bold' }}>{deviceState}</Text>
-      </Text>
-      { hasOadserviceUuid &&
-      (
-      <TouchableOpacity
-        onPress={openFWUpdateModal}
-        style={{
-          paddingHorizontal: 10,
-          borderRadius: 15,
-        }}
-      >
-        <Text style={[{ color: Colors.blue }]}>Update FW</Text>
-      </TouchableOpacity>
+      {hasOadserviceUuid && (
+        <TouchableOpacity
+          onPress={openFWUpdateModal}
+          style={{
+            paddingHorizontal: 10,
+            borderRadius: 15,
+          }}
+        >
+          <Text style={[{ color: Colors.blue }]}>Update FW</Text>
+        </TouchableOpacity>
       )}
     </View>
   );

@@ -31,6 +31,9 @@
  */
 
 import { StyleSheet } from 'react-native';
+/* See README Design Notes section for more information regarding the SimpleBleScanner
+import BleScanner from '../src/components/SimpleBleScanner';
+*/
 import BleScanner from '../src/components/BleScanner';
 import { useEffect } from 'react';
 import { Icon } from '@rneui/themed';

@@ -30,38 +30,16 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { Skeleton } from '@rneui/themed';
-import { View, } from '../../../../components/Themed';
-import LinearGradient from 'react-native-linear-gradient';
+export const getBytes = (from: string) => {
+  let hexString = from.toLocaleLowerCase();
+  let writeByteArray = Uint8Array.from([]);
 
-const ScannedDeviceSkeleton = () => {
-  let h = 40;
-
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        display: 'flex',
-        alignItems: 'center',
-        padding: 20,
-      }}
-    >
-      <Skeleton animation='pulse' style={{ width: '10%', height: h, marginRight: 10, marginTop: 5 }} />
-      <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ width: '70%', height: h, marginRight: 10, marginTop: 5  }} />
-      <View
-        style={{
-        flexDirection: 'column',
-        display: 'flex',
-        alignItems: 'center',
-        paddingHorizontal: 0,
-        marginLeft: 0,
-        width: '10%'
-      }}>
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5}} />
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5 }} />
-      </View>
-    </View>
+  writeByteArray = Uint8Array.from(
+    //@ts-ignore
+    hexString.match(/.{1,2}/g).map((byte) => parseInt(byte, 16))
   );
-};
 
-export default ScannedDeviceSkeleton;
+  let writeBytes = Array.from(writeByteArray);
+
+  return writeBytes;
+};

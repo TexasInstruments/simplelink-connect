@@ -30,38 +30,33 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { Skeleton } from '@rneui/themed';
-import { View, } from '../../../../components/Themed';
-import LinearGradient from 'react-native-linear-gradient';
+import { Text } from '@rneui/themed';
+import { View } from '../../../components/Themed';
+import Colors from '../../../constants/Colors';
+import { StyleSheet } from 'react-native';
 
-const ScannedDeviceSkeleton = () => {
-  let h = 40;
+interface Props {
+  name: string;
+  uuid: string;
+}
 
+const SensorPresentation: React.FC<Props> = ({ name, uuid }) => {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        display: 'flex',
-        alignItems: 'center',
-        padding: 20,
-      }}
-    >
-      <Skeleton animation='pulse' style={{ width: '10%', height: h, marginRight: 10, marginTop: 5 }} />
-      <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ width: '70%', height: h, marginRight: 10, marginTop: 5  }} />
-      <View
-        style={{
-        flexDirection: 'column',
-        display: 'flex',
-        alignItems: 'center',
-        paddingHorizontal: 0,
-        marginLeft: 0,
-        width: '10%'
-      }}>
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5}} />
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5 }} />
-      </View>
+    <View style={styles.container}>
+      <Text h2 h2Style={{ fontWeight: 'bold' }} style={{ marginBottom: 5 }}>
+        {name}
+      </Text>
+      <Text style={{ color: 'rgba(0,0,0' }}>UUID: {uuid}</Text>
     </View>
   );
 };
 
-export default ScannedDeviceSkeleton;
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'column',
+    backgroundColor: Colors.lightGray,
+    padding: 15,
+  },
+});
+
+export default SensorPresentation;

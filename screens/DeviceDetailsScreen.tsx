@@ -27,10 +27,10 @@
  * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
- * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * EVEN   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import BleDevice from '../src/components/BleDevice/BleDevice';
+import BleDevice from '../src/components/BleDevice';
 import { RootTabScreenProps } from '../types';
 
 interface Props extends RootTabScreenProps<'DeviceTab'> {}
@@ -40,10 +40,9 @@ const DeviceDetailsScreen: React.FC<Props> = (props) => {
     route: {
       params: { peripheralId },
     },
-    navigation,
   } = props;
 
-  return <BleDevice peripheralId={peripheralId} navigation={navigation} />;
+  return <BleDevice peripheralId={peripheralId} />;
 };
 
 export default DeviceDetailsScreen;

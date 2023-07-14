@@ -30,7 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '../../../../components/Themed';
 import React from 'react';
 import Colors from '../../../../constants/Colors';
 

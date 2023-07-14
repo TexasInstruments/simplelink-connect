@@ -30,7 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { StyleSheet, View, Text } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Text } from '../../../components/Themed';
 import BleManager from 'react-native-ble-manager';
 import DropDownPicker from 'react-native-dropdown-picker';
 import React, { useState, useEffect } from 'react';

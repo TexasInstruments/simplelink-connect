@@ -36,21 +36,23 @@ import {
   Platform,
   PermissionsAndroid,
   View,
-  Text,
-  TouchableOpacity
+  TouchableOpacity,
+  InteractionManager,
 } from 'react-native';
-import React, { useState, useEffect, useMemo, useContext, useRef, useCallback, memo } from 'react';
+import { Text } from '../../../components/Themed';
+import React, { useState, useEffect, useMemo, useContext, useRef, useCallback } from 'react';
 import BleManager, { Peripheral } from 'react-native-ble-manager';
 import { RootTabScreenProps, ScanScreenNavigationProp } from '../../../types';
 import EnablerSection from './EnablerSection';
-//import { PureScannedDevice } from './ListSection/ScannedDevice';
 import ScannedDevice from './ListSection/ScannedDevice';
 import Separator from '../Separator';
 import ScanningSkeleton from './ListSection/ListSkeleton';
 import { FilterSortState } from '../../../context/FilterSortContext';
 import { FlashList } from '@shopify/flash-list';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Colors from '../../../constants/Colors';
+import ConnectedPeripheral from './ConnectedPeripheral';
+import { ScrollView } from 'react-native-gesture-handler';
 
 interface Props extends RootTabScreenProps<'ScanTab'> {}
 
@@ -60,51 +62,93 @@ const BleScanner: React.FC<Props> = () => {
   let scannedPeriphs = useRef<BleManager.Peripheral[]>([]);
   let lastScannedPeriphs = useRef<BleManager.Peripheral[]>([]);
 
-
   const [scanEnable, setScanEnable] = useState<boolean>(false);
   const [peripherals, setPeripherals] = useState<Peripheral[]>([]);
   const [doSort, setDoSort] = useState<Boolean>(false);
 
+  let initialFocus = useRef<boolean>(true);
+
+  let connectedPeripherals = useRef<Peripheral[]>([]);
+
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+
+  let peripheralViewUpdateInterval: (NodeJS.Timeout | string | number | undefined);
 
   let fsContext = useContext(FilterSortState);
 
   let removeCheckInterval = 0;
 
-  useEffect(() => {
+  useFocusEffect(
+    useCallback(() => {
+      const task = InteractionManager.runAfterInteractions(() => {
+        if (initialFocus.current) {
+          console.log('focused');
+          initialFocus.current = false;
+        } else {
+          setScanEnable(true);
+        }
 
+        BleManager.getConnectedPeripherals([]).then((connPeriphs) => {
+          connectedPeripherals.current = connPeriphs;
+        });
+      });
+
+      return () => {
+        console.log('unfocused');
+        setScanEnable(false);
+        task.cancel();
+      }
+    }, [])
+  );
+
+  useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      console.log('BleScanner focus', navigation)
-      console.log('BleScanner: ', BleScanner)
+      console.log('BleScanner focus');
+      console.log('BleScanner: ', BleScanner);
     });
 
     return unsubscribe;
   }, [navigation]);
 
   useEffect(() => {
-    BleManager.start({ showAlert: true });
+    console.log('useEffect []');
 
     requestAndroidPermissions().then(() => {
-      bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
+      BleManager.start({ showAlert: true });
+      // console.log('BleScanner: addListener')
+      // bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
     });
 
     return () => {
+      console.log('BleScanner: removeAllListeners')
       bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
       bleManagerEmitter.removeAllListeners('BleManagerStopScan');
     };
   }, []);
 
   useEffect(() => {
-    //console.debug('useMemo: scanEnable ', scanEnable)
+    console.log('useEffect [scanEnable]');
     if (!scanEnable) {
+      console.log('BleScanner: removeAllListeners')
       bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
       bleManagerEmitter.removeAllListeners('BleManagerStopScan');
+
+      clearInterval(peripheralViewUpdateInterval);
     } else {
+      console.log('useEffect clear periphs');
       scannedPeriphs.current = [];
       setPeripherals([]);
+      console.log('BleScanner: addListener')
       bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan);
       bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
+
+      const updatePeripheralView = () => {
+        setPeripherals(scannedPeriphs.current);
+      };
+  
+      peripheralViewUpdateInterval = setInterval(updatePeripheralView, 500); // Update the data every 500ms
+  
     }
 
     scan(scanEnable);
@@ -153,7 +197,7 @@ const BleScanner: React.FC<Props> = () => {
   ]);
 
   const sortPeripheral = useMemo(() => {
-    console.debug('sortPeripheral')
+    console.debug('sortPeripheral');
 
     if (fsContext.sort.app_name) {
       //console.debug('[Sort] By App name');
@@ -237,48 +281,84 @@ const BleScanner: React.FC<Props> = () => {
     }
   }
 
-  function handleDiscoverPeripheral(peripheral: Peripheral): void {
-    if (!lastScannedPeriphs.current.map((ele: any) => ele.id).includes(peripheral.id)) {
-      lastScannedPeriphs.current.push(peripheral);
-    }
+  function handleDiscoverPeripheral1(peripheral: Peripheral) {
+    return new Promise((resolve, reject) => {
+      if(!scanEnable)
+        resolve(peripheral);
 
-    if (!peripheral.name || peripheral.name === null || typeof peripheral.name === 'undefined') {
-      peripheral.name = 'Name Unknown';
-    }
-
-    let found =
-      scannedPeriphs.current.filter((ele) => ele.id == peripheral.id).length > 0 ? true : false;
-
-    /* Simulate high volume of devices - note will not connect due to pripheral.id changed */
-    // if (scannedPeriphs.current.length > 600) {
-    //   scannedPeriphs.current = [];
-    //   setPeripherals([]);
-    // }
-    // found = false;
-    // peripheral.showAdvertising = false;
-    // peripheral.id = peripheral.id + scannedPeriphs.current.length.toString();
-
-    if (!found) {
-      /* Add new device */
-      // console.debug('New device ', peripheral.id);
-      peripheral.showAdvertising = false;
-      scannedPeriphs.current.push(peripheral);
-      setPeripherals((prev) => [...prev, peripheral]);
-    } else {
-      let periphIdx = scannedPeriphs.current.findIndex((device) => device.id === peripheral.id);
-      if (scannedPeriphs.current[periphIdx].rssi !== peripheral.rssi) {
-        //console.log('rssi changed', peripheral.id);
-        scannedPeriphs.current[periphIdx].rssi = peripheral.rssi;
-        setPeripherals((prev) => [...prev, peripheral]);
+      const scannedPeripheral = scannedPeriphs.current.find((p) => p.id === peripheral.id);
+      
+      if (!scannedPeripheral) {
+        scannedPeriphs.current.push(peripheral);
+        resolve(peripheral);
+      } else {
+        // Update the existing peripheral if needed
+        if (scannedPeripheral.name !== peripheral.name) {
+          scannedPeripheral.name = peripheral.name;
+        }
+        // Resolve with the updated peripheral
+        resolve(scannedPeripheral);
       }
-    }
+
+      resolve(peripheral);
+    });
+  }
+  
+  function handleDiscoverPeripheral(peripheral: Peripheral) {
+    return new Promise((resolve, reject) => {
+
+      if (!lastScannedPeriphs.current.map((ele: any) => ele.id).includes(peripheral.id)) {
+        lastScannedPeriphs.current.push(peripheral);
+      }
+
+      if (connectedPeripherals.current.map((ele: any) => ele.id).includes(peripheral.id)) {
+        //console.log('scanned device exists in connectedPeripherals list', peripheral.id)
+        resolve(peripheral);
+        return;
+      }
+
+      if (!peripheral.name || peripheral.name === null || typeof peripheral.name === 'undefined') {
+        peripheral.name = 'Name Unknown';
+      }
+
+      let found =
+        scannedPeriphs.current.filter((ele) => ele.id == peripheral.id).length > 0 ? true : false;
+
+      /* Simulate high volume of devices - note will not connect due to pripheral.id changed */
+      // if (scannedPeriphs.current.length > 600) {
+      //   scannedPeriphs.current = [];
+      //   setPeripherals([]);
+      // }
+      // found = false;
+      // peripheral.showAdvertising = false;
+      // peripheral.id = peripheral.id + scannedPeriphs.current.length.toString();
+
+      if (!found) {
+        /* Add new device */
+        // console.debug('New device ', peripheral.id);
+        peripheral.showAdvertising = false;
+        scannedPeriphs.current.push(peripheral);
+      } else {
+        let periphIdx = scannedPeriphs.current.findIndex((device) => device.id === peripheral.id);
+        if (scannedPeriphs.current[periphIdx].rssi !== peripheral.rssi) {
+          //console.log('rssi changed', peripheral.id);
+          scannedPeriphs.current[periphIdx].rssi = peripheral.rssi;
+        }
+        if (scannedPeriphs.current[periphIdx].name !== peripheral.name) {
+          //console.log('name changed', peripheral.id);
+          scannedPeriphs.current[periphIdx].name = peripheral.name;
+        }
+      }
+
+      resolve(peripheral);
+    })
   }
 
   function handleStopScan(): void {
-    removeCheckInterval = removeCheckInterval + 1
+    removeCheckInterval = removeCheckInterval + 1;
 
     /* remove devices on 3rd scan (every 15s) */
-    if(removeCheckInterval === 2) {
+    if (removeCheckInterval === 2) {
       /* filter out devices not discovered in this scan */
       for (let pIdx = 0; pIdx < scannedPeriphs.current.length; pIdx++) {
         if (
@@ -295,11 +375,12 @@ const BleScanner: React.FC<Props> = () => {
       removeCheckInterval = 0;
     }
 
+    console.debug('handleStopScan start scan')
     scan(true);
   }
 
   function scan(enabled: boolean): void {
-    //console.debug('startScan ', enabled)
+    console.debug('startScan ', enabled)
 
     if (enabled) {
       BleManager.scan([], 5, false);
@@ -308,23 +389,39 @@ const BleScanner: React.FC<Props> = () => {
     }
   }
 
-  const requestConnect = useCallback((peripheralId: string) => {
-    // console.debug('requestConnect: ', peripheralId);
+  // const requestConnect = useCallback((peripheralId: string) => {
+  //   // console.debug('requestConnect: ', peripheralId);
+  //   setScanEnable(false);
+  //   clearInterval(peripheralViewUpdateInterval);
 
+  //   /* remove device from scannedPeriphs if it is there */
+  //   connectedPeripherals.current = connectedPeripherals.current.filter(periph => periph.id !== peripheralId);
+
+  //   onConnectRequest!(peripheralId);
+  // }, []);
+
+  const requestConnect = (peripheralId: string) => {
+    // console.debug('requestConnect: ', peripheralId);
     setScanEnable(false);
+    clearInterval(peripheralViewUpdateInterval);
+
+    /* remove device from scannedPeriphs if it is there */
+    connectedPeripherals.current = connectedPeripherals.current.filter(periph => periph.id !== peripheralId);
 
     onConnectRequest!(peripheralId);
-  }, []);
+  }
 
   const scanSwitchEnabler = useCallback((state: boolean) => {
     setScanEnable(state);
   }, []);
 
-  const onConnectRequest = useCallback((p: string) => {
+  const onConnectRequest = (p: string) => {
+    console.log(p, 'connection id');
+
     navigation.navigate('DeviceTab', {
       peripheralId: p,
     });
-  }, []);
+  };
 
   const toggleAdvertising = useCallback((peripheralId: string) => {
     scannedPeriphs.current = scannedPeriphs.current.map((item) =>
@@ -332,45 +429,80 @@ const BleScanner: React.FC<Props> = () => {
     );
   }, []);
 
+  const disconnectPeripheral = useCallback((peripheral: Peripheral) => {
+    BleManager.disconnect(peripheral.id)
+      .then(() => {
+        console.log('Device disconnected');
+      })
+      .catch((error) => {
+        alert(`Error: \n ${error}\n Device removed`);
+      })
+      .finally(() => {
+        // console.log('Rmoving device from connectedPeripherals');
+        connectedPeripherals.current = connectedPeripherals.current.filter(periph => periph.id !== peripheral.id);
+      });
+  }, []);
+
   return (
-    <View style={[{ paddingHorizontal: 20, flex: 1 }]}>
+    <View style={[{ flex: 1 }]}>
       <EnablerSection scanEnable={scanEnable} setScanEnable={scanSwitchEnabler}></EnablerSection>
-      { (!fsContext.sort.rssi && !fsContext.sort.app_name) &&
-      (
-        <View style={{flexDirection:'row', flex: 1, alignItems:'center' }}>
-          <Separator text="Available devices:" itemsCount={filteredPeripherals.length}/>
+      {connectedPeripherals.current.length > 0 && (
+            <View   style={{maxHeight: '40%' }}>
+            { connectedPeripherals.current.length < 10 && (
+              <View>
+              <Separator style={{backgroundColor: Colors.lightGray, padding: 10 }} text="Connected devices:" textStyles={{fontWeight: "bold"}} itemsCount={connectedPeripherals.current.length} />
+              <ScrollView>
+                {connectedPeripherals.current.map((per, i) => (
+                  <ConnectedPeripheral
+                    peripheral={per}
+                    key={`connected-per-${per.id + i}`}
+                    disconnect={() => disconnectPeripheral(per)}
+                    requestConnect={() => requestConnect(per.id)}
+                  />
+                ))}
+              </ScrollView>
+              </View>
+            )}
+          </View>
+      )}
+      {!fsContext.sort.rssi && !fsContext.sort.app_name && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.lightGray, padding: 10  }}>
+          <Separator text="Available devices:"  style={{backgroundColor:  Colors.lightGray}} textStyles={{fontWeight: "bold"}} itemsCount={filteredPeripherals.length} />
         </View>
       )}
-      { (fsContext.sort.rssi || fsContext.sort.app_name) &&
-      (
-        <View style={{flexDirection:'row', flex: 1, alignItems:'center' }}>
-          <Separator 
-            style={{width:'80%', alignContent:'flex-start'}}
-            text="Available devices:" 
-            itemsCount={filteredPeripherals.length}/>
-            <TouchableOpacity
+      {(fsContext.sort.rssi || fsContext.sort.app_name) && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.lightGray, padding: 10 }}>
+          <Separator
+            style={{ width: '80%', alignContent: 'flex-start' }}
+            text="Available devices:"
+            textStyles={{fontWeight: "bold"}} 
+            itemsCount={filteredPeripherals.length}
+          />
+          <TouchableOpacity
+            style={{
+              width: '20%',
+              alignContent: 'flex-end',
+              paddingHorizontal: 10,
+            }}
+            onPress={() => setDoSort(!doSort)}
+          >
+            <Text
               style={{
-                width:'20%', 
-                alignContent:'flex-end',
-                paddingHorizontal: 10
+                fontSize: 18,
+                color: Colors.blue,
               }}
-              onPress={() => setDoSort(!doSort)}
             >
-            <Text 
-              style={{
-                fontSize: 18, 
-                color: Colors.blue
-              }}> sort </Text>
-            </TouchableOpacity>          
+              {' '}
+              sort{' '}
+            </Text>
+          </TouchableOpacity>
         </View>
       )}
-      <View style={{ height: '80%' }}>
+      <View style={{ height: '70%', flex: 1 }}>
         <FlashList
           data={scannedPeriphs.current}
           ListEmptyComponent={() => null}
-          //keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            // <PureScannedDevice peripheral={item} requestConnect={requestConnect} />
             <ScannedDevice
               peripheral={item}
               requestConnect={requestConnect}

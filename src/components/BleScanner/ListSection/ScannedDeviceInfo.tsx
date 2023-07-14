@@ -30,7 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { Text, StyleSheet, Animated } from 'react-native';
+import { StyleSheet, Animated } from 'react-native';
+import { Text } from '../../../../components/Themed';
 import React from 'react';
 import BleManager from 'react-native-ble-manager';
 import { View } from '../../../../components/Themed';

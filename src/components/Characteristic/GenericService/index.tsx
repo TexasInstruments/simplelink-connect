@@ -30,7 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '../../../../components/Themed';
 import React, { useCallback, useEffect, useState } from 'react';
 import ServiceParameters from './ServiceParameters';
 import ServicePresentation from './ServicePresentation';
@@ -83,13 +84,10 @@ const GenericService: React.FC<Props> = ({ serviceUuid, serviceName, icon, perip
         <ServicePresentation icon={icon} />
         <ServiceParameters serviceName={serviceName} serviceUuid={serviceUuid} />
       </View>
-      { screenSpecific &&
-      (
+      {screenSpecific && (
         <View style={[styles.ServiceSpecficContainer]}>
           <TouchableOpacity onPress={screenSpecific ? navigateToScreenSpecific : undefined}>
-            <Text style={{ color: Colors.blue }}>
-              Change to Service Specific View
-            </Text>
+            <Text style={{ color: Colors.blue }}>Change to Service Specific View</Text>
           </TouchableOpacity>
         </View>
       )}

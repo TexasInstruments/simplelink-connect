@@ -30,14 +30,26 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import React, { lazy, Suspense } from 'react';
+import { ViewStyle } from 'react-native';
+import { ChartConfig } from 'react-native-chart-kit/dist/HelperTypes';
 
-const LazyBleScanner = lazy(() => import('./BleDevice'));
+export const chartConfig: ChartConfig = {
+  backgroundColor: 'white',
+  backgroundGradientFrom: 'white',
+  backgroundGradientTo: 'white',
+  decimalPlaces: 2, // optional, defaults to 2dp
+  color: (opacity = 1) => `rgba(0, 0, 255, ${opacity})`,
+  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+  style: {
+    borderRadius: 16,
+  },
+  propsForDots: {
+    r: '2',
+    strokeWidth: '1',
+    stroke: '#ffa726',
+  },
+};
 
-const BleScanner = (props: JSX.IntrinsicAttributes & { children?: React.ReactNode; }) => (
-  <Suspense fallback={null}>
-    <LazyBleScanner {...props} />
-  </Suspense>
-);
-
-export default BleScanner;
+export const chartStyles: Partial<ViewStyle> = {
+  marginTop: 8,
+};

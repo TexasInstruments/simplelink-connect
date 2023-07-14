@@ -30,7 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Text } from '../../../../components/Themed';
 import React, { Dispatch, SetStateAction } from 'react';
 import { Switch } from '../../../../components/Themed';
 import Colors from '../../../../constants/Colors';
@@ -66,7 +67,8 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     paddingVertical: 15,
     paddingHorizontal: 20,
-    marginVertical: 30,
+    marginVertical: 15,
+    marginHorizontal: 10,
     backgroundColor: Colors.lightGray,
   },
 });

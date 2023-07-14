@@ -30,38 +30,32 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { Skeleton } from '@rneui/themed';
-import { View, } from '../../../../components/Themed';
-import LinearGradient from 'react-native-linear-gradient';
+import { StyleSheet } from 'react-native';
+import { View } from '../../../components/Themed';
+import { Text } from '@rneui/themed';
 
-const ScannedDeviceSkeleton = () => {
-  let h = 40;
+interface Props {
+  values: string[];
+  centered?: boolean;
+}
 
+const Legend: React.FC<Props> = ({ values, centered }) => {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        display: 'flex',
-        alignItems: 'center',
-        padding: 20,
-      }}
-    >
-      <Skeleton animation='pulse' style={{ width: '10%', height: h, marginRight: 10, marginTop: 5 }} />
-      <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ width: '70%', height: h, marginRight: 10, marginTop: 5  }} />
-      <View
-        style={{
-        flexDirection: 'column',
-        display: 'flex',
-        alignItems: 'center',
-        paddingHorizontal: 0,
-        marginLeft: 0,
-        width: '10%'
-      }}>
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5}} />
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5 }} />
-      </View>
+    <View style={{ ...styles.legend, justifyContent: centered ? 'center' : 'space-between' }}>
+      {values.map((item, index) => {
+        return <Text key={`legend-${item}-${index}`}>{item}</Text>;
+      })}
     </View>
   );
 };
 
-export default ScannedDeviceSkeleton;
+const styles = StyleSheet.create({
+  legend: {
+    flexDirection: 'row',
+    marginTop: -20,
+    width: '80%',
+    alignSelf: 'center',
+  },
+});
+
+export default Legend;

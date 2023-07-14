@@ -30,38 +30,24 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { Skeleton } from '@rneui/themed';
-import { View, } from '../../../../components/Themed';
-import LinearGradient from 'react-native-linear-gradient';
+import BarometricSensor from './BarometricSensor';
+import BatteryLevelService from './BatteryLevelService';
+import HumiditySensor from './HumiditySensor';
+import IRTemperatureSensor from './IRTemperatureSensor';
+import Legend from './Legend';
+import MovementSensor from './MovementSensor';
+import OpticalSensor from './OpticalSensor';
+import SensorPresentation from './SensorPresentation';
+import SimpleKeysService from './SimpleKeysService';
 
-const ScannedDeviceSkeleton = () => {
-  let h = 40;
-
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        display: 'flex',
-        alignItems: 'center',
-        padding: 20,
-      }}
-    >
-      <Skeleton animation='pulse' style={{ width: '10%', height: h, marginRight: 10, marginTop: 5 }} />
-      <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ width: '70%', height: h, marginRight: 10, marginTop: 5  }} />
-      <View
-        style={{
-        flexDirection: 'column',
-        display: 'flex',
-        alignItems: 'center',
-        paddingHorizontal: 0,
-        marginLeft: 0,
-        width: '10%'
-      }}>
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5}} />
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5 }} />
-      </View>
-    </View>
-  );
+export {
+  BarometricSensor,
+  BatteryLevelService,
+  HumiditySensor,
+  IRTemperatureSensor,
+  Legend,
+  MovementSensor,
+  OpticalSensor,
+  SensorPresentation,
+  SimpleKeysService,
 };
-
-export default ScannedDeviceSkeleton;

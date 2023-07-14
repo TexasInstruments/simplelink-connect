@@ -46,10 +46,10 @@ interface Props {
 const DevicePresentation: React.FC<Props> = ({ peripheral, deviceState }) => {
   let theme = useColorScheme();
 
-  console.log('DevicePresentation name',  peripheral?.name)
+  console.log('DevicePresentation name', peripheral?.name);
   let name = deviceState === 'Connected' ? peripheral?.name : 'Discovering...';
 
-  console.log('DevicePresentation name',  peripheral?.name)
+  console.log('DevicePresentation name', peripheral?.name);
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.lightGray }]}>
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingLeft: 30,
     paddingVertical: 0,
-    flexDirection: 'row'
+    flexDirection: 'row',
   },
   deviceName: {
     width: 200,

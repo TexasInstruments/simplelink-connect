@@ -62,6 +62,8 @@ export type RootStackParamList = {
     icon: Icon;
   };
   FwUpdateServiceModel: { peripheralId: string };
+  TerminalServiceModel: { peripheralId: string };
+  SensorTagModel: { peripheralId: string };
   ModalScreen: { peripheralId: string };
   SettingsModal: undefined;
   NotFound: undefined;
@@ -103,6 +105,10 @@ export type DeviceScreenNavigationProp = CompositeNavigationProp<
   NativeStackNavigationProp<RootStackParamList>
 >;
 
+export type TerminalServiceModelScreenProps = RootScreenprops<'TerminalServiceModel'>;
+
+export type SensorTagServiceModelScreenProps = RootScreenprops<'SensorTagModel'>;
+
 export type RootTabScreenProps<Screen extends keyof RootTabParamList> = CompositeScreenProps<
   BottomTabScreenProps<RootTabParamList, Screen>,
   NativeStackScreenProps<RootStackParamList>
@@ -114,6 +120,8 @@ export type RootScreenprops<Screen extends keyof RootStackParamList> = Composite
 >;
 
 export type DeviceScreenRouteProp = RouteProp<RootTabParamList, 'DeviceTab'>;
+
+export type TerminalServiceModelScreenProps = RootScreenprops<'TerminalServiceModel'>;
 
 declare module 'react-native-ble-manager' {
   //@ts-ignore
@@ -144,3 +152,24 @@ export type Icon = {
   type: string;
   iconName: string;
 };
+
+export type TerminalMessageType = 'default' | 'error' | 'info';
+
+export type TerminalMessage = {
+  id?: string;
+  date?: string;
+  text: string;
+  type: TerminalMessageType;
+};
+
+export type Axies = {
+  x: number;
+  y: number;
+  z: number;
+}[];
+
+export interface MovementSensorState {
+  gyro: Axies;
+  acc: Axies;
+  mag: Axies;
+}

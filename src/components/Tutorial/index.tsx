@@ -32,7 +32,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { Text } from '@rneui/themed';
+import { Text } from '../../../components/Themed';
 import { useCallback, useRef, useState } from 'react';
 import { Animated, ViewToken } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
