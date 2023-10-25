@@ -31,18 +31,20 @@
  */
 
 import { StyleSheet } from 'react-native';
-import BleManager from 'react-native-ble-manager';
+import { PeripheralInfo } from 'react-native-ble-manager';
 import { View } from '../../../../components/Themed';
 import DevicePresentation from './DevicePresentation';
 import DeviceState from './DeviceState';
 import Colors from '../../../../constants/Colors';
 
 interface Props {
-  peripheralInfo?: BleManager.PeripheralInfo;
+  peripheralInfo?: PeripheralInfo;
   deviceState: string;
   discover: (peripheralId: string) => void;
   connect: (peripheralId: string) => void;
   peripheralId: string;
+  isBonded: boolean;
+  isConnected: boolean;
 }
 const DeviceInfo: React.FC<Props> = ({
   peripheralInfo,
@@ -50,17 +52,19 @@ const DeviceInfo: React.FC<Props> = ({
   discover,
   connect,
   peripheralId,
+  ...props
 }) => {
   const OadServiceUuid = 'F000FFC0-0451-4000-B000-000000000000';
   const OadResetServiceUuid = 'F000FFD0-0451-4000-B000-000000000000';
 
-  // console.log('DeviceInfo: peripheralInfo', peripheralInfo);
   let oadserviceUuidList = peripheralInfo?.services?.filter(
     (service) =>
       service.uuid.toUpperCase() === OadServiceUuid ||
       service.uuid.toUpperCase() === OadResetServiceUuid
   );
+
   console.log('oadserviceUuidList', oadserviceUuidList);
+  //@ts-ignore
   let hasOadserviceUuid: boolean = oadserviceUuidList?.length > 0;
 
   return (
@@ -74,6 +78,7 @@ const DeviceInfo: React.FC<Props> = ({
         connect={connect}
         hasOadserviceUuid={hasOadserviceUuid}
         peripheralId={peripheralId}
+        {...props}
       />
     </View>
   );

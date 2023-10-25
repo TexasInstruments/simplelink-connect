@@ -32,7 +32,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { NativeModules, NativeEventEmitter, StyleSheet, ScrollView, Platform } from 'react-native';
-import BleManager from 'react-native-ble-manager';
+import BleManager, { PeripheralInfo } from 'react-native-ble-manager';
 import DeviceInfo from './DeviceInfo';
 import DeviceServices from './DeviceServices';
 import DeviceServiceSkeleton from './DeviceServices/DeviceServiceSkeleton';
@@ -41,11 +41,13 @@ import { DeviceScreenNavigationProp } from '../../../types';
 
 interface BleDeviceProps {
   peripheralId: string;
+  isBonded: boolean;
+  isConnected: boolean;
 }
 
 interface BleDevicePropsState {
   deviceState: string;
-  peripheralInfo?: BleManager.PeripheralInfo;
+  peripheralInfo?: PeripheralInfo;
 }
 
 const initialState: BleDevicePropsState = {
@@ -60,17 +62,19 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
 
   const discover = useCallback(
     (peripheralId: string) => {
-      let emptyPeripheralInfo: BleManager.PeripheralInfo = {
+      let emptyPeripheralInfo: PeripheralInfo = {
         id: peripheralId,
         rssi: -40,
-        advertising: {}, 
+        advertising: {},
         showAdvertising: false,
+        isBonded: false,
+        isConnected: false,
         services: [],
-      }
+      };
       setState((prev) => ({
         ...prev,
         deviceState: 'Discovering',
-        peripheralInfo: emptyPeripheralInfo
+        peripheralInfo: emptyPeripheralInfo,
       }));
 
       BleManager.retrieveServices(peripheralId)
@@ -151,7 +155,6 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
       });
   }
 
-
   const connect = (peripheralId: string) => {
     setState({
       deviceState: 'Connecting',
@@ -177,7 +180,7 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
         });
       }, 5000);
 
-      console.log('handleConnection')
+      console.log('handleConnection');
       handleConnection(peripheralId);
     }
   };
@@ -220,6 +223,9 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
       console.log('Removing all listenders');
 
       bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
+      if (Platform.OS == 'android') {
+        bleManagerEmitter.removeAllListeners('BleManagerPeripheralDidBond');
+      }
     };
   }, [props.peripheralId]);
 
@@ -245,10 +251,9 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
             setState({
               deviceState: 'Disconnected',
             });
-      
+
             connect(props.peripheralId);
           });
-
         } else {
           console.log('focus: Not connect, connect');
           connect(props.peripheralId);
@@ -268,7 +273,7 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
         deviceState={state.deviceState}
         discover={discover}
         connect={connect}
-        peripheralId={props.peripheralId}
+        {...props}
       />
       <DeviceServices peripheralInfo={state.peripheralInfo} />
       {state.deviceState !== 'Connected' && <DeviceServiceSkeleton />}

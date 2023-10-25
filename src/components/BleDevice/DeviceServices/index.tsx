@@ -32,13 +32,13 @@
 
 import { View, StyleSheet } from 'react-native';
 import React from 'react';
-import BleManager from 'react-native-ble-manager';
+import BleManager, { PeripheralInfo } from 'react-native-ble-manager';
 import DeviceService from './DeviceService';
 import Spacing from '../../Spacing';
 import Separator from '../../Separator';
 
 interface Props {
-  peripheralInfo?: BleManager.PeripheralInfo;
+  peripheralInfo?: PeripheralInfo;
 }
 
 const DeviceServices: React.FC<Props> = ({ peripheralInfo }) => {
@@ -47,7 +47,7 @@ const DeviceServices: React.FC<Props> = ({ peripheralInfo }) => {
       <Spacing spaceT={20} />
       <Separator
         text="Available services:"
-        textStyles={{fontWeight: "bold"}} 
+        textStyles={{ fontWeight: 'bold' }}
         itemsCount={peripheralInfo?.services?.length}
         style={{ paddingHorizontal: 20 }}
       />

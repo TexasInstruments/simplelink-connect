@@ -43,3 +43,7 @@ export const getBytes = (from: string) => {
 
   return writeBytes;
 };
+
+export function buf2hex(buffer: any) {
+  return [...new Uint8Array(buffer)].map((x) => x.toString(16).padStart(2, '0')).join('');
+}

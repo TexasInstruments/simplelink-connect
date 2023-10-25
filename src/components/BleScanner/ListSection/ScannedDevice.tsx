@@ -30,28 +30,40 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, StyleSheet, Animated, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Text } from '../../../../components/Themed';
-import React, { memo, useEffect, useRef, useState } from 'react';
-import BleManager from 'react-native-ble-manager';
+import React, { memo, useRef, useState } from 'react';
+import { Peripheral } from 'react-native-ble-manager';
 import { Icon } from '@rneui/themed';
 import { TouchableOpacity } from '../../../../components/Themed';
 import ScannedDeviceInfo from './ScannedDeviceInfo';
 import Colors from '../../../../constants/Colors';
+import PeripheralIcon from '../../PeripheralIcon';
+import { CommonActions, useNavigation } from '@react-navigation/native';
+import { ScanScreenNavigationProp } from '../../../../types';
 
 interface Device {
-  peripheral: BleManager.Peripheral;
-  requestConnect: (peripheralId: string) => void;
+  peripheral: Peripheral;
+  requestConnect: () => void;
+  reconnect: () => void;
   toggleAdvertising: (peripheralId: string) => void;
+  disconnect: () => void;
 }
 
-const ScannedDevice: React.FC<Device> = ({ peripheral, requestConnect, toggleAdvertising }) => {
+const ScannedDevice: React.FC<Device> = ({
+  requestConnect,
+  toggleAdvertising,
+  peripheral,
+  disconnect,
+}) => {
   const lastPeripheralId = useRef(peripheral.id ?? '');
   const [visibleInfo, setVisibleInfo] = useState<boolean>(peripheral.showAdvertising);
+  const [icon, setIcon] = useState<any>(peripheral.icon);
 
   if (peripheral && peripheral.id !== lastPeripheralId.current) {
     lastPeripheralId.current = peripheral.id;
     setVisibleInfo(peripheral.showAdvertising);
+    setIcon(peripheral.icon);
   }
 
   let isConnectable = () => {
@@ -69,8 +81,6 @@ const ScannedDevice: React.FC<Device> = ({ peripheral, requestConnect, toggleAdv
     toggleAdvertising(peripheral.id);
   };
 
-  let { fontScale } = useWindowDimensions();
-
   if (peripheral === undefined) {
     /* there is an issue where a device is removed from the
        sortedFilteredPeripherals list while the device is 
@@ -84,38 +94,126 @@ const ScannedDevice: React.FC<Device> = ({ peripheral, requestConnect, toggleAdv
     return null;
   }
 
+  let navigation = useNavigation<ScanScreenNavigationProp>();
+
+  const reconnectLocal = () => {
+    console.log('Reconnect:', peripheral.id, peripheral.isBonded, peripheral.isConnected);
+
+    navigation.dispatch(
+      CommonActions.navigate({
+        name: 'DeviceTab',
+        params: {
+          peripheralId: peripheral.id,
+          isBonded: peripheral.isBonded,
+          isConnected: peripheral.isConnected,
+        },
+      })
+    );
+  };
+
   return (
-    <View style={[styles.container]}>
-      <View style={[styles.deviceContainer]}>
-        <Icon name="devices" type="fontawesome" />
-        <TouchableOpacity style={[styles.perInfoWrapper]} onPress={expand}>
-          <Text
-            style={{ fontWeight: 'bold' }}
-            allowFontScaling={true}
-            adjustsFontSizeToFit={true}
-            numberOfLines={1}
-          >
-            {peripheral?.name || 'Unknown'}
+    <View style={{ backgroundColor: 'white' }}>
+      <View style={[styles.container]}>
+        <View style={[styles.deviceContainer]}>
+          <PeripheralIcon icon={icon} color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
+          <TouchableOpacity style={[styles.perInfoWrapper]} onPress={expand}>
+            <Text
+              style={{ fontWeight: 'bold', color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black' }}
+              allowFontScaling={true}
+              adjustsFontSizeToFit={true}
+              numberOfLines={1}
+            >
+              {peripheral?.name || 'Unknown'}
+            </Text>
+            <Text allowFontScaling adjustsFontSizeToFit numberOfLines={1} style={{ color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black' }}>
+              ID: {peripheral.id || 'unknown'}
+            </Text>
+          </TouchableOpacity>
+          {!peripheral.isConnected && (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="signal" type="font-awesome" onPress={requestConnect} color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
+              <Text style={{ width: 35, textAlign: 'center', color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black' }}> {peripheral.rssi} </Text>
+              <TouchableOpacity onPress={peripheral.advertismentInActive ? () => { } : peripheral.filter ? () => { } : requestConnect}>
+                <Icon name="chevron-right" type="evilicon" size={40} color={peripheral.filter ? 'white' : peripheral.advertismentInActive ? 'white' : 'black'} />
+              </TouchableOpacity>
+            </View>
+          )}
+          {peripheral.isConnected && (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="signal" type="font-awesome" onPress={reconnectLocal} />
+              <Text style={{ width: 35, textAlign: 'center' }}> {peripheral.rssi} </Text>
+              <TouchableOpacity onPress={disconnect}>
+                <Icon name="trash" type="evilicon" size={30} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={reconnectLocal}>
+                <Icon name="chevron-right" type="evilicon" size={40} color={peripheral.advertismentInActive ? 'white' : 'black'} />
+              </TouchableOpacity>
+            </View>
+          )}
+          {/* {peripheral.isConnected && !isConnectable() && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 40 }}>
+              <Icon name="signal" type="font-awesome" onPress={requestConnect} />
+              <Text style={{ width: 30, textAlign: 'center' }}> {peripheral.rssi} </Text>
+            </View>
+          )} */}
+        </View>
+        <View
+          style={{
+            alignSelf: 'flex-start',
+            flexDirection: 'row',
+            alignItems: 'center',
+            marginTop: 10,
+          }}
+        >
+          <Icon
+            type='font-awesome'
+            name={'link'}
+            color={peripheral.isConnected ? Colors.blue : peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'}
+            size={20}
+            style={{ paddingHorizontal: 10 }}
+          />
+          {Platform.OS === 'android' && (
+            <Icon
+              name={'lock'}
+              color={peripheral.isBonded ? Colors.blue : peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'}
+              type="font-awesome"
+              size={20}
+            />
+          )}
+          <Text style={{ maxWidth: 100, paddingHorizontal: 5, color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black' }}>
+            Advertising
           </Text>
-          <Text>ID: {peripheral.id || 'unknown'}</Text>
-        </TouchableOpacity>
-        {isConnectable() && (
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Icon name="signal" type="font-awesome" onPress={() => requestConnect(peripheral.id)} />
-            <Text style={{ width: 35, textAlign: 'center' }}> {peripheral.rssi} </Text>
-            <TouchableOpacity onPress={() => requestConnect(peripheral.id)}>
-              <Icon name="chevron-right" type="evilicon" size={40} />
-            </TouchableOpacity>
-          </View>
-        )}
-        {!isConnectable() && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 40 }}>
-            <Icon name="signal" type="font-awesome" onPress={() => requestConnect(peripheral.id)} />
-            <Text style={{ width: 30, textAlign: 'center' }}> {peripheral.rssi} </Text>
-          </View>
-        )}
+          <Icon
+            type='font-awesome'
+            name={'square'}
+            color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 0 ? Colors.blue : Colors.lightGray}
+            size={5}
+            style={{ paddingHorizontal: 1 }}
+          />
+          <Icon
+            type='font-awesome'
+            name={'square'}
+            color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 1 ? Colors.blue : Colors.lightGray}
+            size={5}
+            style={{ paddingHorizontal: 1 }}
+          />
+          <Icon
+            type='font-awesome'
+            name={'square'}
+            color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 2 ? Colors.blue : Colors.lightGray}
+            size={5}
+            style={{ paddingHorizontal: 1 }}
+          />
+          <Icon
+            type='font-awesome'
+            name={'square'}
+            color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 3 ? Colors.blue : Colors.lightGray}
+            size={5}
+            style={{ paddingHorizontal: 1 }}
+          />
+        </View>
+        <ScannedDeviceInfo peripheral={peripheral} isVisible={visibleInfo} />
       </View>
-      <ScannedDeviceInfo peripheral={peripheral} isVisible={visibleInfo} />
     </View>
   );
 };

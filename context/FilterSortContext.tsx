@@ -45,6 +45,7 @@ const initialState: IFilterSortState = {
       enabled: false,
       value: '-80',
     },
+    removeInactiveOutDevices: true,
   },
   sort: {
     app_name: false,

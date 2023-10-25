@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
 import { LinearProgress } from '@rneui/base';
 import { useEffect, useRef, useState } from 'react';
@@ -40,12 +40,15 @@ import { Text, TouchableOpacity, View } from '../../../components/Themed';
 import Colors from '../../../constants/Colors';
 import useColorScheme from '../../../hooks/useColorScheme';
 import BleManager from 'react-native-ble-manager';
-import { encode as btoa, decode } from 'base-64';
+import { decode } from 'base-64';
 import { useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import services from '../../../assets/services';
 import IdleTimerManager from 'react-native-idle-timer';
+import DocumentPicker from 'react-native-document-picker';
+import { v4 } from 'uuid';
+import fs from 'react-native-fs';
 
 interface Props {
   peripheralId: string;
@@ -57,6 +60,8 @@ type FW = {
   version: string;
   hwType: string;
   imageType: string;
+  local?: boolean;
+  bytes: Uint8Array;
 };
 
 let availableFirmwares: FW[] = [];
@@ -67,12 +72,15 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   const [openDropdown, setOpenDropdown] = useState<boolean>(false);
   const [selectedFW, setSelectedFW] = useState<string>();
   const [firmwares, setFirmwares] = useState<FW[]>(availableFirmwares);
-  const [status, setStatus] = useState<String>('');
+  const [status, setStatus] = useState<string>('');
   const [updating, setUpdating] = useState<boolean>(false);
   const [blockNum, setBlockNum] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
-  const [imgVersionStr, setImgVersionStr] = useState<String>('');
+  const [imgVersionStr, setImgVersionStr] = useState<string>('');
   const [imgLength, setImgLength] = useState<number>(0);
+  const [localFileError, setLocalFileError] = useState<
+    'success' | 'error' | 'cancelled' | 'fs' | null
+  >(null);
 
   let fakeUpdateInterval = useRef<ReturnType<typeof setInterval>>();
 
@@ -179,11 +187,9 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   let blockSize = 20;
   let numBlocks = 0;
 
-  let blockEventSubstription: any = undefined
+  let blockEventSubstription: any = undefined;
 
-  const dropdownListMode = Platform.OS === 'android' ? 'MODAL' : 'SCROLLVIEW';
-
-  console.log('FWUpdate_Modal', peripheralId)
+  console.log('FWUpdate_Modal', peripheralId);
 
   useEffect(() => {
     /* component mounting, disable lock screen sleep */
@@ -193,13 +199,12 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     return () => {
       /* component unmounting, enable lock screen sleep */
       IdleTimerManager.setIdleTimerDisabled(false, 'fw-update-screen');
-    }
+    };
   }, []);
 
   useEffect(() => {
     console.log('selectedFW selected: ', selectedFW);
-    if(selectedFW != undefined)
-    {
+    if (selectedFW != undefined) {
       getFwUdateImage();
     }
   }, [selectedFW]);
@@ -241,11 +246,11 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
   const cancel = () => {
     setUpdating(false);
-    setSelectedFW(null);
+    setSelectedFW(undefined);
     setProgress(0);
 
     /* Remove the block response listener */
-    bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic')
+    bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
 
     /* cancel OAD on the device */
     let ImgControlPointCancelCmd = new Uint8Array([ImageControlPointCancelOad]);
@@ -256,7 +261,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
       ImageControlPointUuid,
       cmdArray,
       1
-    )
+    );
 
     navigation.goBack();
   };
@@ -282,10 +287,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   async function getAvailableFw() {
     let repository = await getUserRepository();
     console.log('getAvailableFw: ', repository);
-    fetch(`${repository}/firmware.json`, 
-      {headers: 
-        {'Cache-Control': 'no-store'}
-      })
+    fetch(`${repository}/firmware.json`, { headers: { 'Cache-Control': 'no-store' } })
       .then(async (data) => {
         let fwFile = await data.blob();
 
@@ -295,14 +297,16 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
         fileReaderInstance.readAsDataURL(fwFileContents);
         fileReaderInstance.onload = () => {
           const content = decode(
+            //@ts-ignore
             fileReaderInstance.result?.substr('data:application/octet-stream;base64,'.length)
           );
 
-          let fetchedFirmwares: string = ''
-          
+          let fetchedFirmwares: string = '';
+
           try {
             fetchedFirmwares = JSON.parse(content);
 
+            //@ts-ignore
             let mappedFetchedFirmwares = fetchedFirmwares.map((fw) => ({
               label: fw.fileName,
               value: fw.fileName,
@@ -314,10 +318,9 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
             setFirmwares(mappedFetchedFirmwares);
 
-            console.log('Connected FW server')
-            setStatus('Connected FW server');      
-          }
-          catch {
+            console.log('Connected FW server');
+            setStatus('Connected FW server');
+          } catch {
             setStatus('No FW images found');
           }
           //resolve(true)
@@ -333,49 +336,59 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   async function getFwUdateImage(): Promise<Uint8Array> {
     let repository = await getUserRepository();
 
-    return new Promise((resolve, reject) => {
-      console.log('getFwUdateImage');
+    let checkIfLocalFile = firmwares.find((fw) => fw.value == selectedFW);
 
-      fetch( repository + '/' + (selectedFW??''), {
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+    if (checkIfLocalFile?.local) {
+      return new Promise((resolve, reject) => {
+        if (typeof checkIfLocalFile?.bytes !== 'object') {
+          reject('UInt8Array');
         }
+        resolve(checkIfLocalFile!.bytes);
+      });
+    } else {
+      return new Promise((resolve, reject) => {
+        console.log('getFwUdateImage');
+
+        fetch(repository + '/' + (selectedFW ?? ''), {
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            Pragma: 'no-cache',
+            Expires: '0',
+          },
         })
-        .then(async (data) => {
+          .then(async (data) => {
+            let binary = await data.blob();
 
-          let binary = await data.blob();
+            let bytes = binary.slice(0, binary.size);
 
-          let bytes = binary.slice(0, binary.size);
+            const fileReaderInstance = new FileReader();
+            fileReaderInstance.readAsDataURL(bytes);
+            fileReaderInstance.onload = () => {
+              const content = decode(
+                //@ts-ignore
+                fileReaderInstance.result?.substr('data:application/octet-stream;base64,'.length)
+              );
 
-          const fileReaderInstance = new FileReader();
-          fileReaderInstance.readAsDataURL(bytes);
-          fileReaderInstance.onload = () => {
-            const content = decode(
-              fileReaderInstance.result?.substr('data:application/octet-stream;base64,'.length)
-            );
+              const buffer = new ArrayBuffer(content.length);
+              let fwImageBinary = new Uint8Array(buffer);
 
-            const buffer = new ArrayBuffer(content.length);
-            let fwImageBinary = new Uint8Array(buffer);
+              fwImageBinary.set(Array.from(content).map((c) => c.charCodeAt(0)));
 
-            fwImageBinary.set(Array.from(content).map((c) => c.charCodeAt(0)));
+              resolve(fwImageBinary);
 
-            resolve(fwImageBinary);
-
-            console.log('Found selected FW image ', fwImageBinary.length);
-            if(fwImageBinary.length > 0)
-            {
-              setStatus('Found selected FW image');
-            }
-          };
-        })
-        .catch((error) => {
-          setStatus('Selected FW image not found');
-          console.log('fetch error: ', error);
-          reject(error);
-        });
-    });
+              console.log('Found selected FW image ', fwImageBinary.length);
+              if (fwImageBinary.length > 0) {
+                setStatus('Found selected FW image');
+              }
+            };
+          })
+          .catch((error) => {
+            setStatus('Selected FW image not found');
+            console.log('fetch error: ', error);
+            reject(error);
+          });
+      });
+    }
   }
 
   async function checkOadServices(peripheralId: string) {
@@ -522,8 +535,10 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     let imgIdentifyPayload = new Uint8Array(buffer);
 
     let imgTotLength = fwImageByteArray.length;
-    
+
     if (firmwares.find((fw) => fw.value === selectedFW)?.imageType === 'mcuboot') {
+      console.log('mcuboot test');
+
       console.log('sendiImagUpdateReq: Mcuboot image');
       /* Copy image header */
       imgIdentifyPayload.set(fwImageByteArray.slice(0, 18));
@@ -544,6 +559,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
         alert('Not an MCU Boot image');
       }
 
+      //Header
       let imgVersionMajor = fwImageByteArray[20];
       let imgVersionMinor = fwImageByteArray[21];
       let imgRevision = fwImageByteArray[22] + (fwImageByteArray[23] << 8);
@@ -554,14 +570,12 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
         (fwImageByteArray[27] << 24);
 
       setImgVersionStr(
-              imgVersionMajor + '.' + 
-              imgVersionMinor + '.' + 
-              imgRevision + '.' + 
-              imgBuildNum)
+        imgVersionMajor + '.' + imgVersionMinor + '.' + imgRevision + '.' + imgBuildNum
+      );
 
       console.log('mcuboot img version: ', imgVersionStr);
 
-      let mcuBootMapgicSwap = 
+      let mcuBootMapgicSwap =
         fwImageByteArray[fwImageByteArray.length - 16].toString(16) +
         fwImageByteArray[fwImageByteArray.length - 15].toString(16) +
         fwImageByteArray[fwImageByteArray.length - 14].toString(16) +
@@ -577,11 +591,11 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
         fwImageByteArray[fwImageByteArray.length - 4].toString(16) +
         fwImageByteArray[fwImageByteArray.length - 3].toString(16) +
         fwImageByteArray[fwImageByteArray.length - 2].toString(16) +
-        fwImageByteArray[fwImageByteArray.length - 1].toString(16)
+        fwImageByteArray[fwImageByteArray.length - 1].toString(16);
 
       console.log('MCUBoot Swap Magic: ', mcuBootMapgicSwap);
 
-      if( mcuBootMapgicSwap != '77c295f360d2ef7f355250f2cb67980') {
+      if (mcuBootMapgicSwap != '77c295f360d2ef7f355250f2cb67980') {
         console.log('Not swap image');
 
         /* Length is read from header and must include header */
@@ -629,7 +643,6 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
         fwImageByteArray = fwImageByteArray.slice(0, imgTotLength);
       }
-
     } else {
       console.log('sendiImagUpdateReq: TI image');
       /* Send Image identify command */
@@ -643,8 +656,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
       imgIdentifyPayload.set(fwImageByteArray.slice(24, 28), 14);
     }
 
-    setImgLength(imgTotLength)
-    console.log('imgLength:', imgTotLength)
+    setImgLength(imgTotLength);
+    console.log('imgLength:', imgTotLength);
 
     /* Read the Block Size */
     blockSize = 20;
@@ -727,7 +740,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
               ImageControlPointUuid,
               ImgControlPointCmdArray,
               1
-            ).then(() => {
+            )
+              .then(() => {
                 // Success code
                 console.log('Writen: ' + ImgControlPointCmdArray);
               })
@@ -784,9 +798,9 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
             //   await writeWaitNtfy(peripheralId, OadServiceUuid, ImageControlPointUuid, true, ImgControlPointCmd, 1);
             // }
           } else {
-            console.log('unknown  OAD_EXT_CTRL_BLK_RSP_NOTIF response ' + value[1])
-            alert('OAD Failed')
-            setStatus('Found selected FW image')
+            console.log('unknown  OAD_EXT_CTRL_BLK_RSP_NOTIF response ' + value[1]);
+            alert('OAD Failed');
+            setStatus('Found selected FW image');
             setProgress(0);
           }
         } else if (
@@ -851,7 +865,6 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
         //console.log('Block wite error: ', error);
       });
   }
-
   async function writeWaitNtfy(
     peripheralId: string,
     serviceUuid: string,
@@ -859,6 +872,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     withoutResponse: boolean,
     cmdByteArray: Uint8Array,
     len: number
+    //@ts-ignore
   ): Array {
     console.log('writeWaitNtfy');
     // To enable BleManagerDidUpdateValueForCharacteristic listener
@@ -898,9 +912,127 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     });
   }
 
+  let localFileErrorMessage = useMemo(() => {
+    if (localFileError == 'error') {
+      return { message: 'Something went wrong while loading file!', color: 'red' };
+    } else if (localFileError == 'success') {
+      return { message: 'File loaded successfuly!', color: 'green' };
+    } else if (localFileError == 'cancelled') {
+      return { message: 'User cancelled picking!', color: 'red' };
+    } else if (localFileError == 'fs') {
+      return { message: 'Error with parsing file!', color: 'red' };
+    } else {
+      return { message: '', color: 'black' };
+    }
+  }, [localFileError]);
+
+  //Toggle filepicker messages
+  useEffect(() => {
+    if (!localFileErrorMessage) return;
+    let timeout = setTimeout(() => {
+      setLocalFileError(null);
+    }, 2000);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [localFileErrorMessage]);
+
+  const addFile = () => {
+    try {
+      DocumentPicker.pickSingle({
+        mode: 'import',
+        copyTo: 'cachesDirectory',
+      })
+        .then(async (pickedFile) => {
+          if (!pickedFile.fileCopyUri) throw Error('File URI error');
+          setLocalFileError('success');
+
+          //https://github.com/itinance/react-native-fs#readfilepath-string-length--0-position--0-encodingoroptions-any-promisestring
+          //We could use fs.read(filepath: string, length = 0, position = 0, 'base64'): Promise<string>
+          //to fill the FW properties if the binary files provide them.
+
+          try {
+            //https://github.com/itinance/react-native-fs#readfilefilepath-string-encoding-string-promisestring
+            let base64Data = await fs.readFile(decodeURIComponent(pickedFile.uri), 'base64');
+
+            let convert;
+
+            if (Platform.OS === 'android') {
+              convert = await fetch(pickedFile.uri);
+            } else {
+              convert = await fetch(`data:application/octet-stream;base64,${base64Data}`);
+            }
+
+            let binary = await convert.blob();
+
+            let bytes = binary.slice(0, binary.size);
+
+            const fileReaderInstance = new FileReader();
+            fileReaderInstance.readAsDataURL(bytes);
+            fileReaderInstance.onload = () => {
+              const content = decode(
+                //@ts-ignore
+                fileReaderInstance.result?.substr('data:application/octet-stream;base64,'.length)
+              );
+
+              const buffer = new ArrayBuffer(content.length);
+              let binaryImage = new Uint8Array(buffer);
+
+              binaryImage.set(Array.from(content).map((c) => c.charCodeAt(0)));
+
+              let imgVersionMajor = binaryImage[20];
+              let imgVersionMinor = binaryImage[21];
+              let imgRevision = binaryImage[22] + (binaryImage[23] << 8);
+              let imgBuildNum =
+                binaryImage[24] +
+                (binaryImage[25] << 8) +
+                (binaryImage[26] << 16) +
+                (binaryImage[27] << 24);
+
+              let buildVersion =
+                imgVersionMajor + '.' + imgVersionMinor + '.' + imgRevision + '.' + imgBuildNum;
+
+              setFirmwares((prev) => [
+                {
+                  hwType: pickedFile.name ?? 'Not specified',
+                  imageType: 'mcuboot',
+                  label: pickedFile.name ?? 'Not specified',
+                  version: buildVersion,
+                  value: v4(),
+                  local: true,
+                  bytes: binaryImage,
+                },
+                ...prev,
+              ]);
+
+              console.log('File pushed to the FW array!');
+            };
+          } catch (error) {
+            setLocalFileError('fs');
+            console.error(error, 'react-native-fs');
+            return;
+          }
+        })
+        .catch((error) => {
+          if (DocumentPicker.isCancel(error)) {
+            setLocalFileError('cancelled');
+          } else {
+            setLocalFileError('error');
+          }
+        });
+    } catch (error) {
+      if (DocumentPicker.isCancel(error)) {
+        setLocalFileError('cancelled');
+      } else {
+        setLocalFileError('error');
+      }
+    }
+  };
+
   return (
-    <View style={{ flex: 1, width: '100%', marginLeft: 'auto', marginRight: 'auto' }}>
-      <View style={{ flex: 1, width: '100%', zIndex: 100 }}>
+    <View style={{ flex: 1, width: '100%', marginHorizontal: 'auto' }}>
+      <View style={{ width: '100%', zIndex: 100 }}>
         <Text
           style={{
             paddingLeft: 10,
@@ -911,9 +1043,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
           }}
         >
           Select Firmware Image
-        </Text>        
+        </Text>
         <DropDownPicker
-          listMode={dropdownListMode}
           disabled={updating}
           zIndex={100}
           containerStyle={[styles.dropDownPickerContainer]}
@@ -922,23 +1053,27 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
           setOpen={setOpenDropdown}
           items={firmwares}
           setItems={setFirmwares}
+          //@ts-ignore
           value={selectedFW}
           setValue={setSelectedFW}
-          // theme={theme === 'dark' ? 'DARK' : 'LIGHT'}
+          theme={theme === 'dark' ? 'DARK' : 'LIGHT'}
         />
- {/* keyboardProps = Platform.select({
-    android: {
-      enabled: true,
-      keyboardVerticalOffset: 0
-    },
-    ios: {
-      enabled: true,
-      keyboardVerticalOffset: 64,
-      behavior: 'height',
-    },
-  }); */}
       </View>
-      <View style={{ paddingTop: 40, marginVertical: 20 }}>
+      <View
+        style={{
+          flexDirection: 'column',
+          marginHorizontal: 'auto',
+          width: '100%',
+          alignItems: 'center',
+        }}
+      >
+        <Text>OR</Text>
+        <TouchableOpacity onPress={addFile} style={{ paddingVertical: 15 }}>
+          <Text style={{ color: Colors.blue }}>Add local file</Text>
+        </TouchableOpacity>
+        <Text style={{ color: localFileErrorMessage.color }}>{localFileErrorMessage.message}</Text>
+      </View>
+      <View style={{ paddingTop: 15, marginBottom: 20 }}>
         <Text
           style={{
             paddingLeft: 10,

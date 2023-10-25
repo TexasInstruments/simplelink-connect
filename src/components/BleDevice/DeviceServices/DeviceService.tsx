@@ -33,7 +33,7 @@
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../../../../components/Themed';
 import React from 'react';
-import BleManager from 'react-native-ble-manager';
+import BleManager, { PeripheralInfo, Service } from 'react-native-ble-manager';
 import { useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../../types';
 import { TouchableOpacity } from '../../../../components/Themed';
@@ -47,8 +47,8 @@ import TIcon from '../../TIcon';
 import Colors from '../../../../constants/Colors';
 
 interface Props {
-  service: BleManager.Service;
-  peripheralInfo?: BleManager.PeripheralInfo;
+  service: Service;
+  peripheralInfo?: PeripheralInfo;
 }
 
 const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
@@ -66,7 +66,7 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
   );
 
   let serviceUuidString = service.uuid;
-  if(serviceUuidString.length === 4) {
+  if (serviceUuidString.length === 4) {
     serviceUuidString = '0x' + serviceUuidString.toUpperCase();
   }
 
@@ -92,10 +92,15 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
       )}
       <View style={{ paddingLeft: 10, flexDirection: 'column' }}>
         <Text style={{ fontWeight: 'bold' }}>{serviceName}</Text>
-        <Text numberOfLines={1} ellipsizeMode='middle' style={{ color: Colors.gray, width: '85%' }}>
+        <Text numberOfLines={1} ellipsizeMode="middle" style={{ color: Colors.gray, width: '85%' }}>
           {serviceUuidString}
         </Text>
-        <Text adjustsFontSizeToFit allowFontScaling numberOfLines={1} style={{ color: Colors.gray }}>
+        <Text
+          adjustsFontSizeToFit
+          allowFontScaling
+          numberOfLines={1}
+          style={{ color: Colors.gray }}
+        >
           {`${characteristicsCount} `}
           characteristics
         </Text>
@@ -114,7 +119,7 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
             })
           }
         >
-          <Icon name="chevron-right" type="evilicon" size={40}/>
+          <Icon name="chevron-right" type="evilicon" size={40} />
         </TouchableOpacity>
       </View>
     </View>

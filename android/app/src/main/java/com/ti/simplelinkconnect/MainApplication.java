@@ -16,6 +16,7 @@ import com.ti.connectivity.simplelinkconnect.newarchitecture.MainApplicationReac
 
 import expo.modules.ApplicationLifecycleDispatcher;
 import expo.modules.ReactNativeHostWrapper;
+import com.rnfs.RNFSPackage;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;

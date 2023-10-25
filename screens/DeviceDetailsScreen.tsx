@@ -37,12 +37,10 @@ interface Props extends RootTabScreenProps<'DeviceTab'> {}
 
 const DeviceDetailsScreen: React.FC<Props> = (props) => {
   let {
-    route: {
-      params: { peripheralId },
-    },
+    route: { params },
   } = props;
 
-  return <BleDevice peripheralId={peripheralId} />;
+  return <BleDevice {...params} />;
 };
 
 export default DeviceDetailsScreen;

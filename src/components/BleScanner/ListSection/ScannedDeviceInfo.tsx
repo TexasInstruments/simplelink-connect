@@ -43,24 +43,49 @@ interface Props {
 }
 
 const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
+
+  let isConnectable = () => {
+    if (
+      !peripheral.advertising.isConnectable ||
+      typeof peripheral.advertising.isConnectable == undefined
+    )
+      return false;
+  
+    return true;
+  };
+
   return (
-    <View style={[styles.container, { display: isVisible ? 'flex' : 'none' }]}>
-      <Text style={{ fontWeight: 'bold' }}>Advertising data:</Text>
-      <View style={[{ paddingTop: 5 }]}>
-        <Text style={[{ color: 'grey' }]}>
-          Connectable: {peripheral.advertising.isConnectable?.toString()}
-        </Text>
-        {peripheral.advertising?.txPowerLevel !== undefined && (
+    <View style={{ backgroundColor: 'blue'}}>
+    <View style={[styles.container, { display: isVisible ? 'flex' : 'none', 
+                    backgroundColor: 'white'}]}>
+      <View style={[{ paddingTop: 5, 
+                    backgroundColor: 'white' }]}>
+      {peripheral.brand !== undefined && (
           <Text style={[{ color: Colors.gray }]}>
-            Tx Power Level: {peripheral.advertising.txPowerLevel}
+            Brand: {peripheral.brand}
           </Text>
         )}
+        <Text style={[{ color: 'grey' }]}>
+          Connectable: {isConnectable() ? 'Yes' : 'No'}
+        </Text>
+        {peripheral.serviceUUIDs !== undefined && (
+          <Text style={[{ color: Colors.gray }]}>
+            Service UUIDs: {peripheral.serviceUUIDs}
+          </Text>
+        )}       
         {peripheral.advertising?.manufacturerData?.bytes && (
           <Text style={[{ color: Colors.gray }]}>
             Manufacturer Data: {peripheral.advertising.manufacturerData?.bytes}
           </Text>
         )}
+        <Text style={{ color: Colors.gray }}>
+          Connected: {peripheral.isConnected ? 'Yes' : 'No'}
+        </Text>
+        <Text style={{ color: Colors.gray }}>
+          Advertisement Count: {peripheral.advertiesmentCount}
+        </Text>        
       </View>
+    </View>
     </View>
   );
 };

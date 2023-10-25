@@ -82,6 +82,8 @@ export type RootTabParamList = {
   ScanTab: NavigatorScreenParams<RootDrawerParamList>;
   DeviceTab: {
     peripheralId: string;
+    isConnected: boolean;
+    isBonded: boolean;
   };
 };
 
@@ -121,14 +123,45 @@ export type RootScreenprops<Screen extends keyof RootStackParamList> = Composite
 
 export type DeviceScreenRouteProp = RouteProp<RootTabParamList, 'DeviceTab'>;
 
-export type TerminalServiceModelScreenProps = RootScreenprops<'TerminalServiceModel'>;
-
 declare module 'react-native-ble-manager' {
   //@ts-ignore
   export interface Peripheral extends Peripheral {
     showAdvertising: boolean;
+    isConnected: boolean;
+    isBonded: boolean;
+    icon?: {
+      name: string;
+      type?: 'material' | 'font-awesome' | 'brands';
+    };
+    brand?: string;
+    advertiesmentCount: number;
+    prevAdvertismentCount: number;
+    advertismentActive: number;
+    advertismentInActive: boolean;
+    filter: boolean;
+    serviceUUIDs?: string[];  
+  }
+
+  export interface AdvertisingData {
+    isConnectable?: boolean;
+    localName?: string;
+    manufacturerData?: ManufacturerData | any;
+    serviceData?: any;
+    serviceUUIDs?: string[];
+    txPowerLevel?: number;
   }
 }
+
+export type ManufacturerData = {
+  manufacturerId: number;
+  category: number;
+  services: [string];
+  name: string;
+  icon?: {
+    name: string;
+    type?: 'font-awesome' | 'material' | 'brands';
+  };
+};
 
 export interface IFilterSortState {
   filter: {
@@ -141,6 +174,7 @@ export interface IFilterSortState {
       value: string;
     };
     connectable: boolean;
+    removeInactiveOutDevices: boolean;
   };
   sort: {
     rssi: boolean;
@@ -173,3 +207,31 @@ export interface MovementSensorState {
   acc: Axies;
   mag: Axies;
 }
+
+export interface BrandList {
+  [key: string]: Brand;
+}
+
+export type Brand = {
+  name: string;
+  iconName?: BrandIconName;
+};
+
+export type BrandIconName =
+  | 'lg'
+  | 'apple'
+  | 'samsung'
+  | 'sony'
+  | 'hp'
+  | 'bose'
+  | 'huawei'
+  | 'amazon'
+  | 'meta'
+  | 'google'
+  | 'microsoft'
+  | 'razer'
+  | 'xiaomi'
+  | 'toshiba'
+  | 'qualcomm'
+  | 'disney'
+  | 'TI';
