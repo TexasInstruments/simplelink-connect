@@ -113,6 +113,7 @@ const Tutorial: React.FC<Props> = () => {
         animated: true,
         index: currentIndex! + 1,
       });
+      setCurrentIndex(currentIndex! + 1)
     } else {
       skipTutorial();
     }

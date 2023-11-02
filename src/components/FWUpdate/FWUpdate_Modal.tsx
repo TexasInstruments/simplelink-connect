@@ -953,14 +953,13 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
           //to fill the FW properties if the binary files provide them.
 
           try {
-            //https://github.com/itinance/react-native-fs#readfilefilepath-string-encoding-string-promisestring
-            let base64Data = await fs.readFile(decodeURIComponent(pickedFile.uri), 'base64');
-
             let convert;
 
             if (Platform.OS === 'android') {
               convert = await fetch(pickedFile.uri);
             } else {
+              //https://github.com/itinance/react-native-fs#readfilefilepath-string-encoding-string-promisestring
+              let base64Data = await fs.readFile(decodeURIComponent(pickedFile.uri), 'base64');
               convert = await fetch(`data:application/octet-stream;base64,${base64Data}`);
             }
 

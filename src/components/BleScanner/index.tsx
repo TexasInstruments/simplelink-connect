@@ -95,7 +95,7 @@ const BleScanner: React.FC<Props> = () => {
           console.log('focused');
           initialFocus.current = false;
         } else {
-          // setScanEnable(true);
+          setScanEnable(true);
         }
       });
       requestAndroidPermissions().then(() => {
@@ -151,6 +151,7 @@ const BleScanner: React.FC<Props> = () => {
       console.log('BleScanner: addListener');
       bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan);
       bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
+      bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral);
 
       const updatePeripheralView = () => {
         setPeripherals((prev) => [...prev]);
@@ -170,13 +171,27 @@ const BleScanner: React.FC<Props> = () => {
     scan(scanEnable);
   }, [scanEnable]);
 
+
   const handleDisconnectedPeripheral = (
     peripheralId: string,
     androidStatus: number,
     iOSDomain: string,
     iOSCode: number
   ) => {
+    console.log('handleDisconnectedPeripheral')
+
     handleConnectedAndBondedPeripherals();
+
+    /* find devices not discovered in this scan */
+    for (let pIdx = 0; pIdx < scannedPeriphs.current.length; pIdx++) {
+      if (
+        !scannedPeriphs.current
+          .map((ele: any) => ele.id)
+          .includes(peripheralId)
+      ) {
+        scannedPeriphs.current.splice(pIdx, 1);
+      }
+    }
   };
 
   let filteredPeripherals = useMemo(() => {
@@ -536,7 +551,7 @@ const BleScanner: React.FC<Props> = () => {
       ...connectedPeripherals,
       ...scannedPeriphs.current.filter(
         (item) =>
-          !connectedPeripherals.some((filterObj) => filterObj.id === item.id && item.isConnected)
+          !connectedPeripherals.some((filterObj) => filterObj.id === item.id)
       ),
     ];
   }, [connectedPeripherals, peripherals, scannedPeriphs.current]);

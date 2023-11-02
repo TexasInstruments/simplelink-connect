@@ -282,7 +282,7 @@ const SettingsModal: React.FC<Props> = () => {
             This application connects your SimpleLink(TM) devices to your smartphone with Bluetooth Low Energy support.
             Support for Over-the-Air upgrades for the CC23xx LaunchPad development kits are included.
           </Text>
-          <Text style={{ textAlign: 'center', paddingTop: 10 }}><Text style={{ color: Colors.blue }}>Version: </Text>1.3.2</Text>
+          <Text style={{ textAlign: 'center', paddingTop: 10 }}><Text style={{ color: Colors.blue }}>Version: </Text>1.3.3</Text>
           <Text style={{ textAlign: 'center', paddingTop: 10 }}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
           <Text style={{ textAlign: 'center', paddingTop: 10 }}><Text style={{ color: Colors.blue }}>Credits: </Text>Tony Cave (Bluwbee LTD)</Text>
         </View>

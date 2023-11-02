@@ -47,7 +47,7 @@ const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
   let isConnectable = () => {
     if (
       !peripheral.advertising.isConnectable ||
-      typeof peripheral.advertising.isConnectable == undefined
+      typeof !peripheral.advertising.isConnectable == undefined
     )
       return false;
   
