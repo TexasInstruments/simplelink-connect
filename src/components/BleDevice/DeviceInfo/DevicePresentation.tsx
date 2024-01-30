@@ -32,14 +32,16 @@
 
 import { Icon } from '@rneui/themed';
 import { StyleSheet } from 'react-native';
-import { Text, View } from '../../../../components/Themed';
-import Colors from '../../../../constants/Colors';
-import useColorScheme from '../../../../hooks/useColorScheme';
+import { Text, View } from '../../Themed';
+import Colors from '../../../constants/Colors';
+import useColorScheme from '../../../hooks/useColorScheme';
 import BleManager from 'react-native-ble-manager';
 import Spacing from '../../Spacing';
+import { Peripheral } from 'react-native-ble-manager';
+import PeripheralIcon from '../../PeripheralIcon';
 
 interface Props {
-  peripheral?: BleManager.Peripheral;
+  peripheral?: Peripheral;
   deviceState: string;
 }
 
@@ -61,7 +63,7 @@ const DevicePresentation: React.FC<Props> = ({ peripheral, deviceState }) => {
           },
         ]}
       >
-        <Icon name="devices" type="fontawesome" size={32} color={Colors[theme].text} />
+        <PeripheralIcon icon={peripheral?.icon} size={32} />
       </View>
       <Spacing spaceT={10} />
       <Text style={[styles.deviceName]}>{name}</Text>
@@ -80,6 +82,7 @@ const styles = StyleSheet.create({
     width: 200,
     fontWeight: 'bold',
     textAlign: 'center',
+    fontSize: 20,
     paddingVertical: 0,
   },
   deviceInfoIconContainer: {

@@ -48,7 +48,7 @@ import BleManager from 'react-native-ble-manager';
 
 declare global {
   namespace ReactNavigation {
-    interface RootParamList extends RootStackParamList {}
+    interface RootParamList extends RootStackParamList { }
   }
 }
 
@@ -63,7 +63,7 @@ export type RootStackParamList = {
   };
   FwUpdateServiceModel: { peripheralId: string };
   TerminalServiceModel: { peripheralId: string };
-  SensorTagModel: { peripheralId: string };
+  SensorTagModel: { peripheralId: string, serviceName: string };
   ModalScreen: { peripheralId: string };
   SettingsModal: undefined;
   NotFound: undefined;
@@ -139,7 +139,7 @@ declare module 'react-native-ble-manager' {
     advertismentActive: number;
     advertismentInActive: boolean;
     filter: boolean;
-    serviceUUIDs?: string[];  
+    serviceUUIDs?: string[];
   }
 
   export interface AdvertisingData {

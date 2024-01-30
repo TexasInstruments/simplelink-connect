@@ -37,21 +37,21 @@ import {
   PermissionsAndroid,
   View,
 } from 'react-native';
-import { Text, TouchableOpacity } from '../../../components/Themed';
+import { Text, TouchableOpacity } from '../Themed';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import BleManager, { Peripheral } from 'react-native-ble-manager';
 import { RootTabScreenProps, ScanScreenNavigationProp } from '../../../types';
 import Separator from '../Separator';
 import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import Colors from '../../../constants/Colors';
+import Colors from '../../constants/Colors';
 import { ScrollView } from 'react-native-gesture-handler';
 
-interface Props extends RootTabScreenProps<'ScanTab'> {}
+interface Props extends RootTabScreenProps<'ScanTab'> { }
 
 const BleScanner: React.FC<Props> = () => {
   let navigation = useNavigation<ScanScreenNavigationProp>();
-  
+
   let scannedPeriphs = useRef<BleManager.Peripheral[]>([]);
   const [peripherals, setPeripherals] = useState<Peripheral[]>([]);
 
@@ -63,10 +63,10 @@ const BleScanner: React.FC<Props> = () => {
     BleManager.start({ showAlert: true });
 
     requestAndroidPermissions().then(() => {
-        bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan);
-        bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);  
-      });
-    
+      bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan);
+      bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
+    });
+
     scannedPeriphs.current = [];
     scan(true);
 
@@ -113,7 +113,7 @@ const BleScanner: React.FC<Props> = () => {
 
     if (!found) {
       scannedPeriphs.current.push(peripheral);
-      setPeripherals((prev) => [...prev, peripheral]);      
+      setPeripherals((prev) => [...prev, peripheral]);
     }
   }
 
@@ -123,39 +123,39 @@ const BleScanner: React.FC<Props> = () => {
 
   function scan(enabled: boolean): void {
     if (enabled) {
-        /* TODO: Add scan serviceUUIDs here so only devices with expected Services are discovered
-          BleManager.scan(['f000ffc0-0451-4000-b000-000000000000'], 5, false);
-        */
+      /* TODO: Add scan serviceUUIDs here so only devices with expected Services are discovered
+        BleManager.scan(['f000ffc0-0451-4000-b000-000000000000'], 5, false);
+      */
 
-        /*Simulate high volume of devices
-        BleManager.scan([], 5, true);*/
+      /*Simulate high volume of devices
+      BleManager.scan([], 5, true);*/
 
-        BleManager.scan([], 5, false);
+      BleManager.scan([], 5, false);
     } else {
       BleManager.stopScan();
     }
   }
 
-  const onConnectRequest = (p: string) => {
+  const onConnectRequest = (pId: string) => {
     console.log(p, 'connection id');
 
     scan(false);
 
     navigation.navigate('DeviceTab', {
-      peripheralId: p,
+      peripheralId: pId,
     });
   };
 
   return (
     <View style={[{ paddingHorizontal: 20, flex: 1 }]}>
       <View style={{ height: '70%', flex: 1 }}>
-        <Text style={{fontWeight: 'bold', padding: 20}}>Scanned devices {peripherals.length}</Text>
+        <Text style={{ fontWeight: 'bold', padding: 20 }}>Scanned devices {peripherals.length}</Text>
         <FlashList
           data={peripherals}
           ListEmptyComponent={() => null}
           renderItem={({ item }) => (
             <TouchableOpacity onPress={(e) => onConnectRequest(item.id)}>
-              <Text style={{padding: 2}}>ID: {item.id}</Text>
+              <Text style={{ padding: 2 }}>ID: {item.id}</Text>
             </TouchableOpacity>
           )}
           estimatedItemSize={600}

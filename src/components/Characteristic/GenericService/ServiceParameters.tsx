@@ -31,9 +31,9 @@
  */
 
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../../../../components/Themed';
+import { Text } from '../../Themed';
 import React from 'react';
-import Colors from '../../../../constants/Colors';
+import Colors from '../../../constants/Colors';
 
 interface Props {
   serviceName: string;
@@ -59,7 +59,7 @@ const ServiceParameters: React.FC<Props> = ({ serviceName, serviceUuid }) => {
 
   let serviceUuidString = serviceUuid;
 
-  if(serviceUuidString?.length === 4) {
+  if (serviceUuidString?.length === 4) {
     serviceUuidString = '0x' + serviceUuidString.toUpperCase();
   }
 

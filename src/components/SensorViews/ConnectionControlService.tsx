@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
-import { Switch, View } from '../../../components/Themed';
+import { Switch, View } from '../Themed';
 import SensorPresentation from './SensorPresentation';
-import { CONNECTION_CONTROL_SERVICE } from '../../../constants/SensorTag';
+import { CONNECTION_CONTROL_SERVICE } from '../../constants/SensorTag';
 import { Slider, Text } from '@rneui/themed';
 import bleManager from 'react-native-ble-manager';
 import { useEffect, useState } from 'react';
@@ -50,12 +50,12 @@ const ConnectionControlService: React.FC<Props> = ({ peripheralId }) => {
   const write = (value: number) => {
     // value - number from slider
     /* 
-			Max connection interval, 0-1
-			min connectioninterval, 2-3
-			slave latency, 4-5
-			supervision time-out 6-7 
-			(2bytes each)
-		*/
+      Max connection interval, 0-1
+      min connectioninterval, 2-3
+      slave latency, 4-5
+      supervision time-out 6-7 
+      (2bytes each)
+    */
 
     let writeBytes = Array.from([24, 0, 0, 0, 72, 0, 0, 0]);
 

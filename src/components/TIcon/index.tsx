@@ -31,7 +31,7 @@
  */
 
 import { createIconSetFromFontello } from 'react-native-vector-icons';
-import config from '../../../assets/fonts/config.json';
+import config from '../../assets/fonts/config.json';
 
 const TI_Icon_Names = ['terminal-solid'] as const;
 

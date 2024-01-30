@@ -31,14 +31,14 @@
  */
 
 import { Text } from '@rneui/themed';
-import { Switch, View } from '../../../components/Themed';
+import { Switch, View } from '../Themed';
 import { useEffect, useMemo, useState } from 'react';
-import { getBytes } from '../../../hooks/convert';
+import { getBytes } from '../../hooks/convert';
 import bleManager from 'react-native-ble-manager';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions, StyleSheet } from 'react-native';
-import { BAROMETRIC_SENSOR } from '../../../constants/SensorTag';
-import { chartConfig, chartStyles } from '../../../constants/Charts';
+import { BAROMETRIC_SENSOR } from '../../constants/SensorTag';
+import { chartConfig, chartStyles } from '../../constants/Charts';
 import SensorPresentation from './SensorPresentation';
 import Legend from './Legend';
 

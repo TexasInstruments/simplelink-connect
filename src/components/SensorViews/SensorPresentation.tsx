@@ -31,8 +31,8 @@
  */
 
 import { Text } from '@rneui/themed';
-import { View } from '../../../components/Themed';
-import Colors from '../../../constants/Colors';
+import { View } from '../Themed';
+import Colors from '../../constants/Colors';
 import { StyleSheet } from 'react-native';
 
 interface Props {
@@ -43,7 +43,7 @@ interface Props {
 const SensorPresentation: React.FC<Props> = ({ name, uuid }) => {
   return (
     <View style={styles.container}>
-      <Text h2 h2Style={{ fontWeight: 'bold' }} style={{ marginBottom: 5 }}>
+      <Text style={{ marginBottom: 5, fontWeight: 'bold', fontSize: 30 }}>
         {name}
       </Text>
       <Text style={{ color: 'rgba(0,0,0' }}>UUID: {uuid}</Text>

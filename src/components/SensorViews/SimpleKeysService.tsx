@@ -31,14 +31,14 @@
  */
 
 import { useEffect } from 'react';
-import { Switch, View } from '../../../components/Themed';
+import { Switch, View } from '../Themed';
 import bleManager from 'react-native-ble-manager';
 import { Text } from '@rneui/themed';
-import { SIMPLE_KEYS_SERVICE } from '../../../constants/SensorTag';
+import { SIMPLE_KEYS_SERVICE } from '../../constants/SensorTag';
 import SensorPresentation from './SensorPresentation';
 import { Dimensions, StyleSheet } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
-import { chartConfig, chartStyles } from '../../../constants/Charts';
+import { chartConfig, chartStyles } from '../../constants/Charts';
 
 interface Props {
   peripheralId: string;

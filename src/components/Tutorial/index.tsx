@@ -32,18 +32,18 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
-import { Text } from '../../../components/Themed';
+import { Text } from '../Themed';
 import { useCallback, useRef, useState } from 'react';
 import { Animated, ViewToken } from 'react-native';
 import { FlatList } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TouchableOpacity, View } from '../../../components/Themed';
-import Colors from '../../../constants/Colors';
+import { TouchableOpacity, View } from '../Themed';
+import Colors from '../../constants/Colors';
 import { TutorialScreenNavigationProp } from '../../../types';
 import Paginator from './Paginator';
 import TutorialSlide from './TutorialSlide';
 
-interface Props {}
+interface Props { }
 
 type TutorialSlide = {
   id: string;
@@ -53,39 +53,39 @@ type TutorialSlide = {
 const slides: TutorialSlide[] = [
   {
     id: 'slide_1',
-    img: require('../../../assets/tutorial/scan-1.png'),
+    img: require('../../assets/tutorial/scan_1.png'),
   },
   {
     id: 'slide_2',
-    img: require('../../../assets/tutorial/scan-2.png'),
+    img: require('../../assets/tutorial/scan_2.png'),
   },
   {
     id: 'slide_3',
-    img: require('../../../assets/tutorial/scan-3.png'),
+    img: require('../../assets/tutorial/scan_3.png'),
   },
   {
     id: 'slide_4',
-    img: require('../../../assets/tutorial/services-1.png'),
+    img: require('../../assets/tutorial/services_4.png'),
   },
   {
     id: 'slide_5',
-    img: require('../../../assets/tutorial/services-2.png'),
+    img: require('../../assets/tutorial/services_5.png'),
   },
   {
     id: 'slide_6',
-    img: require('../../../assets/tutorial/services-3.png'),
+    img: require('../../assets/tutorial/FW_update_6.png'),
   },
   {
     id: 'slide_7',
-    img: require('../../../assets/tutorial/chars-1.png'),
+    img: require('../../assets/tutorial/characteristic_7.png'),
   },
   {
     id: 'slide_8',
-    img: require('../../../assets/tutorial/chars-2.png'),
+    img: require('../../assets/tutorial/characteristic_8.png'),
   },
   {
     id: 'slide_9',
-    img: require('../../../assets/tutorial/chars-3.png'),
+    img: require('../../assets/tutorial/characteristic_9.png'),
   }
 ];
 

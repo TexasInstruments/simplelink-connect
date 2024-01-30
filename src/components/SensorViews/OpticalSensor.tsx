@@ -30,15 +30,15 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, Switch } from '../../../components/Themed';
+import { View, Switch } from '../Themed';
 import bleManager from 'react-native-ble-manager';
-import { getBytes } from '../../../hooks/convert';
+import { getBytes } from '../../hooks/convert';
 import { useEffect, useMemo, useState } from 'react';
 import { Dimensions, StyleSheet } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { Text } from '@rneui/base';
-import { OPTICAL_SENSOR } from '../../../constants/SensorTag';
-import { chartConfig, chartStyles } from '../../../constants/Charts';
+import { OPTICAL_SENSOR } from '../../constants/SensorTag';
+import { chartConfig, chartStyles } from '../../constants/Charts';
 import SensorPresentation from './SensorPresentation';
 import Legend from './Legend';
 

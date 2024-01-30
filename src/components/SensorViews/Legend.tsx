@@ -31,7 +31,7 @@
  */
 
 import { StyleSheet } from 'react-native';
-import { View } from '../../../components/Themed';
+import { View } from '../Themed';
 import { Text } from '@rneui/themed';
 
 interface Props {

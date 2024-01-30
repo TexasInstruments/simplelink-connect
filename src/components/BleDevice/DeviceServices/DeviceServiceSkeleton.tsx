@@ -32,7 +32,7 @@
 
 import { StyleSheet } from 'react-native';
 import { Skeleton } from '@rneui/themed';
-import { View } from '../../../../components/Themed';
+import { View } from '../../Themed';
 import LinearGradient from 'react-native-linear-gradient';
 
 const DeviceServiceSkeleton = () => {
@@ -42,8 +42,8 @@ const DeviceServiceSkeleton = () => {
     <View style={[styles.container]}
     >
       <Skeleton animation='pulse' circle style={{ width: 30, height: 30, marginLeft: 10, marginRight: 0 }} />
-      <View style={{ width: '70%'}}>
-        <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ height: 15, marginLeft: 10, marginBottom: 2}} />
+      <View style={{ width: '70%' }}>
+        <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ height: 15, marginLeft: 10, marginBottom: 2 }} />
         <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ height: 12, marginLeft: 10, marginBottom: 2 }} />
         <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ height: 12, marginLeft: 10, marginBottom: 2 }} />
       </View>

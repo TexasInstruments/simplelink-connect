@@ -31,20 +31,20 @@
  */
 
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../../../../components/Themed';
+import { Text } from '../../Themed';
 import React from 'react';
 import BleManager, { PeripheralInfo, Service } from 'react-native-ble-manager';
 import { useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../../types';
-import { TouchableOpacity } from '../../../../components/Themed';
+import { TouchableOpacity } from '../../Themed';
 import { Icon } from '@rneui/themed';
-import Layout from '../../../../constants/Layout';
+import Layout from '../../../constants/Layout';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import { uuidToIcon, uuidToServiceName } from '../../../../hooks/uuidToName';
+import { uuidToIcon, uuidToServiceName } from '../../../hooks/uuidToName';
 import { useMemo } from 'react';
 import TIcon from '../../TIcon';
-import Colors from '../../../../constants/Colors';
+import Colors from '../../../constants/Colors';
 
 interface Props {
   service: Service;

@@ -31,7 +31,7 @@
  */
 
 import { memo } from 'react';
-import { View } from '../../../../components/Themed';
+import { View } from '../../Themed';
 import ScannedDeviceSkeleton from '../ListSection/ScannedDeviceSkeleton';
 
 interface Props {

@@ -31,15 +31,15 @@
  */
 
 import { Dimensions, StyleSheet } from 'react-native';
-import { Switch, View } from '../../../components/Themed';
+import { Switch, View } from '../Themed';
 import SensorPresentation from './SensorPresentation';
-import { IR_TEMPERATURE_SENSOR } from '../../../constants/SensorTag';
+import { IR_TEMPERATURE_SENSOR } from '../../constants/SensorTag';
 import { Text } from '@rneui/themed';
 import { useEffect, useMemo, useState } from 'react';
 import { LineChart } from 'react-native-chart-kit';
-import { chartConfig, chartStyles } from '../../../constants/Charts';
+import { chartConfig, chartStyles } from '../../constants/Charts';
 import bleManager from 'react-native-ble-manager';
-import { getBytes } from '../../../hooks/convert';
+import { getBytes } from '../../hooks/convert';
 import Legend from './Legend';
 
 interface Props {

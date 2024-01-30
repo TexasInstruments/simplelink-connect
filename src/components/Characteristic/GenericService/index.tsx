@@ -31,15 +31,16 @@
  */
 
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../../../../components/Themed';
+import { Text } from '../../Themed';
 import React, { useCallback, useEffect, useState } from 'react';
 import ServiceParameters from './ServiceParameters';
 import ServicePresentation from './ServicePresentation';
-import { TouchableOpacity } from '../../../../components/Themed';
-import Colors from '../../../../constants/Colors';
-import { uuidToServiceSpecificScreen } from '../../../../hooks/uuidToName';
+import { TouchableOpacity } from '../../Themed';
+import Colors from '../../../constants/Colors';
+import { uuidToServiceSpecificScreen } from '../../../hooks/uuidToName';
 import { CharacteristicsScreenNavigationProp, Icon, RootStackParamList } from '../../../../types';
 import { useNavigation } from '@react-navigation/native';
+import { SUPPORTED_SPAECIFIC_SCREEN } from '../../../constants/SensorTag';
 
 interface Props {
   serviceUuid: string;
@@ -57,24 +58,29 @@ const GenericService: React.FC<Props> = ({ serviceUuid, serviceName, icon, perip
     (async () => {
       try {
         let checkForScreenSpecificScreen = await uuidToServiceSpecificScreen({ uuid: serviceUuid });
-
-        if (!checkForScreenSpecificScreen) throw Error('Service Specific Screen not implemented!');
+        if (!checkForScreenSpecificScreen || !isServiceSupportSensor()) throw Error('Service Specific Screen not implemented!');
 
         setScreenSpecific(
           checkForScreenSpecificScreen.serviceSpecificScreen as keyof RootStackParamList
         );
+
       } catch (error) {
         setScreenSpecific(null);
       }
     })();
   }, [serviceUuid]);
 
+  let isServiceSupportSensor = () => {
+    return SUPPORTED_SPAECIFIC_SCREEN.find(sensor => serviceName.toLowerCase().includes(sensor))
+  }
+
   let navigateToScreenSpecific = useCallback(() => {
     if (!screenSpecific) {
       return;
     }
+
     navigation.navigate(screenSpecific, {
-      peripheralId,
+      peripheralId, serviceName
     });
   }, [screenSpecific]);
 

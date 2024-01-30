@@ -3,7 +3,10 @@
   "compilerOptions": {
     "strict": true,
     "module": "ESNext",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
   },
-  "exclude": ["node_modules", "local_server"]
+  "exclude": [
+    "node_modules",
+    "local_server"
+  ],
 }

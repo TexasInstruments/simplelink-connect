@@ -31,10 +31,10 @@
  */
 
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../../../../components/Themed';
+import { Text } from '../../Themed';
 import React, { Dispatch, SetStateAction } from 'react';
-import { Switch } from '../../../../components/Themed';
-import Colors from '../../../../constants/Colors';
+import { Switch } from '../../Themed';
+import Colors from '../../../constants/Colors';
 
 interface Props {
   scanEnable: boolean;
@@ -50,7 +50,7 @@ const EnablerSection: React.FC<Props> = ({ scanEnable, setScanEnable }) => {
         allowFontScaling
         style={{ color: Colors.darkGray, fontSize: 18 }}
       >
-        Enable BluetoothLE scan
+        Enable BluetoothLE Scan
       </Text>
       <Switch onValueChange={(value) => setScanEnable(value)} value={scanEnable} />
     </View>

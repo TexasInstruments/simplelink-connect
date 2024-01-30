@@ -31,9 +31,9 @@
  */
 
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../../../../components/Themed';
+import { Text } from '../../Themed';
 import React from 'react';
-import Colors from '../../../../constants/Colors';
+import Colors from '../../../constants/Colors';
 
 const DeviceParameters = () => {
   return (

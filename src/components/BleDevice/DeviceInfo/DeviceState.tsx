@@ -31,10 +31,10 @@
  */
 
 import { View, StyleSheet, Platform } from 'react-native';
-import { Text } from '../../../../components/Themed';
+import { Text } from '../../Themed';
 import React, { useCallback, useMemo, useState } from 'react';
-import { TouchableOpacity } from '../../../../components/Themed';
-import Colors from '../../../../constants/Colors';
+import { TouchableOpacity } from '../../Themed';
+import Colors from '../../../constants/Colors';
 import { DeviceScreenNavigationProp } from '../../../../types';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Icon } from '@rneui/themed';

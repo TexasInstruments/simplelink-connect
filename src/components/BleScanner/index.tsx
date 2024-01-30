@@ -38,8 +38,9 @@ import {
   View,
   TouchableOpacity,
   InteractionManager,
+  ScrollView,
+  AsyncStorage,
 } from 'react-native';
-import { Text } from '../../../components/Themed';
 import React, { useState, useEffect, useMemo, useContext, useRef, useCallback } from 'react';
 import BleManager, { Peripheral } from 'react-native-ble-manager';
 import { RootTabScreenProps, ScanScreenNavigationProp } from '../../../types';
@@ -47,21 +48,15 @@ import EnablerSection from './EnablerSection';
 import ScannedDevice from './ListSection/ScannedDevice';
 import Separator from '../Separator';
 import ScanningSkeleton from './ListSection/ListSkeleton';
-import { FilterSortState } from '../../../context/FilterSortContext';
+import { FilterSortState } from '../../context/FilterSortContext';
 import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import Colors from '../../../constants/Colors';
-import { Buffer } from 'buffer';
-import { getBrand } from '../../../hooks/uuidToBrand';
+import Colors from '../../constants/Colors';
+import { getIconByPeripheralInfo } from '../../hooks/uuidToBrand';
+import FontAwesome from "react-native-vector-icons/FontAwesome";
+import RNRestart from 'react-native-restart';
 
 interface Props extends RootTabScreenProps<'ScanTab'> { }
-
-export interface Peripheral {
-  id: string;
-  rssi: number;
-  name?: string;
-  advertising: null;
-}
 
 const BleScanner: React.FC<Props> = () => {
   let navigation = useNavigation<ScanScreenNavigationProp>();
@@ -80,7 +75,7 @@ const BleScanner: React.FC<Props> = () => {
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
-  let peripheralViewUpdateInterval = useRef<NodeJS.Timeout | string | number | undefined>(
+  let peripheralViewUpdateInterval = useRef<NodeJS.Timeout | string | number | undefined | null>(
     undefined
   );
 
@@ -186,12 +181,13 @@ const BleScanner: React.FC<Props> = () => {
     for (let pIdx = 0; pIdx < scannedPeriphs.current.length; pIdx++) {
       if (
         !scannedPeriphs.current
-          .map((ele: any) => ele.id)
+          .map((ele: any) => ele.id.toLocaleUpperCase())
           .includes(peripheralId)
       ) {
         scannedPeriphs.current.splice(pIdx, 1);
       }
     }
+    setDoSort(!doSort)
   };
 
   let filteredPeripherals = useMemo(() => {
@@ -284,16 +280,33 @@ const BleScanner: React.FC<Props> = () => {
   async function requestAndroidPermissions(): Promise<void> {
     if (Platform.OS === 'android') {
       try {
-        //'Request multiple andorid bluetooth permissions'
-        await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_ADVERTISE,
-        ]);
+        // Android 12 and above
+        console.log(Platform.Version)
+        if (Platform.Version >= 31) {
+          await PermissionsAndroid.requestMultiple([
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+            PermissionsAndroid.PERMISSIONS.BLUETOOTH_ADVERTISE,
+          ]);
+        }
+        // Android 11 and lower 
+        else {
+          await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          );
+
+          // First time asking for permission - need to reload the app
+          const hasAskedPermission = await AsyncStorage.getItem('hasAskedPermission');
+          if (hasAskedPermission !== 'true') {
+            await AsyncStorage.setItem('hasAskedPermission', 'true');
+            RNRestart.Restart();
+          }
+        }
 
         console.log('got permissions')
         Promise.resolve();
+
       } catch (error) {
         console.error('Android permissions error: ', error);
       }
@@ -334,64 +347,7 @@ const BleScanner: React.FC<Props> = () => {
         peripheral.isBonded = false;
 
         /* Add new device */
-        let serviceDataUUIDs = peripheral.advertising.serviceData;
-        let serviceUUIDs: string[] | undefined = peripheral.advertising.serviceUUIDs;
-        let manufacturerData = peripheral.advertising.manufacturerData;
-
-        peripheral.serviceUUIDs = serviceUUIDs;
-
-        let icon: { name: string; type: any } | null = null;
-
-        if (serviceUUIDs && icon == null) {
-          if (serviceUUIDs.length > 0) {
-            let brand = getBrand(serviceUUIDs);
-            if (brand) {
-              icon = {
-                name: brand.iconName!,
-                type: 'brands',
-              };
-              peripheral.brand = brand.iconName!;
-            }
-          }
-        }
-
-        if (serviceDataUUIDs && icon == null) {
-          let uuids = Object.keys(serviceDataUUIDs);
-          if (uuids.length > 0) {
-            let brand = getBrand(uuids);
-            if (brand) {
-              icon = {
-                name: brand.iconName!,
-                type: 'brands',
-              };
-              peripheral.brand = brand.iconName!;
-            }
-          }
-        }
-
-        if (manufacturerData && manufacturerData.bytes && icon == null) {
-          let bytes = Buffer.from(manufacturerData.bytes);
-          let uuid = bytes.readUInt16LE().toString(16).padStart(4, '0').toUpperCase();
-
-          let brandByBytes = getBrand(uuid);
-
-          if (brandByBytes) {
-            icon = {
-              name: brandByBytes.iconName!,
-              type: 'brands',
-            };
-            peripheral.brand = brandByBytes.iconName!;
-          }
-        }
-
-        if (!icon) {
-          icon = {
-            name: 'devices',
-            type: 'material',
-          };
-        }
-
-        peripheral.icon = icon;
+        peripheral = getIconByPeripheralInfo(peripheral)
 
         peripheral.advertiesmentCount = 0;
         peripheral.prevAdvertismentCount = 0;
@@ -399,7 +355,7 @@ const BleScanner: React.FC<Props> = () => {
         peripheral.advertismentInActive = false;
 
         scannedPeriphs.current.push(peripheral);
-        // console.log(peripheral);
+
       } else {
         let periphIdx = scannedPeriphs.current.findIndex((device) => device.id === peripheral.id);
         if (scannedPeriphs.current[periphIdx].rssi !== peripheral.rssi) {
@@ -507,7 +463,7 @@ const BleScanner: React.FC<Props> = () => {
             item.isConnected = true;
             item.isBonded = tempBondedPeripherals.find((bon) => bon.id == item.id) ? true : false;
 
-            return item;
+            return getIconByPeripheralInfo(item);
           })
         );
       } else {
@@ -515,7 +471,7 @@ const BleScanner: React.FC<Props> = () => {
           result.map((item) => {
             item.isBonded = false;
             item.isConnected = true;
-            return item;
+            return getIconByPeripheralInfo(item);
           })
         );
       }
@@ -548,7 +504,6 @@ const BleScanner: React.FC<Props> = () => {
 
   let memoedPeripherals = useMemo(() => {
     return [
-      ...connectedPeripherals,
       ...scannedPeriphs.current.filter(
         (item) =>
           !connectedPeripherals.some((filterObj) => filterObj.id === item.id)
@@ -556,62 +511,101 @@ const BleScanner: React.FC<Props> = () => {
     ];
   }, [connectedPeripherals, peripherals, scannedPeriphs.current]);
 
+  let memoConnectedDevices = useMemo(() => {
+    //console.log(JSON.stringify(connectedPeripherals, null, 2))
+    let list = connectedPeripherals.map((peripheral) => {
+      return peripheral
+    })
+    return [...list]
+  }, [connectedPeripherals])
+
+
   return (
     <View style={[{ flex: 1 }]}>
       <EnablerSection scanEnable={scanEnable} setScanEnable={scanSwitchEnabler} />
-      {!fsContext.sort.rssi && !fsContext.sort.app_name && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: Colors.lightGray,
-            padding: 10,
-          }}
-        >
-          <Separator
-            text="Available devices:"
-            style={{ backgroundColor: Colors.lightGray }}
-            textStyles={{ fontWeight: 'bold' }}
-            itemsCount={filteredPeripherals.length}
-          />
+      {/* Connected Devices */}
+      {memoConnectedDevices.length > 0 && (
+        <View style={{ maxHeight: '40%' }}>
+          {memoConnectedDevices.length < 10 && (
+            <View >
+              <Separator style={{ backgroundColor: Colors.lightGray, padding: 10 }} text="Connected devices:" textStyles={{ fontWeight: "bold" }} itemsCount={memoConnectedDevices.length} />
+              <ScrollView >
+                <View style={{ flex: 1 }}>
+                  <FlashList
+                    data={memoConnectedDevices}
+                    ListEmptyComponent={() => null}
+                    renderItem={({ item }) => (
+                      <ScannedDevice
+                        peripheral={item}
+                        requestConnect={() => {
+                          requestConnect(item);
+                        }}
+                        reconnect={() => {
+                          reconnect(item);
+                        }}
+                        disconnect={() => {
+                          disconnectPeripheral(item.id);
+                        }}
+                        toggleAdvertising={toggleAdvertising}
+                      />
+                    )}
+                    estimatedItemSize={200}
+                  />
+                </View>
+              </ScrollView>
+            </View>
+          )}
         </View>
       )}
-      {(fsContext.sort.rssi || fsContext.sort.app_name) && (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: Colors.lightGray,
-            padding: 10,
-          }}
-        >
-          <Separator
-            style={{ width: '80%', alignContent: 'flex-start' }}
-            text="Available devices:"
-            textStyles={{ fontWeight: 'bold' }}
-            itemsCount={filteredPeripherals.length}
-          />
-          <TouchableOpacity
+
+      {/* Available Devices */}
+      {
+        !fsContext.sort.rssi && !fsContext.sort.app_name && (
+          <View
             style={{
-              width: '20%',
-              alignContent: 'flex-end',
-              paddingHorizontal: 10,
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: Colors.lightGray,
+              padding: 10,
             }}
-            onPress={() => setDoSort(!doSort)}
           >
-            <Text
+            <Separator
+              text="Available devices:"
+              style={{ backgroundColor: Colors.lightGray }}
+              textStyles={{ fontWeight: 'bold' }}
+              itemsCount={filteredPeripherals.length}
+            />
+          </View>
+        )
+      }
+      {
+        (fsContext.sort.rssi || fsContext.sort.app_name) && (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: Colors.lightGray,
+              padding: 10,
+            }}
+          >
+            <Separator
+              style={{ width: '90%', alignContent: 'flex-start' }}
+              text="Available devices:"
+              textStyles={{ fontWeight: 'bold' }}
+              itemsCount={filteredPeripherals.length}
+            />
+            <TouchableOpacity
               style={{
-                fontSize: 18,
-                color: Colors.blue,
+                width: '20%',
               }}
+              onPress={() => setDoSort(!doSort)}
             >
-              {' '}
-              sort{' '}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      <View style={{ height: '70%', flex: 1 }}>
+              <FontAwesome name="sort-amount-asc" size={18} color={Colors.blue} />
+            </TouchableOpacity>
+          </View>
+        )
+      }
+      <View style={{ flex: 1, height: '70%' }}>
         <FlashList
           data={memoedPeripherals}
           ListEmptyComponent={() => null}
@@ -636,7 +630,7 @@ const BleScanner: React.FC<Props> = () => {
           estimatedItemSize={200}
         />
       </View>
-    </View>
+    </View >
   );
 };
 

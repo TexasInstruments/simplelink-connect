@@ -38,6 +38,7 @@ import DeviceServices from './DeviceServices';
 import DeviceServiceSkeleton from './DeviceServices/DeviceServiceSkeleton';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../types';
+import { getIconByPeripheralInfo } from '../../hooks/uuidToBrand';
 
 interface BleDeviceProps {
   peripheralId: string;
@@ -70,6 +71,11 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
         isBonded: false,
         isConnected: false,
         services: [],
+        advertiesmentCount: 0,
+        prevAdvertismentCount: 0,
+        advertismentActive: 0,
+        advertismentInActive: false,
+        filter: false
       };
       setState((prev) => ({
         ...prev,
@@ -86,6 +92,8 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
           if (peripheralInfo.name == null) {
             peripheralInfo.name = 'Unknown';
           }
+
+          peripheralInfo = getIconByPeripheralInfo(peripheralInfo)
 
           setState((prev) => ({
             ...prev,

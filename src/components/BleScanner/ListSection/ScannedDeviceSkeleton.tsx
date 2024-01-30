@@ -31,7 +31,7 @@
  */
 
 import { Skeleton } from '@rneui/themed';
-import { View, } from '../../../../components/Themed';
+import { View, } from '../../Themed';
 import LinearGradient from 'react-native-linear-gradient';
 
 const ScannedDeviceSkeleton = () => {
@@ -47,18 +47,18 @@ const ScannedDeviceSkeleton = () => {
       }}
     >
       <Skeleton animation='pulse' style={{ width: '10%', height: h, marginRight: 10, marginTop: 5 }} />
-      <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ width: '70%', height: h, marginRight: 10, marginTop: 5  }} />
+      <Skeleton animation='wave' LinearGradientComponent={LinearGradient} style={{ width: '70%', height: h, marginRight: 10, marginTop: 5 }} />
       <View
         style={{
-        flexDirection: 'column',
-        display: 'flex',
-        alignItems: 'center',
-        paddingHorizontal: 0,
-        marginLeft: 0,
-        width: '10%'
-      }}>
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5}} />
-        <Skeleton animation='pulse'  style={{ height: h/2.5, marginTop: 5 }} />
+          flexDirection: 'column',
+          display: 'flex',
+          alignItems: 'center',
+          paddingHorizontal: 0,
+          marginLeft: 0,
+          width: '10%'
+        }}>
+        <Skeleton animation='pulse' style={{ height: h / 2.5, marginTop: 5 }} />
+        <Skeleton animation='pulse' style={{ height: h / 2.5, marginTop: 5 }} />
       </View>
     </View>
   );

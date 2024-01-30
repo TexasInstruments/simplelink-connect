@@ -30,9 +30,9 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { TouchableOpacity, View } from '../../../components/Themed';
+import { TouchableOpacity, View } from '../Themed';
 import bleManager from 'react-native-ble-manager';
-import { BATTERY_LEVEL } from '../../../constants/SensorTag';
+import { BATTERY_LEVEL } from '../../constants/SensorTag';
 import { Icon, Text } from '@rneui/themed';
 import SensorPresentation from './SensorPresentation';
 import { useEffect, useMemo, useState } from 'react';

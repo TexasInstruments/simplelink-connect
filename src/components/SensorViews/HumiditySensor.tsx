@@ -31,13 +31,13 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Switch, View } from '../../../components/Themed';
+import { Switch, View } from '../Themed';
 import { Dimensions, StyleSheet } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import BleManager from 'react-native-ble-manager';
-import { getBytes } from '../../../hooks/convert';
-import { HUMIDITY_SENSOR } from '../../../constants/SensorTag';
-import { chartConfig, chartStyles } from '../../../constants/Charts';
+import { getBytes } from '../../hooks/convert';
+import { HUMIDITY_SENSOR } from '../../constants/SensorTag';
+import { chartConfig, chartStyles } from '../../constants/Charts';
 import SensorPresentation from './SensorPresentation';
 import { Text } from '@rneui/themed';
 import Legend from './Legend';

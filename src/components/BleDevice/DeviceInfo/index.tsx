@@ -32,10 +32,10 @@
 
 import { StyleSheet } from 'react-native';
 import { PeripheralInfo } from 'react-native-ble-manager';
-import { View } from '../../../../components/Themed';
+import { View } from '../../Themed';
 import DevicePresentation from './DevicePresentation';
 import DeviceState from './DeviceState';
-import Colors from '../../../../constants/Colors';
+import Colors from '../../../constants/Colors';
 
 interface Props {
   peripheralInfo?: PeripheralInfo;

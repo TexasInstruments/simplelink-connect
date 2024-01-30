@@ -31,13 +31,13 @@
  */
 
 import { StyleSheet } from 'react-native';
-import { Switch, View } from '../../../components/Themed';
-import { IO_SERVICE } from '../../../constants/SensorTag';
+import { Switch, View } from '../Themed';
+import { IO_SERVICE } from '../../constants/SensorTag';
 import SensorPresentation from './SensorPresentation';
 import { Text } from '@rneui/themed';
 import { useEffect, useState } from 'react';
 import bleManager from 'react-native-ble-manager';
-import { getBytes } from '../../../hooks/convert';
+import { getBytes } from '../../hooks/convert';
 
 interface Props {
   peripheralId: string;
@@ -47,14 +47,14 @@ const IOService: React.FC<Props> = ({ peripheralId }) => {
   const [ioServiceData, setIOServiceData] = useState<{
     ledOn: number;
     buzzer: number;
-  }>({ buzzer: 0, ledOn: 0});
+  }>({ buzzer: 0, ledOn: 0 });
 
   const toggleLedOn = (value: boolean) => {
     console.debug('I/O toggle ledOn LED');
 
     setIOServiceData((prev) => ({ ...prev, ledOn: Number(value) }));
 
-    let writeByteArray =  Uint8Array.from([(Number(value ? '1' : '0') + Number((ioServiceData.buzzer << 2)))])
+    let writeByteArray = Uint8Array.from([(Number(value ? '1' : '0') + Number((ioServiceData.buzzer << 2)))])
     let writeBytes = Array.from(writeByteArray);
 
     bleManager
@@ -70,7 +70,7 @@ const IOService: React.FC<Props> = ({ peripheralId }) => {
   const toggleBuzzer = (value: boolean) => {
     setIOServiceData((prev) => ({ ...prev, buzzer: Number(value) }));
 
-    let writeByteArray =  Uint8Array.from([Number(ioServiceData.ledOn + (Number(value ? '4' : '0')))])
+    let writeByteArray = Uint8Array.from([Number(ioServiceData.ledOn + (Number(value ? '4' : '0')))])
     let writeBytes = Array.from(writeByteArray);
 
     bleManager
@@ -111,13 +111,13 @@ const IOService: React.FC<Props> = ({ peripheralId }) => {
         <View style={styles.switchContainer}>
           <View style={styles.serviceContainer}>
             <Text style={styles.serviceName}>LED On</Text>
-            <Switch style={styles.switch} value={(ioServiceData.ledOn!=0)} onValueChange={toggleLedOn} />
+            <Switch style={styles.switch} value={(ioServiceData.ledOn != 0)} onValueChange={toggleLedOn} />
           </View>
           <View style={styles.serviceContainer}>
             <Text style={styles.serviceName}>Buzzer</Text>
             <Switch
               style={styles.switch}
-              value={ioServiceData.buzzer!=0}
+              value={ioServiceData.buzzer != 0}
               onValueChange={toggleBuzzer}
             />
           </View>

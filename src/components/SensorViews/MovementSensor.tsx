@@ -31,15 +31,15 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { Switch, View } from '../../../components/Themed';
+import { Switch, View } from '../Themed';
 import { MovementSensorState } from '../../../types';
 import bleManager from 'react-native-ble-manager';
-import { getBytes } from '../../../hooks/convert';
-import { MOVEMENT_SENSOR } from '../../../constants/SensorTag';
+import { getBytes } from '../../hooks/convert';
+import { MOVEMENT_SENSOR } from '../../constants/SensorTag';
 import { LineChart } from 'react-native-chart-kit';
 import { Text } from '@rneui/themed';
 import { Dimensions, StyleSheet } from 'react-native';
-import { chartConfig, chartStyles } from '../../../constants/Charts';
+import { chartConfig, chartStyles } from '../../constants/Charts';
 import SensorPresentation from './SensorPresentation';
 import Legend from './Legend';
 

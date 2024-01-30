@@ -32,10 +32,10 @@
 
 import { StyleProp, TextStyle, View } from 'react-native';
 import { TextProps } from '@rneui/themed';
-import { Text } from '../../../components/Themed';
+import { Text } from '../Themed';
 import React from 'react';
-import { ViewProps } from '../../../components/Themed';
-import Colors from '../../../constants/Colors';
+import { ViewProps } from '../Themed';
+import Colors from '../../constants/Colors';
 
 interface Props {
   text: string;
@@ -51,7 +51,7 @@ const Separator: React.FC<Props> = ({ itemsCount, text, textStyles, textProps, s
       <Text {...textProps} style={textStyles}>
         {text} {itemsCount}
       </Text>
-      <View style={{ flex: 1, height: 2, backgroundColor:  Colors.lightGray, marginLeft: 10 }}></View>
+      <View style={{ flex: 1, height: 2, backgroundColor: Colors.lightGray, marginLeft: 10 }}></View>
     </View>
   );
 };

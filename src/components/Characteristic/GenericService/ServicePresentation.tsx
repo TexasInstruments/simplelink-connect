@@ -32,9 +32,9 @@
 
 import { Icon } from '@rneui/themed';
 import { StyleSheet } from 'react-native';
-import { View } from '../../../../components/Themed';
-import Colors from '../../../../constants/Colors';
-import useColorScheme from '../../../../hooks/useColorScheme';
+import { View } from '../../Themed';
+import Colors from '../../../constants/Colors';
+import useColorScheme from '../../../hooks/useColorScheme';
 import TIcon from '../../TIcon';
 
 interface Props {

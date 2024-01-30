@@ -32,8 +32,8 @@
 
 import { Button } from '@rneui/themed';
 import { Animated, StyleSheet, useWindowDimensions } from 'react-native';
-import { View } from '../../../components/Themed';
-import Colors from '../../../constants/Colors';
+import { View } from '../Themed';
+import Colors from '../../constants/Colors';
 
 interface Props {
   items: any[];
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
   },
   dot: {
     height: 7,
-    width: 7, 
+    width: 7,
     borderRadius: 5,
     marginHorizontal: 4,
     backgroundColor: 'black',

@@ -31,24 +31,28 @@
  */
 
 import React, { useMemo } from 'react';
-import { NativeModules, NativeEventEmitter, Platform } from 'react-native';
+import { NativeModules, NativeEventEmitter, Platform, ScrollView } from 'react-native';
 import { LinearProgress } from '@rneui/base';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
-import DropDownPicker from 'react-native-dropdown-picker';
-import { Text, TouchableOpacity, View } from '../../../components/Themed';
-import Colors from '../../../constants/Colors';
-import useColorScheme from '../../../hooks/useColorScheme';
+import { Text, TouchableOpacity, View } from '../Themed';
+import Colors from '../../constants/Colors';
+import useColorScheme from '../../hooks/useColorScheme';
 import BleManager from 'react-native-ble-manager';
 import { decode } from 'base-64';
 import { useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import services from '../../../assets/services';
 import IdleTimerManager from 'react-native-idle-timer';
 import DocumentPicker from 'react-native-document-picker';
 import { v4 } from 'uuid';
 import fs from 'react-native-fs';
+import { UUID } from './constants/Uuids';
+import { OadEvent, OadProtocolOpCode, OadResetServiceOpCodes } from './constants/OpCodes';
+import { OadStatus } from './constants/Statuses';
+import { buf2hex } from '../../hooks/convert';
+import SelectFirmwareImage from './SelectFirmwareImage/index';
+import * as Keychain from 'react-native-keychain';
 
 interface Props {
   peripheralId: string;
@@ -64,23 +68,36 @@ type FW = {
   bytes: Uint8Array;
 };
 
+export type Repository = {
+  url: string;
+  name: string;
+  owner: string;
+  visibility: 'public' | 'private';
+  accessToken?: string;
+}
+
 let availableFirmwares: FW[] = [];
 
-const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
-  let navigation = useNavigation<DeviceScreenNavigationProp>();
+const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
 
-  const [openDropdown, setOpenDropdown] = useState<boolean>(false);
+  let navigation = useNavigation<DeviceScreenNavigationProp>();
   const [selectedFW, setSelectedFW] = useState<string>();
+  const [selectedHW, setSelectedHW] = useState<string>();
   const [firmwares, setFirmwares] = useState<FW[]>(availableFirmwares);
+  const [hwTypes, setHwTypes] = useState([]);
   const [status, setStatus] = useState<string>('');
   const [updating, setUpdating] = useState<boolean>(false);
   const [blockNum, setBlockNum] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
-  const [imgVersionStr, setImgVersionStr] = useState<string>('');
   const [imgLength, setImgLength] = useState<number>(0);
-  const [localFileError, setLocalFileError] = useState<
-    'success' | 'error' | 'cancelled' | 'fs' | null
-  >(null);
+  const [localFileError, setLocalFileError] = useState<'success' | 'error' | 'cancelled' | 'fs' | null>(null);
+  const [currentRepoUrl, setCurrentRepoUrl] = useState('');
+  const [repository, setRepository] = useState<Repository>({
+    url: 'https://github.com/TexasInstruments/simplelink-connect-fw-bins',
+    name: 'simplelink-connect-fw-bins',
+    owner: 'TexasInstruments',
+    visibility: 'public'
+  })
 
   let fakeUpdateInterval = useRef<ReturnType<typeof setInterval>>();
 
@@ -88,100 +105,6 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
-
-  const OadServiceUuid = 'F000FFC0-0451-4000-B000-000000000000';
-  const ImageIdentifyWriteUuid = 'F000FFC1-0451-4000-B000-000000000000';
-  const ImageBlockRequestUuid = 'F000FFC2-0451-4000-B000-000000000000';
-  const ImageControlPointUuid = 'F000FFC5-0451-4000-B000-000000000000';
-
-  const OadResetServiceUuid = 'F000FFD0-0451-4000-B000-000000000000';
-  const OadResetCharUuid = 'F000FFD1-0451-4000-B000-000000000000';
-
-  /*!
-   * Using OAD Reset Service start a new OAD operation OAD_RESET_CMD_START_OAD
-   * The target device will invalidate the current running image and begin
-   * the update process
-   */
-  const OadResetCharOadResetCmdStartOad = 0x01;
-
-  /*!
-   * Get Block Size external control command op-code
-   * This command is used by a peer to determine what is the largest block
-   * size the target can support
-   */
-  const ImageControlPointGetBlkSize = 0x01;
-
-  /*!
-   * Start OAD external control command op-code
-   * This command is used to tell the target device that the configuration stage
-   * has completed and it is time to start sending block requests
-   */
-  const ImageControlPointStartOad = 0x03;
-
-  /*!
-   * Enable image external control command op-code
-   * This command is used to enable an image after download, instructing the
-   * target to prepare the image to run and then reboot
-   */
-  const ImageControlPointEnableImg = 0x04;
-
-  /*!
-   * Cancel OAD external control command op-code
-   * This command is used to cancel the OAD process
-   */
-  const ImageControlPointCancelOad = 0x05;
-
-  /*!
-   * Disable block notification external control command op-code
-   * This command is used to disable the image block request notifications
-   */
-  const ImageControlPointDisableBlkNotify = 0x06;
-
-  /*!
-   * Get software version external control command op-code
-   * This command is used to query the OAD target device for its software version
-   */
-  const ImageControlPointGetSwVer = 0x07;
-
-  /*!
-   * Get status external control command op-code
-   * This command is used to query the status of the OAD process.
-   */
-  const ImageControlPointGetImgStat = 0x08;
-
-  /*!
-   * Get profile version external control command op-code
-   * This command is used to query the version of the OAD profile
-   */
-  const ImageControlPointGetProfileVer = 0x09;
-
-  /*!
-   * Get device type external control command op-code
-   * This command is used to query type of the device the profile is running on
-   */
-  const ImageControlPointGetDevType = 0x10;
-
-  /*!
-   * Get image info external control command op-code
-   * This command is used to get the image info structure corresponding to the
-   * the image asked for
-   */
-  const ImageControlPointGetImgInfo = 0x11;
-
-  /*!
-   * Send block request external control command op-code
-   * This command is used to send a block request notification to the peer device
-   */
-  const OAD_EXT_CTRL_BLK_RSP_NOTIF = 0x12;
-
-  /*!
-   * Erase bonds external control command op-code
-   * This command is used to erase all BLE bonding info on the device
-   */
-  const OAD_EXT_CTRL_ERASE_BONDS = 0x13;
-
-  const OAD_EXT_CTRL_BLK_RSP_SUCCESS = 0;
-  const OAD_EXT_CTRL_BLK_RSP_DL_COMPLETE = 14;
 
   let fwImageByteArray: Uint8Array;
   let blockSize = 20;
@@ -203,6 +126,51 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   }, []);
 
   useEffect(() => {
+    async function getRepoDetails() {
+      let repo = await getUserRepository();
+      let accessToken = null;
+      if (repo.visibility === 'private') {
+        accessToken = await getAccessToken();
+      }
+      getAvailableFw(repo.name, repo.owner, accessToken)
+        .then(() => {
+          console.log('getAvailableFw success');
+        })
+        .catch((error) => {
+          console.log('getAvailableFw error ', error);
+        });
+      setCurrentRepoUrl(repo.url);
+      return { ...repo, accessToken: accessToken }
+    }
+
+    getRepoDetails().then((details) => { setRepository(details) })
+
+    return () => {
+      setUpdating(false);
+      clearInterval(fakeUpdateInterval.current);
+
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('repo URL changed', repository.url);
+
+    getAvailableFw(repository.name, repository.owner, repository.accessToken)
+      .then(() => {
+        console.log('getAvailableFw success');
+      })
+      .catch((error) => {
+        console.log('getAvailableFw error ', error);
+      });
+    setCurrentRepoUrl(repository.url);
+
+    return () => {
+      setUpdating(false);
+      clearInterval(fakeUpdateInterval.current);
+    };
+  }, [repository.url]);
+
+  useEffect(() => {
     console.log('selectedFW selected: ', selectedFW);
     if (selectedFW != undefined) {
       getFwUdateImage();
@@ -211,32 +179,72 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
   useEffect(() => {
     console.log('firmwares changed');
+    // Create unique hardware types list from current firmwares.
+    const uniqueHwTypesSet = new Set();
+    uniqueHwTypesSet.add('All');
+    firmwares.forEach((firmware) => {
+      uniqueHwTypesSet.add(firmware.hwType);
+    });
+    setHwTypes(Array.from(uniqueHwTypesSet).map(hwType => ({ value: hwType, label: hwType })))
+
   }, [firmwares]);
 
-  const getUserRepository = async (): Promise<String> => {
-    let userRepo = await AsyncStorage.getItem('@repository');
-    return userRepo
-      ? userRepo
-      : 'https://github.com/TexasInstruments/simplelink-connect-fw-bins/raw/main';
-  };
+  let localFileErrorMessage = useMemo(() => {
+    if (localFileError == 'error') {
+      return { message: 'Something went wrong while loading file!', color: 'red' };
+    } else if (localFileError == 'success') {
+      return { message: 'File loaded successfuly!', color: 'green' };
+    } else if (localFileError == 'cancelled') {
+      return { message: 'User cancelled picking!', color: 'red' };
+    } else if (localFileError == 'fs') {
+      return { message: 'Error with parsing file!', color: 'red' };
+    } else {
+      return { message: '', color: 'black' };
+    }
+  }, [localFileError]);
 
+  //Toggle filepicker messages
   useEffect(() => {
-    console.log('clear');
-
-    console.log('getAvailableFw');
-    getAvailableFw()
-      .then(() => {
-        console.log('getAvailableFw success');
-      })
-      .catch((error) => {
-        console.log('getAvailableFw error ', error);
-      });
+    if (!localFileErrorMessage) return;
+    let timeout = setTimeout(() => {
+      setLocalFileError(null);
+    }, 2000);
 
     return () => {
-      setUpdating(false);
-      clearInterval(fakeUpdateInterval.current);
+      clearTimeout(timeout);
     };
-  }, []);
+  }, [localFileErrorMessage]);
+
+  const getUserRepository = async () => {
+    let owner = await AsyncStorage.getItem('@repo_owner');
+    let name = await AsyncStorage.getItem('@repo_name');
+    let visibility = await AsyncStorage.getItem('@visibility');
+    let savedURL = `https://github.com/${owner}/${name}`
+
+    if (!owner || !name) {
+      owner = 'TexasInstruments'
+      name = 'simplelink-connect-fw-bins'
+      savedURL = 'https://github.com/TexasInstruments/simplelink-connect-fw-bins'
+      visibility = 'public'
+    }
+
+    let repo = { owner: owner, name: name, url: savedURL, visibility: visibility }
+    return repo
+
+  };
+
+  const getAccessToken = async () => {
+    try {
+      const credentials = await Keychain.getGenericPassword();
+      console.log(credentials);
+      return credentials ? credentials.password : null;
+    }
+    catch (error) {
+      console.log('no access token')
+      return null;
+    }
+
+  };
 
   const startFwUpdate = () => {
     console.log('startFwUpdate');
@@ -253,12 +261,12 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
 
     /* cancel OAD on the device */
-    let ImgControlPointCancelCmd = new Uint8Array([ImageControlPointCancelOad]);
+    let ImgControlPointCancelCmd = new Uint8Array([OadEvent.OAD_EVT_CANCEL_OAD]);
     var cmdArray = Array.from(ImgControlPointCancelCmd);
     BleManager.writeWithoutResponse(
       peripheralId,
-      OadServiceUuid,
-      ImageControlPointUuid,
+      UUID.OadServiceUuid,
+      UUID.ImageControlPointUuid,
       cmdArray,
       1
     );
@@ -272,23 +280,42 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
     let oadService = await checkOadServices(peripheralId);
 
-    if (oadService === OadResetServiceUuid) {
+    // ON CHIP - need to reset to the persistent application to start running oad process
+    if (oadService === UUID.OadResetServiceUuid) {
+      // Wait reset process to end
       oadService = await resetToOadServices(peripheralId);
     }
 
     if (oadService === oadService) {
-      await sendiImagUpdateReq(peripheralId);
+      // Prepare for sending image
+      await sendImagUpdateReq(peripheralId);
+      // Start sending image
       sendImageBlocks(peripheralId);
+
     } else {
       console.log('oadServiceError');
     }
   }
 
-  async function getAvailableFw() {
-    let repository = await getUserRepository();
-    console.log('getAvailableFw: ', repository);
-    fetch(`${repository}/firmware.json`, { headers: { 'Cache-Control': 'no-store' } })
+  async function getAvailableFw(repoName: string, repoOwner: string, accessToken: string | undefined) {
+    const apiUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main`;
+
+    console.log('getAvailableFw: ', apiUrl);
+    console.log('accessToken: ', accessToken);
+
+    const headers = {
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+      'Cache-Control': 'no-store',
+    };
+
+    fetch(`${apiUrl}/firmware.json`, { headers })
       .then(async (data) => {
+        if (!data.ok) {
+          setStatus('Server not found');
+          console.error('fetch error: ', data.status, data.statusText);
+          setFirmwares([])
+        }
+
         let fwFile = await data.blob();
 
         let fwFileContents = fwFile.slice(0, fwFile.size);
@@ -308,7 +335,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
             //@ts-ignore
             let mappedFetchedFirmwares = fetchedFirmwares.map((fw) => ({
-              label: fw.fileName,
+              label: fw.fileName.split('/').pop(),
               value: fw.fileName,
               version: fw.version,
               hwType: fw.hwType,
@@ -334,8 +361,14 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   }
 
   async function getFwUdateImage(): Promise<Uint8Array> {
-    let repository = await getUserRepository();
+    /* After selecting Fw, get image from repo */
+    let repoDetails = await getUserRepository();
 
+    let accessToken: any = null;
+
+    if (repoDetails.visibility === 'private') {
+      accessToken = await getAccessToken();
+    }
     let checkIfLocalFile = firmwares.find((fw) => fw.value == selectedFW);
 
     if (checkIfLocalFile?.local) {
@@ -348,15 +381,23 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     } else {
       return new Promise((resolve, reject) => {
         console.log('getFwUdateImage');
+        const headers = {
+          ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        };
+        const apiUrl = `https://raw.githubusercontent.com/${repoDetails.owner}/${repoDetails.name}/main`;
 
-        fetch(repository + '/' + (selectedFW ?? ''), {
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            Pragma: 'no-cache',
-            Expires: '0',
-          },
+        fetch(apiUrl + '/' + (selectedFW ?? ''), {
+          headers,
         })
           .then(async (data) => {
+            if (!data.ok) {
+              setStatus('Server not found');
+              console.error('fetch error: ', data.status, data.statusText);
+            }
+
             let binary = await data.blob();
 
             let bytes = binary.slice(0, binary.size);
@@ -394,32 +435,36 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
   async function checkOadServices(peripheralId: string) {
     console.log('checkOadServices');
     return new Promise((resolve, reject) => {
-      BleManager.startNotification(peripheralId, OadServiceUuid, ImageIdentifyWriteUuid)
+
+      BleManager.startNotification(peripheralId, UUID.OadServiceUuid, UUID.ImageIdentifyWriteUuid)
+        // OFF-CHIP and DUAL-IMAGE
         .then(() => {
           console.log('device has OadServiceUuid');
           setStatus('Found OAD Service');
-          BleManager.stopNotification(peripheralId, OadServiceUuid, ImageIdentifyWriteUuid).then(
+          BleManager.stopNotification(peripheralId, UUID.OadServiceUuid, UUID.ImageIdentifyWriteUuid).then(
             () => {
-              resolve(OadServiceUuid);
+              resolve(UUID.OadServiceUuid);
             }
           );
         })
-        .catch((e) => {
+        // ON-CHIP
+        .catch((e: any) => {
           console.log('device does not have OadServiceUuid ', e);
-
-          let oadResetCmd = new Uint8Array([OadResetCharOadResetCmdStartOad]);
+          // Start a new OAD operation, the target device will invalidate the current running image and begin the update process.
+          let oadResetCmd = new Uint8Array([OadResetServiceOpCodes.OAD_RESET_CMD_START_OAD]);
           var oadResetCmdArray = Array.from(oadResetCmd);
 
+          // Send reset command
           BleManager.writeWithoutResponse(
             peripheralId,
-            OadResetServiceUuid,
-            OadResetCharUuid,
+            UUID.OadResetServiceUuid,
+            UUID.OadResetCharUuid,
             oadResetCmdArray
           )
             .then(() => {
               console.log('device has OadResetCharUuid');
               setStatus('Resetting OAD Reset Service');
-              resolve(OadResetServiceUuid);
+              resolve(UUID.OadResetServiceUuid);
             })
             .catch(() => {
               console.log('device does not have OadResetServiceUuid');
@@ -439,6 +484,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
       }, 12000);
 
       bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
+
+      /* Wait for device to disconnect then connect again, and find the OAD service */
       let oadServericeListiner = bleManagerEmitter.addListener(
         'BleManagerDisconnectPeripheral',
         () => {
@@ -451,16 +498,16 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
               setStatus('Discovering OAD Service');
               BleManager.retrieveServices(peripheralId).then(() => {
                 console.log('resetToOadServices - device connected');
-                BleManager.startNotification(peripheralId, OadServiceUuid, ImageIdentifyWriteUuid)
+                BleManager.startNotification(peripheralId, UUID.OadServiceUuid, UUID.ImageIdentifyWriteUuid)
                   .then(() => {
                     console.log('device has ImageIdentifyWriteUuid');
                     setStatus('Found OAD Service');
                     BleManager.stopNotification(
                       peripheralId,
-                      OadServiceUuid,
-                      ImageIdentifyWriteUuid
+                      UUID.OadServiceUuid,
+                      UUID.ImageIdentifyWriteUuid
                     ).then(() => {
-                      resolve(OadServiceUuid);
+                      resolve(UUID.OadServiceUuid);
                     });
                   })
                   .catch(() => {
@@ -490,7 +537,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     });
   }
 
-  function resetafterOad(peripheralId: string) {
+  function resetAfterOad(peripheralId: string) {
     setStatus('Waiting for device reset in to new FW');
     setProgress(0.98);
 
@@ -500,80 +547,112 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
       () => {
         setProgress(1);
         setStatus('Device reset');
-        console.log('resetafterOad - device disconnected');
+        console.log('resetAfterOad - device disconnected');
 
         oadServericeListiner.remove();
       }
     );
   }
 
-  async function sendiImagUpdateReq(peripheralId: string) {
-    console.log('sendiImagUpdateReq');
+  function updateImgSizeInImgHeader(payload: Uint8Array, imgSize: number) {
+    console.log('payload before updating', buf2hex(payload))
 
-    setStatus('Starting FW Update');
+    payload[12] = imgSize & 0xFF;
+    payload[13] = (imgSize >> 8) & 0xFF;
+    payload[14] = (imgSize >> 16) & 0xFF;
+    payload[15] = (imgSize >> 24) & 0xFF;
 
-    /* Get the SW Version */
-    var ImgControlPointCmd = new Uint8Array([ImageControlPointGetSwVer]);
+    console.log('payload after updating', buf2hex(payload))
+    return payload;
+  }
+
+  async function getSwVersion() {
+    /* Get the SW Version - Response: 
+        uint8       cmdID;                     //!< Ctrl Op-code
+        uint8       swVer[MCUBOOT_SW_VER_LEN]; //!< App version
+    */
+    var ImgControlPointCmd = new Uint8Array([OadProtocolOpCode.OAD_REQ_GET_SW_VER]);
     let rsp = await writeWaitNtfy(
       peripheralId,
-      OadServiceUuid,
-      ImageControlPointUuid,
+      UUID.OadServiceUuid,
+      UUID.ImageControlPointUuid,
       true,
       ImgControlPointCmd,
       1
     );
-    console.log('SW Version: ', rsp);
+    let SWVersion;
+    if (rsp[0] == OadProtocolOpCode.OAD_REQ_GET_SW_VER) {
+      SWVersion = rsp[1] + (rsp[2] << 8);
+      console.log('SW Version: ', SWVersion);
+    }
 
-    // /* Set the MTU Size - Android only API 21+ */
+    return SWVersion;
+  }
+
+  function getImgVersionFromImg(fwImageByteArray: Uint8Array | number[]) {
+    let imgVersionMajor = fwImageByteArray[20];
+    let imgVersionMinor = fwImageByteArray[21];
+    let imgRevision = fwImageByteArray[22] + (fwImageByteArray[23] << 8);
+    let imgBuildNum =
+      fwImageByteArray[24] +
+      (fwImageByteArray[25] << 8) +
+      (fwImageByteArray[26] << 16) +
+      (fwImageByteArray[27] << 24);
+
+    return imgVersionMajor + '.' + imgVersionMinor + '.' + imgRevision + '.' + imgBuildNum
+  }
+
+  async function sendImagUpdateReq(peripheralId: string) {
+    console.log('sendImagUpdateReq');
+
+    setStatus('Starting FW Update');
+    await getSwVersion();
+
+    /* Set the MTU Size - Android only API 21+, iOS initiates an MTU exchange automatically upon connection */
     if (Platform.OS === 'android') {
       await BleManager.requestConnectionPriority(peripheralId, 1);
-      await BleManager.requestMTU(peripheralId, 255);
+      let mtu = await BleManager.requestMTU(peripheralId, 255);
+      console.log('MTU:', mtu)
     }
+    let rsp;
 
     /* Prepare Image identify command */
     const buffer = new ArrayBuffer(18);
     let imgIdentifyPayload = new Uint8Array(buffer);
 
-    let imgTotLength = fwImageByteArray.length;
-
+    let imgLength = fwImageByteArray.length;
     if (firmwares.find((fw) => fw.value === selectedFW)?.imageType === 'mcuboot') {
-      console.log('mcuboot test');
-
       console.log('sendiImagUpdateReq: Mcuboot image');
-      /* Copy image header */
+      /** MCU BOOT Image header structure
+       * IMAGE_MAGIC            0x96f3b83d
+       * IMAGE_HEADER_SIZE      32
+       * struct image_header {
+       *   uint32_t ih_magic;
+       *   uint32_t ih_load_addr;
+       *   uint16_t ih_hdr_size;             Size of image header (bytes).
+       *   uint16_t ih_protect_tlv_size;     Size of protected TLV area (bytes). 
+       *   uint32_t ih_img_size;             Does not include header.
+       *   uint32_t ih_flags;                IMAGE_F_[...]. 
+       *   struct image_version ih_ver;
+       *   uint32_t _pad1;
+       * };
+       */
+
+      /* Copy image header - first 18 bytes */
       imgIdentifyPayload.set(fwImageByteArray.slice(0, 18));
 
-      console.log('fwImageByteArray[0]: ', fwImageByteArray[0]);
-      console.log('fwImageByteArray[1]: ', fwImageByteArray[1]);
-      console.log('fwImageByteArray[2]: ', fwImageByteArray[2]);
-      console.log('fwImageByteArray[3]: ', fwImageByteArray[3]);
+      /* Update image size to be real size instead of the size written in the input img */
+      imgIdentifyPayload = updateImgSizeInImgHeader(imgIdentifyPayload, imgLength)
 
-      /* check MCUBoot header Magic */
-      if (
-        fwImageByteArray[0] != 0x3d ||
-        fwImageByteArray[1] != 0xb8 ||
-        fwImageByteArray[2] != 0xf3 ||
-        (fwImageByteArray[3] != 0x96 && fwImageByteArray[3] != 0x97)
-      ) {
+      /* check MCUBoot header Magic (4 first bytes)- should be  0x96f3b83d*/
+      if (fwImageByteArray[0] != 0x3d || fwImageByteArray[1] != 0xb8 || fwImageByteArray[2] != 0xf3 || (fwImageByteArray[3] != 0x96 && fwImageByteArray[3] != 0x97)) {
         cancel();
         alert('Not an MCU Boot image');
       }
 
-      //Header
-      let imgVersionMajor = fwImageByteArray[20];
-      let imgVersionMinor = fwImageByteArray[21];
-      let imgRevision = fwImageByteArray[22] + (fwImageByteArray[23] << 8);
-      let imgBuildNum =
-        fwImageByteArray[24] +
-        (fwImageByteArray[25] << 8) +
-        (fwImageByteArray[26] << 16) +
-        (fwImageByteArray[27] << 24);
-
-      setImgVersionStr(
-        imgVersionMajor + '.' + imgVersionMinor + '.' + imgRevision + '.' + imgBuildNum
-      );
-
-      console.log('mcuboot img version: ', imgVersionStr);
+      /* Find img version */
+      const versionString = getImgVersionFromImg(fwImageByteArray)
+      console.log('MCUBOOT img version: ', versionString);
 
       let mcuBootMapgicSwap =
         fwImageByteArray[fwImageByteArray.length - 16].toString(16) +
@@ -599,13 +678,13 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
         console.log('Not swap image');
 
         /* Length is read from header and must include header */
-        imgTotLength =
+        imgLength =
           fwImageByteArray[12] +
           (fwImageByteArray[13] << 8) +
           (fwImageByteArray[14] << 16) +
           (fwImageByteArray[15] << 24);
 
-        console.log('MCUBoot imgLength: ', imgTotLength);
+        console.log('MCUBoot imgLength: ', imgLength);
 
         let headerLen =
           fwImageByteArray[8] +
@@ -613,35 +692,35 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
           (fwImageByteArray[10] << 16) +
           (fwImageByteArray[11] << 24);
 
-        console.log('tlv magic 0', fwImageByteArray[imgTotLength + headerLen]);
-        console.log('tlv magic 1', fwImageByteArray[imgTotLength + headerLen + 1]);
+        console.log('tlv magic 0', fwImageByteArray[imgLength + headerLen]);
+        console.log('tlv magic 1', fwImageByteArray[imgLength + headerLen + 1]);
 
         /* check TLV header Magic */
         if (
-          fwImageByteArray[imgTotLength + headerLen + 1] != 0x69 ||
-          (fwImageByteArray[imgTotLength + headerLen] != 0x07 &&
-            fwImageByteArray[imgTotLength + headerLen] != 0x08)
+          fwImageByteArray[imgLength + headerLen + 1] != 0x69 ||
+          (fwImageByteArray[imgLength + headerLen] != 0x07 &&
+            fwImageByteArray[imgLength + headerLen] != 0x08)
         ) {
           cancel();
           alert('Bad TLV Magic');
         }
 
         let tlvLength =
-          fwImageByteArray[imgTotLength + headerLen + 2] +
-          (fwImageByteArray[imgTotLength + headerLen + 3] << 8);
+          fwImageByteArray[imgLength + headerLen + 2] +
+          (fwImageByteArray[imgLength + headerLen + 3] << 8);
 
         console.log('headerLen: ', headerLen);
         console.log('tlvLength: ', tlvLength);
 
         /* add MCU Boot header and trailer size */
-        imgTotLength += headerLen + tlvLength;
-        console.log('imgTotLength: ', imgTotLength);
-        imgIdentifyPayload[12] = imgTotLength & 0x000000ff;
-        imgIdentifyPayload[13] = (imgTotLength & 0x0000ff00) >> 8;
-        imgIdentifyPayload[14] = (imgTotLength & 0x00ff0000) >> 16;
-        imgIdentifyPayload[15] = (imgTotLength & 0xff000000) >> 24;
+        imgLength += headerLen + tlvLength;
+        console.log('imgTotLength: ', imgLength);
+        imgIdentifyPayload[12] = imgLength & 0x000000ff;
+        imgIdentifyPayload[13] = (imgLength & 0x0000ff00) >> 8;
+        imgIdentifyPayload[14] = (imgLength & 0x00ff0000) >> 16;
+        imgIdentifyPayload[15] = (imgLength & 0xff000000) >> 24;
 
-        fwImageByteArray = fwImageByteArray.slice(0, imgTotLength);
+        fwImageByteArray = fwImageByteArray.slice(0, imgLength);
       }
     } else {
       console.log('sendiImagUpdateReq: TI image');
@@ -656,51 +735,52 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
       imgIdentifyPayload.set(fwImageByteArray.slice(24, 28), 14);
     }
 
-    setImgLength(imgTotLength);
-    console.log('imgLength:', imgTotLength);
+    setImgLength(imgLength);
+    console.log('imgLength:', imgLength);
 
     /* Read the Block Size */
     blockSize = 20;
-    ImgControlPointCmd = new Uint8Array([ImageControlPointGetBlkSize]);
+    let ImgControlPointCmd = new Uint8Array([OadProtocolOpCode.OAD_REQ_GET_BLK_SZ]);
     rsp = await writeWaitNtfy(
       peripheralId,
-      OadServiceUuid,
-      ImageControlPointUuid,
+      UUID.OadServiceUuid,
+      UUID.ImageControlPointUuid,
       true,
       ImgControlPointCmd,
       1
     );
     console.log('Block Size: ', rsp);
     /* check it is a response for the correct size */
-    if (rsp[0] == ImageControlPointGetBlkSize) {
+    if (rsp[0] == OadProtocolOpCode.OAD_REQ_GET_BLK_SZ) {
       /* Store block size */
       blockSize = rsp[1] + (rsp[2] << 8) - 4;
       console.log('blockSize ', blockSize);
-      numBlocks = Math.floor(imgTotLength / blockSize);
+      numBlocks = Math.floor(imgLength / blockSize);
       console.log('numBlocks ', numBlocks);
     } else {
       console.log('Error: Block size response not for block size command');
     }
 
-    /* Send Image identify command */
-    console.log('imgIdentifyPayload ', imgIdentifyPayload);
+    /* Send Image identify command - send the image header to target to give him opportunity to accept or decline the image */
+    console.log('imgIdentifyPayload ', buf2hex(imgIdentifyPayload));
     rsp = await writeWaitNtfy(
       peripheralId,
-      OadServiceUuid,
-      ImageIdentifyWriteUuid,
+      UUID.OadServiceUuid,
+      UUID.ImageIdentifyWriteUuid,
       true,
       imgIdentifyPayload,
       18
     );
     console.log('ImageIdentify Rsp: ', rsp);
 
-    if (rsp == 0) {
+    if (rsp == OadStatus.OAD_PROFILE_SUCCESS) {
       setStatus('Image header accepted');
     } else {
       setStatus('Image header reject - select correct image type');
+      console.log('Invalid image', rsp)
     }
 
-    BleManager.startNotification(peripheralId, OadServiceUuid, ImageControlPointUuid);
+    BleManager.startNotification(peripheralId, UUID.OadServiceUuid, UUID.ImageControlPointUuid);
   }
 
   function sendImageBlocks(peripheralId: string): void {
@@ -710,34 +790,47 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
     console.log('sendImageBlocks: fwImageByteArray.length: ', fwImageByteArray.length);
     let prevProgress = 0;
-    // Add event listener
+    // Add event listener- after getting the image header, the target asked for the image blocks.
     blockEventSubstription = bleManagerEmitter.addListener(
       'BleManagerDidUpdateValueForCharacteristic',
       async ({ value, peripheral, characteristic, service }) => {
-        //console.log('blockEventSubstription:')
+        /*
+        value[0] -> opCode
+        value[1] -> Status of previous block write
+        value[2] -> Requested block number
+        */
+        console.log('blockEventSubstription:')
+        console.log('OpCode: 0x' + value[0].toString(16))
+        if (value[0] == OadProtocolOpCode.OAD_RSP_BLK_RSP_NOTIF) { // Block Request
+          console.log('Previous Block Status: ', value[1].toString(16))
+          console.log('Requested Block: ', value[2] + (value[3] << 8) + (value[4] << 16) + (value[5] << 24))
+        }
 
-        //console.log('characteristic: ',  characteristic)
-        //console.log('charUpdate[0]: ',  value[0])
+        console.log('characteristic: ', characteristic)
 
         let blockRequested: number;
 
+        // Block request
         if (
-          characteristic.toUpperCase() === ImageControlPointUuid &&
-          value[0] === OAD_EXT_CTRL_BLK_RSP_NOTIF
+          characteristic.toUpperCase() === UUID.ImageControlPointUuid &&
+          value[0] === OadProtocolOpCode.OAD_RSP_BLK_RSP_NOTIF
         ) {
-          if (value[1] === OAD_EXT_CTRL_BLK_RSP_DL_COMPLETE) {
-            console.log('OAD_EXT_CTRL_BLK_RSP_NOTIF status: OAD_EXT_CTRL_BLK_RSP_DL_COMPLETE');
+          // OAD image payload download complete.
+          if (value[1] === OadStatus.OAD_PROFILE_DL_COMPLETE) {
+
+            console.log(' OadProtocolOpCode.OAD_RSP_BLK_RSP_NOTIF status: OAD_EXT_CTRL_BLK_RSP_DL_COMPLETE');
 
             console.log('FwUpdate completed');
             //blockEventSubstription.remove();
             //BleManager.stopNotification(peripheralId, OadServiceUuid, ImageControlPointUuid);
 
-            let ImgControlPointCmd = new Uint8Array([ImageControlPointEnableImg]);
+            // Enable an image after download,  instructing the target to prepare the image to run and then reboot.
+            let ImgControlPointCmd = new Uint8Array([OadEvent.OAD_EVT_ENABLE_IMG]);
             var ImgControlPointCmdArray = Array.from(ImgControlPointCmd);
             BleManager.writeWithoutResponse(
               peripheralId,
-              OadServiceUuid,
-              ImageControlPointUuid,
+              UUID.OadServiceUuid,
+              UUID.ImageControlPointUuid,
               ImgControlPointCmdArray,
               1
             )
@@ -745,11 +838,13 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
                 // Success code
                 console.log('Writen: ' + ImgControlPointCmdArray);
               })
-              .catch((error) => {
+              .catch((error: string) => {
                 console.log('Write faled  ' + error);
               });
-          } else if (value[1] === OAD_EXT_CTRL_BLK_RSP_SUCCESS) {
-            //console.log('OAD_EXT_CTRL_BLK_RSP_NOTIF status: OAD_EXT_CTRL_BLK_RSP_SUCCESS')
+          }
+          // OAD succeeded.
+          else if (value[1] === OadStatus.OAD_PROFILE_SUCCESS) {
+            //console.log(' OadProtocolOpCode.OAD_RSP_BLK_RSP_NOTIF status: OadStatus.OAD_PROFILE_SUCCESS')
 
             blockRequested = value[2] + (value[3] << 8) + (value[4] << 16) + (value[5] << 24);
 
@@ -761,6 +856,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
             prevProgress = Math.floor(progressUpdate * 100);
 
             const fwImageByteOffset = blockRequested * blockSize;
+            // Last block
             if (blockRequested === numBlocks) {
               console.log(
                 'fwImageByteArray.length %d, blockSize %d, numBlocks %d',
@@ -784,11 +880,14 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
               fwImageByteOffset,
               fwImageByteOffset + blockSize
             );
+            // console.log('block data', buf2hex(blockData))
 
             // if(blockRequested == (numBlocks)) {
             //   await BleManager.stopNotification(peripheralId, OadServiceUuid, ImageControlPointUuid);
             //   await bleManagerEmitter.removeAllListeners("BleManagerDidUpdateValueForCharacteristic");
             // }
+
+            // Send block data
 
             await writeBlock(peripheralId, blockRequested, blockData, blockSize);
 
@@ -797,20 +896,26 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
             //   let ImgControlPointCmd = new Uint8Array([ImageControlPointDisableBlkNotify])
             //   await writeWaitNtfy(peripheralId, OadServiceUuid, ImageControlPointUuid, true, ImgControlPointCmd, 1);
             // }
-          } else {
-            console.log('unknown  OAD_EXT_CTRL_BLK_RSP_NOTIF response ' + value[1]);
+          }
+          // OAD Failed
+          else {
+            console.log('unknown OadProtocolOpCode.OAD_RSP_BLK_RSP_NOTIF response ' + value[1]);
             alert('OAD Failed');
             setStatus('Found selected FW image');
             setProgress(0);
           }
-        } else if (
-          characteristic.toUpperCase() === ImageControlPointUuid &&
-          value[0] === ImageControlPointEnableImg
+
+        }
+        // OAD Finished
+        else if (
+          characteristic.toUpperCase() === UUID.ImageControlPointUuid &&
+          value[0] === OadEvent.OAD_EVT_ENABLE_IMG
         ) {
-          console.log('got ImageControlPointEnableImg');
-          resetafterOad(peripheral);
-        } else {
-          /* unknown request */
+          console.log('got ImageControlPointEnableImg !!!!!', value[1]);
+          resetAfterOad(peripheral);
+        }
+        // Unknown request
+        else {
           console.log(
             'unknwon blockEventSubstription char ' + characteristic + ' or command ' + value[0]
           );
@@ -819,12 +924,12 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     );
 
     console.log('Sending ImageControlPointStartOad command');
-    let ImgControlPointCmd = new Uint8Array([ImageControlPointStartOad]);
+    let ImgControlPointCmd = new Uint8Array([OadEvent.OAD_EVT_START_OAD]);
     var ImgControlPointCmdArray = Array.from(ImgControlPointCmd);
     BleManager.writeWithoutResponse(
       peripheralId,
-      OadServiceUuid,
-      ImageControlPointUuid,
+      UUID.OadServiceUuid,
+      UUID.ImageControlPointUuid,
       ImgControlPointCmdArray,
       1
     );
@@ -852,19 +957,20 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
     BleManager.write(
       peripheralId,
-      OadServiceUuid,
-      ImageBlockRequestUuid,
+      UUID.OadServiceUuid,
+      UUID.ImageBlockRequestUuid,
       BlockRspCmdArray,
       BlockRspCmd.length
     )
       .then(() => {
         //console.log("writeBlock writen");
       })
-      .catch((error) => {
+      .catch((error: any) => {
         // Failure code
         //console.log('Block wite error: ', error);
       });
   }
+
   async function writeWaitNtfy(
     peripheralId: string,
     serviceUuid: string,
@@ -902,9 +1008,9 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
       writeFunction(peripheralId, serviceUuid, charUuid, cmdArray, len)
         .then(() => {
           // Success code
-          console.log('writeWaitNtfy Writen: ' + cmdByteArray);
+          console.log('writeWaitNtfy Writen: ' + buf2hex(cmdByteArray));
         })
-        .catch((error) => {
+        .catch((error: any) => {
           // Failure code
           console.log('ImgControlPointCmdArray error: ', error);
           reject();
@@ -912,39 +1018,13 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
     });
   }
 
-  let localFileErrorMessage = useMemo(() => {
-    if (localFileError == 'error') {
-      return { message: 'Something went wrong while loading file!', color: 'red' };
-    } else if (localFileError == 'success') {
-      return { message: 'File loaded successfuly!', color: 'green' };
-    } else if (localFileError == 'cancelled') {
-      return { message: 'User cancelled picking!', color: 'red' };
-    } else if (localFileError == 'fs') {
-      return { message: 'Error with parsing file!', color: 'red' };
-    } else {
-      return { message: '', color: 'black' };
-    }
-  }, [localFileError]);
-
-  //Toggle filepicker messages
-  useEffect(() => {
-    if (!localFileErrorMessage) return;
-    let timeout = setTimeout(() => {
-      setLocalFileError(null);
-    }, 2000);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [localFileErrorMessage]);
-
   const addFile = () => {
     try {
       DocumentPicker.pickSingle({
         mode: 'import',
         copyTo: 'cachesDirectory',
       })
-        .then(async (pickedFile) => {
+        .then(async (pickedFile: { fileCopyUri: any; uri: RequestInfo; name: any; }) => {
           if (!pickedFile.fileCopyUri) throw Error('File URI error');
           setLocalFileError('success');
 
@@ -992,19 +1072,23 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
               let buildVersion =
                 imgVersionMajor + '.' + imgVersionMinor + '.' + imgRevision + '.' + imgBuildNum;
 
+              let uploadedImage = {
+                hwType: 'N/A',
+                imageType: 'mcuboot',
+                label: pickedFile.name ?? 'Not specified',
+                version: buildVersion,
+                value: v4(),
+                local: true,
+                bytes: binaryImage,
+              };
+
               setFirmwares((prev) => [
-                {
-                  hwType: pickedFile.name ?? 'Not specified',
-                  imageType: 'mcuboot',
-                  label: pickedFile.name ?? 'Not specified',
-                  version: buildVersion,
-                  value: v4(),
-                  local: true,
-                  bytes: binaryImage,
-                },
+                uploadedImage,
                 ...prev,
               ]);
 
+              setSelectedFW(uploadedImage.value)
+              setSelectedHW('N/A');
               console.log('File pushed to the FW array!');
             };
           } catch (error) {
@@ -1013,7 +1097,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
             return;
           }
         })
-        .catch((error) => {
+        .catch((error: any) => {
           if (DocumentPicker.isCancel(error)) {
             setLocalFileError('cancelled');
           } else {
@@ -1031,134 +1115,120 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }) => {
 
   return (
     <View style={{ flex: 1, width: '100%', marginHorizontal: 'auto' }}>
-      <View style={{ width: '100%', zIndex: 100 }}>
-        <Text
-          style={{
-            paddingLeft: 10,
-            fontSize: 20,
-            fontWeight: 'bold',
-            backgroundColor: Colors.lightGray,
-            paddingVertical: 20,
-          }}
-        >
-          Select Firmware Image
-        </Text>
-        <DropDownPicker
-          disabled={updating}
-          zIndex={100}
-          containerStyle={[styles.dropDownPickerContainer]}
-          placeholder="Select firmware version"
-          open={openDropdown}
-          setOpen={setOpenDropdown}
-          items={firmwares}
-          setItems={setFirmwares}
-          //@ts-ignore
-          value={selectedFW}
-          setValue={setSelectedFW}
-          theme={theme === 'dark' ? 'DARK' : 'LIGHT'}
-        />
-      </View>
-      <View
-        style={{
-          flexDirection: 'column',
-          marginHorizontal: 'auto',
-          width: '100%',
-          alignItems: 'center',
-        }}
-      >
-        <Text>OR</Text>
-        <TouchableOpacity onPress={addFile} style={{ paddingVertical: 15 }}>
-          <Text style={{ color: Colors.blue }}>Add local file</Text>
-        </TouchableOpacity>
-        <Text style={{ color: localFileErrorMessage.color }}>{localFileErrorMessage.message}</Text>
-      </View>
-      <View style={{ paddingTop: 15, marginBottom: 20 }}>
-        <Text
-          style={{
-            paddingLeft: 10,
-            fontSize: 20,
-            fontWeight: 'bold',
-            backgroundColor: Colors.lightGray,
-            paddingVertical: 20,
-          }}
-        >
-          Image details
-        </Text>
-        <Text style={{ paddingTop: 10, paddingVertical: 2, paddingLeft: 20 }}>
-          Hardware Type: {firmwares.find((fw) => fw.value === selectedFW)?.hwType}{' '}
-        </Text>
-        <Text style={{ paddingVertical: 2, paddingLeft: 20 }}>
-          Image Type: {firmwares.find((fw) => fw.value === selectedFW)?.imageType}{' '}
-        </Text>
-        <Text style={{ paddingVertical: 2, paddingLeft: 20 }}>
-          Image Version: {firmwares.find((fw) => fw.value === selectedFW)?.version}{' '}
-        </Text>
-      </View>
-      <View style={{ flex: 2 }}>
-        <Text
-          style={{
-            paddingLeft: 10,
-            fontSize: 20,
-            fontWeight: 'bold',
-            backgroundColor: Colors.lightGray,
-            paddingVertical: 20,
-          }}
-        >
-          Status
-        </Text>
-        <Text style={{ paddingLeft: 20, paddingVertical: 20 }}>{status}</Text>
-        {updating && (
-          <View>
-            <Text style={{ textAlign: 'center' }}>Progress</Text>
-            <LinearProgress value={progress} color={Colors.blue} style={[styles.linearProgress]} />
-            <Text style={{ marginBottom: 10, textAlign: 'center' }}>
-              {Math.floor(progress * 100).toFixed(0)}%
-            </Text>
-          </View>
-        )}
-      </View>
-      {progress < 1 && (
+      <ScrollView >
+        <SelectFirmwareImage
+          currentRepoUrl={currentRepoUrl}
+          hwTypes={hwTypes}
+          selectedHW={selectedHW}
+          setSelectedHW={setSelectedHW}
+          firmwares={firmwares}
+          setSelectedFW={setSelectedFW}
+          selectedFW={selectedFW}
+          repository={repository}
+          setRepository={setRepository} />
         <View
-          style={{ flex: 2, flexDirection: 'row', justifyContent: 'space-evenly', marginTop: 30 }}
+          style={{
+            flexDirection: 'column',
+            marginTop: 15,
+            marginHorizontal: 'auto',
+            width: '100%',
+            alignItems: 'center',
+          }}
         >
-          <TouchableOpacity style={[styles.buttonWrapper]} onPress={cancel}>
-            <Text style={{ color: Colors.blue, fontSize: 18 }}>Cancel</Text>
+          <Text>OR</Text>
+          <TouchableOpacity onPress={addFile} style={{ paddingTop: 10 }}>
+            <Text style={{ color: Colors.blue }}>Add local file</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.buttonWrapper,
-              {
-                opacity: updating || selectedFW == null ? 0.6 : 1,
-              },
-            ]}
-            disabled={updating || selectedFW == null}
-            onPress={startFwUpdate}
+          <Text style={{ color: localFileErrorMessage.color }}>{localFileErrorMessage.message}</Text>
+        </View>
+        <View style={{ marginBottom: 20 }}>
+          <Text
+            style={{
+              paddingLeft: 10,
+              fontSize: 20,
+              fontWeight: 'bold',
+              backgroundColor: Colors.lightGray,
+              paddingVertical: 20,
+            }}
           >
-            <Text style={{ color: Colors.blue, fontSize: 18 }}>Update</Text>
-          </TouchableOpacity>
+            Image details
+          </Text>
+          <Text style={{ paddingTop: 10, paddingVertical: 2, paddingLeft: 20 }}>
+            <Text style={{ fontWeight: "bold" }} >Hardware Type: </Text>{firmwares.find((fw) => fw.value === selectedFW)?.hwType}{' '}
+          </Text>
+          <Text style={{ paddingVertical: 2, paddingLeft: 20 }}>
+            <Text style={{ fontWeight: "bold" }} >Image Type: </Text> {firmwares.find((fw) => fw.value === selectedFW)?.imageType}{' '}
+          </Text>
+          <Text style={{ paddingVertical: 2, paddingLeft: 20 }}>
+            <Text style={{ fontWeight: "bold" }} >Image Version: </Text>{firmwares.find((fw) => fw.value === selectedFW)?.version}{' '}
+          </Text>
+          <Text style={{ paddingVertical: 2, paddingLeft: 20 }}>
+            <Text style={{ fontWeight: "bold" }} >Image File Name: </Text> {firmwares.find((fw) => fw.value === selectedFW)?.label}{' '}
+          </Text>
         </View>
-      )}
-      {progress == 1 && (
-        <View
-          style={{ flex: 2, flexDirection: 'row', justifyContent: 'space-evenly', marginTop: 30 }}
-        >
-          <TouchableOpacity style={[styles.buttonWrapper]} onPress={cancel}>
-            <Text style={{ color: Colors.blue, fontSize: 18 }}>Done</Text>
-          </TouchableOpacity>
+        <View style={{ flex: 2 }}>
+          <Text
+            style={{
+              paddingLeft: 10,
+              fontSize: 20,
+              fontWeight: 'bold',
+              backgroundColor: Colors.lightGray,
+              paddingVertical: 20,
+            }}
+          >
+            Status
+          </Text>
+          <Text style={{ paddingLeft: 20, paddingVertical: 20 }}>{status}</Text>
+          {updating && (
+            <View>
+              <Text style={{ textAlign: 'center' }}>Progress</Text>
+              <LinearProgress value={progress} color={Colors.blue} style={[styles.linearProgress]} />
+              <Text style={{ marginBottom: 10, textAlign: 'center' }}>
+                {Math.floor(progress * 100).toFixed(0)}%
+              </Text>
+            </View>
+          )}
         </View>
-      )}
-    </View>
+        {
+          progress < 1 && (
+            <View
+              style={{ flex: 2, flexDirection: 'row', justifyContent: 'space-evenly', marginTop: 30 }}
+            >
+              <TouchableOpacity style={[styles.buttonWrapper]} onPress={cancel}>
+                <Text style={{ color: Colors.blue, fontSize: 18 }}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.buttonWrapper,
+                  {
+                    opacity: updating || selectedFW == null ? 0.6 : 1,
+                  },
+                ]}
+                disabled={updating || selectedFW == null}
+                onPress={startFwUpdate}
+              >
+                <Text style={{ color: Colors.blue, fontSize: 18 }}>Update</Text>
+              </TouchableOpacity>
+            </View>
+          )
+        }
+        {
+          progress == 1 && (
+            <View
+              style={{ flex: 2, flexDirection: 'row', justifyContent: 'space-evenly', marginTop: 30 }}
+            >
+              <TouchableOpacity style={[styles.buttonWrapper]} onPress={cancel}>
+                <Text style={{ color: Colors.blue, fontSize: 18 }}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          )
+        }
+      </ScrollView >
+    </View >
   );
 };
 
 const styles = StyleSheet.create({
-  container: { backgroundColor: '#1b1b1b', opacity: 0.6 },
-  dropDownPickerContainer: {
-    width: '90%',
-    alignContent: 'center',
-    alignSelf: 'center',
-    marginVertical: 15,
-  },
   dialogTitle: { color: 'white', textAlign: 'center' },
   buttonWrapper: {
     paddingVertical: 10,

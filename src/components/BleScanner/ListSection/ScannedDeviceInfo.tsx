@@ -30,12 +30,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { StyleSheet, Animated } from 'react-native';
-import { Text } from '../../../../components/Themed';
+import { StyleSheet } from 'react-native';
+import { Text } from '../../Themed';
 import React from 'react';
 import BleManager from 'react-native-ble-manager';
-import { View } from '../../../../components/Themed';
-import Colors from '../../../../constants/Colors';
+import { View } from '../../Themed';
+import Colors from '../../../constants/Colors';
 
 interface Props {
   isVisible: boolean;
@@ -43,49 +43,54 @@ interface Props {
 }
 
 const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
-
   let isConnectable = () => {
     if (
       !peripheral.advertising.isConnectable ||
       typeof !peripheral.advertising.isConnectable == undefined
     )
       return false;
-  
+
     return true;
   };
 
   return (
-    <View style={{ backgroundColor: 'blue'}}>
-    <View style={[styles.container, { display: isVisible ? 'flex' : 'none', 
-                    backgroundColor: 'white'}]}>
-      <View style={[{ paddingTop: 5, 
-                    backgroundColor: 'white' }]}>
-      {peripheral.brand !== undefined && (
-          <Text style={[{ color: Colors.gray }]}>
-            Brand: {peripheral.brand}
+    <View style={{ backgroundColor: 'blue' }}>
+      <View style={[styles.container, {
+        display: isVisible ? 'flex' : 'none',
+        backgroundColor: 'white'
+      }]}>
+        <View style={[{
+          paddingTop: 5,
+          backgroundColor: 'white'
+        }]}>
+          {peripheral.brand !== undefined && (
+            <Text style={[{ color: Colors.gray }]}>
+              Brand: {peripheral.brand}
+            </Text>
+          )}
+          <Text style={[{ color: 'grey' }]}>
+            Connectable: {isConnectable() ? 'Yes' : 'No'}
           </Text>
-        )}
-        <Text style={[{ color: 'grey' }]}>
-          Connectable: {isConnectable() ? 'Yes' : 'No'}
-        </Text>
-        {peripheral.serviceUUIDs !== undefined && (
-          <Text style={[{ color: Colors.gray }]}>
-            Service UUIDs: {peripheral.serviceUUIDs}
+          {peripheral.serviceUUIDs !== undefined && (
+            <Text style={[{ color: Colors.gray }]}>
+              Service UUIDs: {peripheral.serviceUUIDs.join(', ')}
+            </Text>
+          )}
+          {peripheral.advertising?.manufacturerData?.bytes && (
+            <Text style={[{ color: Colors.gray }]}>
+              Manufacturer Data: {peripheral.advertising.manufacturerData?.bytes}
+            </Text>
+          )}
+          <Text style={{ color: Colors.gray }}>
+            Connected: {peripheral.isConnected ? 'Yes' : 'No'}
           </Text>
-        )}       
-        {peripheral.advertising?.manufacturerData?.bytes && (
-          <Text style={[{ color: Colors.gray }]}>
-            Manufacturer Data: {peripheral.advertising.manufacturerData?.bytes}
-          </Text>
-        )}
-        <Text style={{ color: Colors.gray }}>
-          Connected: {peripheral.isConnected ? 'Yes' : 'No'}
-        </Text>
-        <Text style={{ color: Colors.gray }}>
-          Advertisement Count: {peripheral.advertiesmentCount}
-        </Text>        
+          {!peripheral.isConnected && (
+            <Text style={{ color: Colors.gray }}>
+              Advertisement Count: {peripheral.advertiesmentCount}
+            </Text>
+          )}
+        </View>
       </View>
-    </View>
     </View>
   );
 };

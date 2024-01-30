@@ -32,7 +32,7 @@
 
 import { Text } from '@rneui/themed';
 import { useWindowDimensions, Image, StyleSheet } from 'react-native';
-import { View } from '../../../components/Themed';
+import { View } from '../Themed';
 
 interface Props {
   id: string;

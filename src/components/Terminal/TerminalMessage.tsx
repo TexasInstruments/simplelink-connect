@@ -1,4 +1,4 @@
-import { Text, View } from '../../../components/Themed';
+import { Text, View } from '../Themed';
 
 interface RenderItemProps {
   message: string;

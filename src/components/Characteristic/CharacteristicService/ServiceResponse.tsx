@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { Text, View } from '../../../../components/Themed';
+import { Text, View } from '../../Themed';
 
 type ResponseObject = {
   data: string;
@@ -57,10 +57,10 @@ const ServiceResponse: React.FC<Props> = ({ responseArray }) => {
             }}
             key={`${readData.data}-${i}}`}
           >
-            <Text adjustsFontSizeToFit allowFontScaling style={{ fontWeight: 'bold'}}>
+            <Text adjustsFontSizeToFit allowFontScaling style={{ fontWeight: 'bold' }}>
               {readData.data}
             </Text>
-            <Text style={{ fontWeight: '200', color: 'gray'}}>{readData.time}</Text>
+            <Text style={{ fontWeight: '200', color: 'gray' }}>{readData.time}</Text>
           </View>
         );
       })}

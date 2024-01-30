@@ -31,7 +31,7 @@
  */
 
 import { StyleSheet, View } from 'react-native';
-import { Text } from '../../../components/Themed';
+import { Text } from '../Themed';
 import BleManager from 'react-native-ble-manager';
 import DropDownPicker from 'react-native-dropdown-picker';
 import React, { useState, useEffect } from 'react';
@@ -39,6 +39,8 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import GenericService from './GenericService';
 import CharacteristicsList from './CharacteristicsList';
 import { Icon } from '../../../types';
+import { useCharacteristicContext } from '../../context/CharacteristicContext';
+import CharacteristicServiceSkeleton from './CharacteristicService/CharacteristicServiceSkeleton';
 
 interface Props {
   serviceCharacteristics: BleManager.Characteristic[];
@@ -81,6 +83,7 @@ const Characteristic: React.FC<Props> = ({
   const [formats, setformats] = useState<Formats[]>(availableFormats);
   const [openDropdown, setOpenDropdown] = useState<boolean>(false);
   const [selectedFormat, setSelectedFormat] = useState<string>("Hex");
+  const { characteristicData, loading } = useCharacteristicContext();
 
   return (
     <View>
@@ -91,18 +94,18 @@ const Characteristic: React.FC<Props> = ({
         peripheralId={peripheralId}
       />
       <View style={[styles.formatContainer]}>
-        <Text style={{ fontSize: 20, paddingRight: 20}}>Format</Text>
+        <Text style={{ fontSize: 20, paddingRight: 20 }}>Format</Text>
         <DropDownPicker
-            zIndex={100}
-            containerStyle={[styles.dropDownPickerContainer]}
-            placeholder="Hex"
-            open={openDropdown}
-            setOpen={setOpenDropdown}
-            value={selectedFormat}
-            setValue={setSelectedFormat}
-            items={formats}
-            setItems={setformats}
-            style={{minHeight: 35}}
+          zIndex={100}
+          containerStyle={[styles.dropDownPickerContainer]}
+          placeholder="Hex"
+          open={openDropdown}
+          setOpen={setOpenDropdown}
+          value={selectedFormat}
+          setValue={setSelectedFormat}
+          items={formats}
+          setItems={setformats}
+          style={{ minHeight: 35 }}
         />
       </View>
       <KeyboardAwareScrollView
@@ -112,20 +115,28 @@ const Characteristic: React.FC<Props> = ({
         }}
         style={[styles.container]}
       >
-        <CharacteristicsList
-          peripheralId={peripheralId}
-          serviceUuid={serviceUuid}
-          serviceName={serviceName}
-          characteristics={serviceCharacteristics}
-          selectedFormat={selectedFormat}
-          setSelectedFormat={setSelectedFormat}
-        />
+        {!loading && (
+          <CharacteristicsList
+            peripheralId={peripheralId}
+            serviceUuid={serviceUuid}
+            serviceName={serviceName}
+            characteristics={serviceCharacteristics}
+            selectedFormat={selectedFormat}
+            setSelectedFormat={setSelectedFormat}
+          />
+        )}
+        {
+          loading && (
+            <CharacteristicServiceSkeleton />
+          )
+        }
+
       </KeyboardAwareScrollView>
     </View>
   );
 };
 
-const styles = StyleSheet.create({ 
+const styles = StyleSheet.create({
   container: {},
   formatContainer: {
     display: 'flex',
@@ -134,11 +145,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
     width: '100%',
-    zIndex: 100 
+    zIndex: 100
   },
   dropDownPickerContainer: {
     width: '30%',
-  } 
+  }
 });
 
 export default Characteristic;
