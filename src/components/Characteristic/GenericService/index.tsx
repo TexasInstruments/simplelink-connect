@@ -40,19 +40,22 @@ import Colors from '../../../constants/Colors';
 import { uuidToServiceSpecificScreen } from '../../../hooks/uuidToName';
 import { CharacteristicsScreenNavigationProp, Icon, RootStackParamList } from '../../../../types';
 import { useNavigation } from '@react-navigation/native';
-import { SUPPORTED_SPAECIFIC_SCREEN } from '../../../constants/SensorTag';
+import { SUPPORTED_SPAECIFIC_SCREEN } from '../../../constants/uuids';
+import { checkIfTestingSupported } from '../../Tests/testsUtils';
 
 interface Props {
   serviceUuid: string;
   serviceName: string;
   icon: Icon;
   peripheralId: string;
+  peripheralName: string;
 }
 
-const GenericService: React.FC<Props> = ({ serviceUuid, serviceName, icon, peripheralId }) => {
+const GenericService: React.FC<Props> = ({ serviceUuid, serviceName, icon, peripheralId, peripheralName }: Props) => {
   let navigation = useNavigation<CharacteristicsScreenNavigationProp>();
 
   const [screenSpecific, setScreenSpecific] = useState<keyof RootStackParamList | null>(null);
+  const [stressTestOption, setTestOption] = useState<boolean>(false);
 
   useEffect(() => {
     (async () => {
@@ -68,6 +71,11 @@ const GenericService: React.FC<Props> = ({ serviceUuid, serviceName, icon, perip
         setScreenSpecific(null);
       }
     })();
+
+    // Check if this service is supported gatt testing
+    if (checkIfTestingSupported(serviceUuid)) {
+      setTestOption(true);
+    }
   }, [serviceUuid]);
 
   let isServiceSupportSensor = () => {
@@ -84,12 +92,38 @@ const GenericService: React.FC<Props> = ({ serviceUuid, serviceName, icon, perip
     });
   }, [screenSpecific]);
 
+  function navigateToTestScreen() {
+    if (!stressTestOption) {
+      return;
+    }
+
+    navigation.navigate('IopParameters', { testService: serviceName, peripheralId: peripheralId, peripheralName: peripheralName });
+  }
+
+
   return (
     <View>
-      <View style={[styles.container, { width: '100%', marginTop: 0, flexDirection: 'row' }]}>
+      <View style={[styles.container, {
+        width: '100%', marginTop: 0, flexDirection: 'row', shadowColor: 'rgba(0,0,0,0.4)',
+        shadowOffset: {
+          height: 1,
+          width: 0,
+        },
+        shadowOpacity: 1,
+        shadowRadius: 3,
+        elevation: 5,
+        zIndex: 1
+      }]}>
         <ServicePresentation icon={icon} />
         <ServiceParameters serviceName={serviceName} serviceUuid={serviceUuid} />
       </View>
+      {stressTestOption && (
+        <View style={[styles.container, { width: '100%', marginTop: 0, alignItems: 'flex-end' }]}>
+          <TouchableOpacity onPress={stressTestOption ? navigateToTestScreen : undefined} style={{ marginEnd: 15 }}>
+            <Text style={{ color: Colors.blue }}>Enter Stress Test Mode</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       {screenSpecific && (
         <View style={[styles.ServiceSpecficContainer]}>
           <TouchableOpacity onPress={screenSpecific ? navigateToScreenSpecific : undefined}>
@@ -106,14 +140,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lightGray,
     paddingVertical: 10,
     alignItems: 'center',
-    shadowColor: 'rgba(0,0,0,0.4)',
-    shadowOffset: {
-      height: 1,
-      width: 0,
-    },
-    shadowOpacity: 1,
-    shadowRadius: 3,
-    elevation: 5,
   },
   ServiceSpecficContainer: {
     marginTop: 20,

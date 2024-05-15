@@ -59,6 +59,7 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
       <Characteristic
         icon={route.params.icon}
         peripheralId={peripheralInfo.id}
+        peripheralName={peripheralInfo.name}
         serviceUuid={serviceUuid}
         serviceName={serviceName}
         serviceCharacteristics={serviceCharacteristics}

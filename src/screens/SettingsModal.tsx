@@ -42,12 +42,14 @@ import { EnablerActionTypes, ValueActionTypes } from '../reducers/FilterSortRedu
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import Colors from '../constants/Colors';
+import { useNavigation } from '@react-navigation/native';
 
 interface Props extends DrawerContentComponentProps { }
 
 const SettingsModal: React.FC<Props> = () => {
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [RSSIsort, setRSSISort] = useState<boolean>(true);
+  let navigation = useNavigation();
 
   useEffect(() => {
     let checkTutorial = async () => {
@@ -116,10 +118,23 @@ const SettingsModal: React.FC<Props> = () => {
     }
   };
 
+  function handleTesting() {
+    navigation.navigate('IopParameters', { testService: null });
+  }
+
   return (
     <SafeAreaView style={{ height: '100%' }} >
       <KeyboardAwareScrollView scrollIndicatorInsets={{ right: 1 }} >
+
         <View style={{ marginHorizontal: 20 }}>
+          <View style={{ display: 'flex', flexDirection: 'column', paddingTop: 10, paddingBottom: 20 }}>
+            <Separator text="Stress Test" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
+            <TouchableOpacity onPress={() => handleTesting()} style={[styles.button]}>
+              <Text style={{ color: Colors.blue }}>
+                Enter Stress Test Mode
+              </Text>
+            </TouchableOpacity>
+          </View>
           <View style={{ paddingTop: 5 }}>
             <Separator text="Settings" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
             <View
@@ -275,7 +290,7 @@ const SettingsModal: React.FC<Props> = () => {
               This application connects your SimpleLink(TM) devices to your smartphone with Bluetooth Low Energy support.
               Support for Over-the-Air upgrades for the CC23xx LaunchPad development kits are included.
             </Text>
-            <Text style={{ textAlign: 'center', paddingTop: 10 }}><Text style={{ color: Colors.blue }}>Version: </Text>1.3.4</Text>
+            <Text style={{ textAlign: 'center', paddingTop: 10 }}><Text style={{ color: Colors.blue }}>Version: </Text>1.3.5</Text>
             <Text style={{ textAlign: 'center', paddingTop: 10 }}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
             <Text style={{ textAlign: 'center', paddingTop: 10 }}><Text style={{ color: Colors.blue }}>Credits: </Text>Tony Cave (Bluwbee LTD)</Text>
           </View>
@@ -292,6 +307,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
     marginHorizontal: 10,
     borderRadius: 5,
+  },
+  button: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: Colors.blue,
+    marginHorizontal: 30,
+    marginTop: 10,
+    height: 40,
   },
 });
 

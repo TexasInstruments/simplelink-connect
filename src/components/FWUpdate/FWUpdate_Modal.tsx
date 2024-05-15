@@ -53,6 +53,7 @@ import { OadStatus } from './constants/Statuses';
 import { buf2hex } from '../../hooks/convert';
 import SelectFirmwareImage from './SelectFirmwareImage/index';
 import * as Keychain from 'react-native-keychain';
+import { Buffer } from 'buffer';
 
 interface Props {
   peripheralId: string;
@@ -63,10 +64,12 @@ type FW = {
   value: string;
   version: string;
   hwType: string;
-  imageType: string;
+  imageType: ImageType;
   local?: boolean;
   bytes: Uint8Array;
 };
+
+type ImageType = 'bim' | 'mcuboot' | null;
 
 export type Repository = {
   url: string;
@@ -90,7 +93,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
   const [blockNum, setBlockNum] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0);
   const [imgLength, setImgLength] = useState<number>(0);
-  const [localFileError, setLocalFileError] = useState<'success' | 'error' | 'cancelled' | 'fs' | null>(null);
+  const [localFileError, setLocalFileError] = useState<'success' | 'error' | 'cancelled' | 'fs' | 'unknownImgType' | null>(null);
   const [currentRepoUrl, setCurrentRepoUrl] = useState('');
   const [repository, setRepository] = useState<Repository>({
     url: 'https://github.com/TexasInstruments/simplelink-connect-fw-bins',
@@ -198,6 +201,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
       return { message: 'User cancelled picking!', color: 'red' };
     } else if (localFileError == 'fs') {
       return { message: 'Error with parsing file!', color: 'red' };
+    } else if (localFileError == 'unknownImgType') {
+      return { message: 'Unkown Image Type!', color: 'red' };
     } else {
       return { message: '', color: 'black' };
     }
@@ -480,7 +485,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
       setStatus('Waiting for device to reset to OAD Service');
       let resetTimer = setTimeout(() => {
         console.log('resetToOadServices: device did not reset');
-        alert('Device did not reset to OAD ervice. Press reset button on device');
+        alert('Device did not reset to OAD service. Press reset button on device');
       }, 12000);
 
       bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
@@ -1018,6 +1023,28 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
     });
   }
 
+  function uriToBlob(uri: string): Promise<Blob> {
+    return new Promise((resolve, reject) => {
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.onload = function () {
+        resolve(xhr.response);
+      };
+
+      xhr.onerror = function () {
+        reject(new Error('uriToBlob failed'));
+      };
+      xhr.responseType = 'blob';
+
+      // Initialize the request. The third argument set to 'true' denotes that the request is asynchronous
+      xhr.open('GET', uri, true);
+
+      // Send the request. The 'null' argument means that no body content is given for the request
+      xhr.send(null);
+    });
+  };
+
   const addFile = () => {
     try {
       DocumentPicker.pickSingle({
@@ -1034,16 +1061,16 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
 
           try {
             let convert;
+            let binary;
 
             if (Platform.OS === 'android') {
-              convert = await fetch(pickedFile.uri);
+              binary = await uriToBlob(pickedFile.uri);
             } else {
               //https://github.com/itinance/react-native-fs#readfilefilepath-string-encoding-string-promisestring
               let base64Data = await fs.readFile(decodeURIComponent(pickedFile.uri), 'base64');
               convert = await fetch(`data:application/octet-stream;base64,${base64Data}`);
+              binary = await convert.blob();
             }
-
-            let binary = await convert.blob();
 
             let bytes = binary.slice(0, binary.size);
 
@@ -1054,7 +1081,6 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
                 //@ts-ignore
                 fileReaderInstance.result?.substr('data:application/octet-stream;base64,'.length)
               );
-
               const buffer = new ArrayBuffer(content.length);
               let binaryImage = new Uint8Array(buffer);
 
@@ -1072,9 +1098,16 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
               let buildVersion =
                 imgVersionMajor + '.' + imgVersionMinor + '.' + imgRevision + '.' + imgBuildNum;
 
+              let imageType = getImgType(binaryImage);
+
+              if (imageType === null) {
+                setLocalFileError('unknownImgType');
+                return;
+              }
+
               let uploadedImage = {
                 hwType: 'N/A',
-                imageType: 'mcuboot',
+                imageType: imageType,
                 label: pickedFile.name ?? 'Not specified',
                 version: buildVersion,
                 value: v4(),
@@ -1112,6 +1145,21 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
       }
     }
   };
+
+  function getImgType(imgContent: Uint8Array): ImageType {
+    let magicNumber = new Uint8Array(imgContent.buffer.slice(0, 4));
+    let hexMagicNumber = Buffer.from(magicNumber).toString('hex');
+
+    if (hexMagicNumber === '3db8f396' || hexMagicNumber === '3db8f397') {
+      return 'mcuboot';
+    }
+    else if (hexMagicNumber === '43433236') {
+      return 'bim';
+    }
+    else {
+      return null;
+    }
+  }
 
   return (
     <View style={{ flex: 1, width: '100%', marginHorizontal: 'auto' }}>

@@ -93,7 +93,6 @@ export const uuidToServiceSpecificScreen = async ({
     (service) =>
       service.serviceUuid.toLowerCase() === uuid.toLowerCase() && service.serviceSpecificScreen
   );
-
   return service.length > 0 ? service[0] : undefined;
 };
 

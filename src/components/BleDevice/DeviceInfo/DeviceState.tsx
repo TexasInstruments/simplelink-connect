@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, Alert, Linking, useWindowDimensions } from 'react-native';
 import { Text } from '../../Themed';
 import React, { useCallback, useMemo, useState } from 'react';
 import { TouchableOpacity } from '../../Themed';
@@ -58,11 +58,37 @@ const DeviceState: React.FC<Props> = ({
   ...props
 }) => {
   let navigation = useNavigation<DeviceScreenNavigationProp>();
+  const { fontScale } = useWindowDimensions();
 
   const [isBonded, setIsBonded] = useState<boolean>(false);
 
+
+  const showAlert = () =>
+    Alert.alert(
+      'OAD Service',
+      'For OAD process please connect and pair to the device using the iOS\'s Bluetooth interface.',
+      [
+        {
+          text: 'Continue',
+          onPress: () => navigation.navigate('FwUpdateServiceModel', { peripheralId: peripheralId }),
+          style: 'cancel',
+        },
+        {
+          text: 'Go to Bluetooth',
+          onPress: () => Linking.openURL('App-Prefs:Bluetooth'),
+          style: 'destructive',
+        },
+
+      ],
+    );
+
   const openFWUpdateModal = () => {
-    navigation.navigate('FwUpdateServiceModel', { peripheralId: peripheralId });
+    if (Platform.OS === 'ios') {
+      showAlert();
+    }
+    else {
+      navigation.navigate('FwUpdateServiceModel', { peripheralId: peripheralId });
+    }
   };
 
   const checkIfPeripheripheralIsBonded = async (): Promise<boolean> => {
@@ -127,7 +153,7 @@ const DeviceState: React.FC<Props> = ({
       )}
       {/* Rediscover devices services feature */}
       <TouchableOpacity onPress={() => connect(peripheralId)}>
-        <Text>
+        <Text style={{ fontSize: 15 / fontScale }} >
           State:{' '}
           <Text style={{ fontWeight: 'bold' }}>
             {deviceState} {showIsBonded}
@@ -143,7 +169,7 @@ const DeviceState: React.FC<Props> = ({
             marginLeft: 'auto',
           }}
         >
-          <Text style={[{ color: Colors.blue }]}>Update FW</Text>
+          <Text style={[{ color: Colors.blue, fontSize: 15 / fontScale }]}>Update FW</Text>
         </TouchableOpacity>
       )}
     </View>

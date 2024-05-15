@@ -21,6 +21,8 @@ import 'react-native-get-random-values';
 import { v4 as uuid4 } from 'uuid';
 import { Buffer } from 'buffer';
 import * as encoding from 'text-encoding';
+import { TextDecoder } from 'text-encoding';
+
 
 interface Props extends TerminalServiceModelScreenProps { }
 
@@ -36,12 +38,14 @@ const TerminalItemSeparator = () => {
 };
 
 const TerminalServiceModel: React.FC<Props> = ({ route }) => {
+
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+
   let { peripheralId } = route.params;
 
   const [terminalMessages, setTerminalMessages] = useState<
-    { message: string; id: string; date: string }[]
+    { message: string; id: string; date: string, length: number, received: boolean }[]
   >([]);
 
   let terminalInputRef = useRef<TextInput | null>(null);
@@ -50,6 +54,8 @@ const TerminalServiceModel: React.FC<Props> = ({ route }) => {
   let insets = useSafeAreaInsets();
 
   let initialFocus = useRef<boolean>(true);
+
+  const flashListRef = useRef(null);
 
   useEffect(() => {
     if (terminalInputRef.current) {
@@ -61,7 +67,7 @@ const TerminalServiceModel: React.FC<Props> = ({ route }) => {
     let message = '> ' + terminalInput
     setTerminalMessages((prev) => [
       ...prev,
-      { id: uuid4(), message: message, date: new Date().toTimeString().split(' ')[0] },
+      { id: uuid4(), message: message, date: new Date().toTimeString().split(' ')[0], length: terminalInput.length, received: false },
     ]);
 
     let hexString = terminalInput.toLocaleLowerCase();
@@ -88,38 +94,6 @@ const TerminalServiceModel: React.FC<Props> = ({ route }) => {
     setTerminalInput('');
   };
 
-  // useEffect(() => {
-  //   console.log('enable noti')
-  //   // Termianl notifications
-  //   BleManager.startNotification(
-  //     peripheralId,
-  //     DATASTREAMSERVER_SERV_UUID,
-  //     DATASTREAMSERVER_DATAOUT_UUID
-  //   );
-
-  //   console.log('addListener for BleManagerDidUpdateValueForCharacteristic');
-  //   bleManagerEmitter.addListener(
-  //     'BleManagerDidUpdateValueForCharacteristic',
-  //     ({ value, peripheral, characteristic, service }) => {
-  //       console.log('got noti')
-  //       let hexString = Buffer.from(value).toString('utf8');
-  //       hexString = '< ' + hexString;
-  //       setTerminalMessages((prev) => [
-  //         ...prev,
-  //         { id: uuid4(), message: hexString, date: new Date().toTimeString().split(' ')[0] },
-  //       ]);
-  //     }
-  //   );
-
-  //   return () => {
-  //     console.log('remove all listeners');
-  //     bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
-
-  //     //Terminal notification
-  //     BleManager.stopNotification(peripheralId, DATASTREAMSERVER_SERV_UUID, DATASTREAMSERVER_DATAIN_UUID);      
-  //   };
-  // }, []);
-
   useFocusEffect(
     useCallback(() => {
       const task = InteractionManager.runAfterInteractions(() => {
@@ -140,14 +114,17 @@ const TerminalServiceModel: React.FC<Props> = ({ route }) => {
             'BleManagerDidUpdateValueForCharacteristic',
             ({ value, peripheral, characteristic, service }) => {
               console.log('got noti')
-              let hexString = Buffer.from(value).toString('utf8');
+              let buf = Buffer.from(value);
+              let len = buf.length
+
+              let hexString = new TextDecoder().decode(buf);
               hexString = '< ' + hexString;
               setTerminalMessages((prev) => [
                 ...prev,
-                { id: uuid4(), message: hexString, date: new Date().toTimeString().split(' ')[0] },
+                { id: uuid4(), message: hexString, date: new Date().toTimeString().split(' ')[0], length: len, received: true },
               ]);
-            }
-          );
+            })
+
         } else {
           console.log('refocuse');
         }
@@ -165,7 +142,10 @@ const TerminalServiceModel: React.FC<Props> = ({ route }) => {
   );
 
   useEffect(() => {
-    console.log(terminalMessages);
+    // useEffect to scroll to the end whenever terminalMessages change
+    if (flashListRef.current) {
+      flashListRef.current.scrollToEnd();
+    }
   }, [terminalMessages]);
 
   return (
@@ -179,9 +159,10 @@ const TerminalServiceModel: React.FC<Props> = ({ route }) => {
           showsVerticalScrollIndicator={false}
           data={terminalMessages}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <TerminalRenderItem message={item.message} date={item.date} />}
+          renderItem={({ item, index }) => <TerminalRenderItem key={index} message={item.message} length={item.length} date={item.date} received={item.received} />}
           ItemSeparatorComponent={TerminalItemSeparator}
           estimatedItemSize={100}
+          ref={flashListRef}
         />
       </View>
       <View style={[styles.terminalInput]}>

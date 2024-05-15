@@ -2,14 +2,14 @@
   "expo": {
     "name": "SimpleLink™ Connect",
     "slug": "SimplelinkConnect",
-    "version": "1.3.4",
+    "version": "1.3.5",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./src/assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash.png",
-      "resizeMode": "fill",
+      "image": "./src/assets/images/splash.png",
+      "resizeMode": "contain",
       "backgroundColor": "#cc0000"
     },
     "updates": {
@@ -26,7 +26,7 @@
       "package": "com.ti.connectivity.simplelinkconnect",
     },
     "web": {
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./src/assets/images/favicon.png"
     }
   }
 }

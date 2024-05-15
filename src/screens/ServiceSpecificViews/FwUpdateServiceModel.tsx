@@ -36,9 +36,9 @@ import { RootStackScreenProps } from '../../../types';
 interface Props extends RootStackScreenProps<'FwUpdateServiceModel'> { }
 
 const FwUpdateServiceModel: React.FC<Props> = ({ route }) => {
-  console.log('FwUpdateServiceModel: route params', route.params);
+
   let peripheralId = route.params.peripheralId!;
-  console.log('FwUpdateServiceModel: peripheralId', peripheralId)
+
   return <FWUpdate_Modal peripheralId={peripheralId} />;
 };
 

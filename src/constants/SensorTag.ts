@@ -102,4 +102,3 @@ export const CONNECTION_CONTROL_SERVICE = {
   request_disconnect: 'f000ccc3-0451-4000-b000-000000000000',
 } as const;
 
-export const SUPPORTED_SPAECIFIC_SCREEN = ["ti terminal", "ti oad", "temp", "humidity", "barometer", "optical", "movement", "simple keys", "battery", "i/o", "control"] as const;

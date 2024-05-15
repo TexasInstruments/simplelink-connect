@@ -39,7 +39,8 @@ import {
   TouchableOpacity,
   InteractionManager,
   ScrollView,
-  AsyncStorage,
+  RefreshControl,
+  useWindowDimensions,
 } from 'react-native';
 import React, { useState, useEffect, useMemo, useContext, useRef, useCallback } from 'react';
 import BleManager, { Peripheral } from 'react-native-ble-manager';
@@ -55,6 +56,7 @@ import Colors from '../../constants/Colors';
 import { getIconByPeripheralInfo } from '../../hooks/uuidToBrand';
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import RNRestart from 'react-native-restart';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Props extends RootTabScreenProps<'ScanTab'> { }
 
@@ -67,6 +69,7 @@ const BleScanner: React.FC<Props> = () => {
   const [scanEnable, setScanEnable] = useState<boolean>(false);
   const [peripherals, setPeripherals] = useState<Peripheral[]>([]);
   const [doSort, setDoSort] = useState<Boolean>(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   let initialFocus = useRef<boolean>(true);
 
@@ -80,6 +83,7 @@ const BleScanner: React.FC<Props> = () => {
   );
 
   let fsContext = useContext(FilterSortState);
+  const { fontScale } = useWindowDimensions();
 
   let removeCheckInterval = 0;
 
@@ -148,23 +152,27 @@ const BleScanner: React.FC<Props> = () => {
       bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
       bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral);
 
-      const updatePeripheralView = () => {
-        setPeripherals((prev) => [...prev]);
-
-        for (let pIdx = 0; pIdx < scannedPeriphs.current.length; pIdx++) {
-          if (scannedPeriphs.current[pIdx].advertiesmentCount > scannedPeriphs.current[pIdx].prevAdvertismentCount) {
-            scannedPeriphs.current[pIdx].advertismentActive = scannedPeriphs.current[pIdx].advertismentActive + 1;
-            scannedPeriphs.current[pIdx].prevAdvertismentCount = scannedPeriphs.current[pIdx].advertiesmentCount;
-            scannedPeriphs.current[pIdx].advertismentInActive = false;
-          }
-        }
-      };
-
       peripheralViewUpdateInterval.current = setInterval(updatePeripheralView, 500); // Update the data every 500ms
     }
     handleConnectedAndBondedPeripherals();
     scan(scanEnable);
   }, [scanEnable]);
+
+  const updatePeripheralView = () => {
+    setPeripherals((prev) => [...prev]);
+
+    for (let pIdx = 0; pIdx < scannedPeriphs.current.length; pIdx++) {
+      if (scannedPeriphs.current[pIdx].advertiesmentCount > scannedPeriphs.current[pIdx].prevAdvertismentCount) {
+        scannedPeriphs.current[pIdx].advertismentActive = scannedPeriphs.current[pIdx].advertismentActive + 1;
+        scannedPeriphs.current[pIdx].prevAdvertismentCount = scannedPeriphs.current[pIdx].advertiesmentCount;
+        scannedPeriphs.current[pIdx].advertismentInActive = false;
+      }
+    }
+
+    if (refreshing) {
+      setRefreshing(false);
+    }
+  };
 
 
   const handleDisconnectedPeripheral = (
@@ -273,6 +281,10 @@ const BleScanner: React.FC<Props> = () => {
 
     if (peripheralViewUpdateInterval.current != null) {
       setPeripherals((prev) => [...prev]);
+    }
+
+    if (refreshing) {
+      setRefreshing(false);
     }
 
   }, [doSort]);
@@ -519,6 +531,18 @@ const BleScanner: React.FC<Props> = () => {
     return [...list]
   }, [connectedPeripherals])
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+
+    scannedPeriphs.current = [];
+    setPeripherals([]);
+
+    setDoSort(!doSort);
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
+  }, []);
 
   return (
     <View style={[{ flex: 1 }]}>
@@ -528,7 +552,7 @@ const BleScanner: React.FC<Props> = () => {
         <View style={{ maxHeight: '40%' }}>
           {memoConnectedDevices.length < 10 && (
             <View >
-              <Separator style={{ backgroundColor: Colors.lightGray, padding: 10 }} text="Connected devices:" textStyles={{ fontWeight: "bold" }} itemsCount={memoConnectedDevices.length} />
+              <Separator style={{ backgroundColor: Colors.lightGray, padding: 10 }} text="Connected devices:" textStyles={{ fontWeight: "bold", fontSize: 15 / fontScale }} itemsCount={memoConnectedDevices.length} />
               <ScrollView >
                 <View style={{ flex: 1 }}>
                   <FlashList
@@ -572,7 +596,7 @@ const BleScanner: React.FC<Props> = () => {
             <Separator
               text="Available devices:"
               style={{ backgroundColor: Colors.lightGray }}
-              textStyles={{ fontWeight: 'bold' }}
+              textStyles={{ fontWeight: 'bold', fontSize: 15 / fontScale }}
               itemsCount={filteredPeripherals.length}
             />
           </View>
@@ -591,7 +615,7 @@ const BleScanner: React.FC<Props> = () => {
             <Separator
               style={{ width: '90%', alignContent: 'flex-start' }}
               text="Available devices:"
-              textStyles={{ fontWeight: 'bold' }}
+              textStyles={{ fontWeight: 'bold', fontSize: 15 / fontScale }}
               itemsCount={filteredPeripherals.length}
             />
             <TouchableOpacity
@@ -626,6 +650,9 @@ const BleScanner: React.FC<Props> = () => {
           )}
           ListFooterComponent={
             <ScanningSkeleton periphsLenght={peripherals.length} scanEnabled={scanEnable} />
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           estimatedItemSize={200}
         />

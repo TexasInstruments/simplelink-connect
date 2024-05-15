@@ -213,6 +213,7 @@ export default [
       type: 'font-awesome-5',
       iconName: 'thermometer-half',
     },
+    serviceSpecificScreen: 'HealthTermometerServiceModel'
   },
   {
     serviceName: 'Heart Rate',

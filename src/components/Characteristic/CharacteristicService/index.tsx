@@ -86,12 +86,14 @@ const CharacteristicService: React.FC<Props> = ({
   let checkWrite = Object.values(char.properties).indexOf('Write') > -1
   let checkWriteWithoutRsp = Object.values(char.properties).indexOf('WriteWithoutResponse') > -1;
   let checkRead = Object.values(char.properties).indexOf('Read') > -1;
+  let checkIndicate = Object.values(char.properties).indexOf('Indicate') > -1;
 
   let propertiesString = ''
   if (checkRead) { propertiesString += 'Read ' }
   if (checkWrite) { propertiesString += 'Write ' }
   if (checkWriteWithoutRsp) { propertiesString += 'WriteNoRsp ' }
   if (checkNotify) { propertiesString += 'Notify' }
+  if (checkIndicate) { propertiesString += 'Indicate' }
 
   const [charName, setCharName] = useState<string>(() => {
     if (char.characteristic.length == 4) {
@@ -105,6 +107,7 @@ const CharacteristicService: React.FC<Props> = ({
   const [writeWithResponseSwitch, setWriteWithResponseSwitch] = useState<boolean>(false);
 
   const [notificationSwitch, setNotificationSwitch] = useState<boolean>(false);
+  const [indicationsSwitch, setIndicationsSwitch] = useState<boolean>(false);
 
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
@@ -175,7 +178,7 @@ const CharacteristicService: React.FC<Props> = ({
         task.cancel();
         console.log('CharacteristicService: removeAllListeners')
         bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
-        if (Object.values(char.properties).indexOf('Notify') > -1) {
+        if (Object.values(char.properties).indexOf('Notify') > -1 || Object.values(char.properties).indexOf('Indicate') > -1) {
           //Cleaning up notification
           BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
         }
@@ -223,6 +226,23 @@ const CharacteristicService: React.FC<Props> = ({
       console.log('Notify not supported by this characteristic');
     }
   }, [notificationSwitch, selectedFormat]);
+
+  useEffect(() => {
+    console.log('indication:', indicationsSwitch)
+    if (Object.values(char.properties).indexOf('Indicate') > -1) {
+      if (indicationsSwitch) {
+        console.log('enabling indications');
+        // To enable BleManagerDidUpdateValueForCharacteristic listener
+        BleManager.startNotification(peripheralId, serviceUuid, char.characteristic);
+      } else {
+        console.log('disabling indications');
+        BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
+      }
+    } else {
+      console.log('Indications not supported by this characteristic');
+    }
+  }, [indicationsSwitch, selectedFormat]);
+
 
   const [writeBytes, setWriteBytes] = useState<Uint8Array | string>();
 
@@ -373,6 +393,10 @@ const CharacteristicService: React.FC<Props> = ({
     setNotificationSwitch((prev) => !prev);
   }, [notificationSwitch]);
 
+  const handleIndicationSwitch = useCallback(async () => {
+    setIndicationsSwitch((prev) => !prev);
+  }, [indicationsSwitch]);
+
   return (
     <View>
       <View style={[styles.charContainer]}>
@@ -454,20 +478,16 @@ const CharacteristicService: React.FC<Props> = ({
       )}
       {checkNotify && (
         <View>
-          <View style={[styles.container]}>
-            <View>
-              <View style={{ alignContent: 'center', alignItems: 'center', flexDirection: 'row' }}>
-                <View style={{ flexDirection: 'row' }}>
-                  <Text style={{ fontWeight: 'bold', paddingLeft: 12, paddingRight: 20 }}>Notifications</Text>
-                </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', paddingLeft: 80, paddingRight: 'auto' }}>
-                  <Text style={{ paddingRight: 10 }}>Enable</Text>
-                  <Switch
-                    value={notificationSwitch}
-                    onChange={handleNotificationSwitch}
-                  />
-                </View>
-              </View>
+          <View style={[styles.container, { alignContent: 'center', justifyContent: 'space-between', flexDirection: 'row' }]}>
+            <View style={{ flexDirection: 'row' }}>
+              <Text style={{ fontWeight: 'bold' }}>Notifications</Text>
+            </View>
+            <View style={{ flexDirection: 'row', alignItems: 'center', }}>
+              <Text style={{ paddingRight: 10 }}>Enable</Text>
+              <Switch
+                value={notificationSwitch}
+                onChange={handleNotificationSwitch}
+              />
             </View>
           </View>
           <View style={{ paddingLeft: 25, paddingBottom: 20 }}>
@@ -475,7 +495,27 @@ const CharacteristicService: React.FC<Props> = ({
           </View>
         </View>
       )}
-    </View>
+      {
+        checkIndicate && (
+          <View>
+            <View style={[styles.container, { alignContent: 'center', justifyContent: 'space-between', flexDirection: 'row' }]}>
+              <View style={{ flexDirection: 'row' }}>
+                <Text style={{ fontWeight: 'bold', paddingLeft: 12, paddingRight: 20 }}>Indications</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ paddingRight: 10 }}>Enable</Text>
+                <Switch
+                  value={indicationsSwitch}
+                  onChange={handleIndicationSwitch}
+                />
+              </View>
+            </View>
+            <View style={{ paddingLeft: 25, paddingBottom: 20 }}>
+              <ServiceResponse responseArray={notifyResponse} />
+            </View>
+          </View>
+        )}
+    </View >
   );
 };
 
@@ -489,6 +529,7 @@ const styles = StyleSheet.create({
   container: {
     paddingTop: 10,
     marginLeft: 20,
+    marginRight: 20,
     flexDirection: 'row'
   },
   characteristicUUIDWrapper: {

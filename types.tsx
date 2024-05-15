@@ -55,6 +55,9 @@ declare global {
 export type RootStackParamList = {
   Root: NavigatorScreenParams<RootTabParamList> | undefined;
   Tutorial: undefined;
+  IopParameters: { testService: string | null, peripheralId: string | null, peripheralName: string | null };
+  IopTest: undefined;
+  GattTesting: { testService: string | null, peripheralId: string | null, peripheralName: string | null };
   Characteristics: {
     serviceUuid: string;
     serviceName: string;
@@ -62,10 +65,12 @@ export type RootStackParamList = {
     icon: Icon;
   };
   FwUpdateServiceModel: { peripheralId: string };
+  HealthTermometerServiceModel: { peripheralId: string };
   TerminalServiceModel: { peripheralId: string };
   SensorTagModel: { peripheralId: string, serviceName: string };
   ModalScreen: { peripheralId: string };
   SettingsModal: undefined;
+  TerminalSettingsDrawer: undefined;
   NotFound: undefined;
 };
 
@@ -85,6 +90,9 @@ export type RootTabParamList = {
     isConnected: boolean;
     isBonded: boolean;
   };
+  TerminalServiceModel: {
+    peripheralId: string;
+  }
 };
 
 export type ScanScreenNavigationProp = CompositeNavigationProp<
@@ -108,6 +116,9 @@ export type DeviceScreenNavigationProp = CompositeNavigationProp<
 >;
 
 export type TerminalServiceModelScreenProps = RootScreenprops<'TerminalServiceModel'>;
+export type IopParametersScreenProps = RootScreenprops<'IopParameters'>;
+export type GattScreenProps = RootScreenprops<'GattTesting'>;
+export type IopTestScreenProps = RootScreenprops<'IopTest'>;
 
 export type SensorTagServiceModelScreenProps = RootScreenprops<'SensorTagModel'>;
 
@@ -122,6 +133,7 @@ export type RootScreenprops<Screen extends keyof RootStackParamList> = Composite
 >;
 
 export type DeviceScreenRouteProp = RouteProp<RootTabParamList, 'DeviceTab'>;
+export type TerminalScreenRouteProp = RouteProp<RootTabParamList, 'TerminalServiceModel'>;
 
 declare module 'react-native-ble-manager' {
   //@ts-ignore

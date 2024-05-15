@@ -1,5 +1,6 @@
 import axios from 'axios';
 import yaml from 'js-yaml';
+import { reject } from 'lodash';
 
 const TI_CHAR = [
     { name: 'Characteristic 1', uuid: 'FFF1', },
@@ -29,11 +30,22 @@ export const fetchCharacteristicData = async () => {
     if (CHARACTERISTIC_LIST) {
         return CHARACTERISTIC_LIST
     }
+
     try {
-        const response = await axios.get(YAML_FILE_URL);
+        const responsePromise = axios.get(YAML_FILE_URL);
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => {
+                reject(new Error("Fetching timed out"));
+            }, 10000);
+        });
+
+        const response = await Promise.race([responsePromise, timeoutPromise]);
+
         const yamlData = yaml.load(response.data);
+
         const yamlDataAsHex = [...TI_CHAR, ...yamlData.uuids.map((characteristic: any) => ({ ...characteristic, uuid: characteristic.uuid.toString(16) }))]
-        CHARACTERISTIC_LIST = yamlDataAsHex
+        CHARACTERISTIC_LIST = yamlDataAsHex;
+
         return yamlDataAsHex;
     } catch (error) {
         console.error('Error fetching YAML file:', error);

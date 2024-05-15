@@ -31,18 +31,20 @@
  */
 
 const red = '#dd0000';
-const blue = '#1a75ff'; //Small touches
+const blue = '#007aff'; //Small touches
 const lightBlue = '#b3d1ff'; //Small touches
 const gray = '#7f7f7f';
 const lightGray = '#f0f0f0';
 const darkGray = '#010101';
 const buttonSliderOn = '#34c759';
 const buttonSliderOff = gray;
+const teal = '#007c8c';
 
 const tintColorLight = lightGray;
 const tintColorDark = lightGray;
 
 export default {
+  active: teal,
   primary: red,
   blue,
   lightBlue,

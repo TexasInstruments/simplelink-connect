@@ -1,0 +1,16 @@
+Release 1.3.5 of TI Simplelink Connect (#26)
+This commit consolidates work done for Release 1.3.5 of the TI
+Simplelink Connect iOS and Android application
+
+Changes:
+	1.	Implemented Stress tests feature. Additional information can be found in the SimpleLink Academy: https://dev.ti.com/tirex/explore/node?node=A__Af6ue7WVKTMCYaoKZ-dN.g__SIMPLELINK-ACADEMY-CC23XX__gsUPh5j__LATEST
+	2.	Created a specific screen for the Health Thermometer Profile that polls data every 10s/30s/60s and shows the data on a graph. 
+	3.	Created a configuration page for the Terminal screen that enhances user experience: 
+		•	Added support for ANSI color codes. 
+		•	Added an option to disable local echo. 
+		•	Added support for configuring print message length. 
+		•	Added an option to enable/disable timestamp. 
+		•	Added support for setting different colors for RX/TX data. 
+	4.	Support Indication GATT operation. 
+
+Signed-off-by: Texas Instrument

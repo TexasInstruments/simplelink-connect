@@ -36,6 +36,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import useCachedResources from './src/hooks/useCachedResources';
 import useColorScheme from './src/hooks/useColorScheme';
 import Navigation from './src/navigation';
+import { TerminalConfigProvider } from './src/context/TerminalOptionsContext';
 
 export default function App() {
   const [isLoadingComplete, showTutorial] = useCachedResources();
@@ -46,8 +47,10 @@ export default function App() {
   } else {
     return (
       <SafeAreaProvider>
-        <Navigation colorScheme={colorScheme} showTutorial={showTutorial} />
-        <StatusBar />
+        <TerminalConfigProvider>
+          <Navigation colorScheme={colorScheme} showTutorial={showTutorial} />
+          <StatusBar />
+        </TerminalConfigProvider>
       </SafeAreaProvider>
     );
   }

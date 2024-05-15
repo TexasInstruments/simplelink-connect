@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Text } from '../../Themed';
 import React, { Dispatch, SetStateAction } from 'react';
 import { Switch } from '../../Themed';
@@ -42,13 +42,15 @@ interface Props {
 }
 
 const EnablerSection: React.FC<Props> = ({ scanEnable, setScanEnable }) => {
+  const { fontScale } = useWindowDimensions();
+
   return (
     <View style={[styles.container]}>
       <Text
-        adjustsFontSizeToFit
         numberOfLines={1}
         allowFontScaling
-        style={{ color: Colors.darkGray, fontSize: 18 }}
+        adjustsFontSizeToFit={true}
+        style={{ color: Colors.darkGray, fontSize: 18 / fontScale }}
       >
         Enable BluetoothLE Scan
       </Text>

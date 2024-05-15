@@ -47,6 +47,7 @@ interface Props {
   serviceUuid: string;
   serviceName: string;
   peripheralId: string;
+  peripheralName: string;
   icon: Icon;
 }
 
@@ -55,6 +56,7 @@ const Characteristic: React.FC<Props> = ({
   serviceUuid,
   serviceName,
   peripheralId,
+  peripheralName,
   icon,
 }) => {
 
@@ -86,13 +88,16 @@ const Characteristic: React.FC<Props> = ({
   const { characteristicData, loading } = useCharacteristicContext();
 
   return (
-    <View>
+    <KeyboardAwareScrollView
+    >
       <GenericService
         serviceName={serviceName}
         serviceUuid={serviceUuid}
         icon={icon}
         peripheralId={peripheralId}
+        peripheralName={peripheralName}
       />
+
       <View style={[styles.formatContainer]}>
         <Text style={{ fontSize: 20, paddingRight: 20 }}>Format</Text>
         <DropDownPicker
@@ -108,36 +113,28 @@ const Characteristic: React.FC<Props> = ({
           style={{ minHeight: 35 }}
         />
       </View>
-      <KeyboardAwareScrollView
-        extraScrollHeight={30}
-        contentContainerStyle={{
-          paddingBottom: 240
-        }}
-        style={[styles.container]}
-      >
-        {!loading && (
-          <CharacteristicsList
-            peripheralId={peripheralId}
-            serviceUuid={serviceUuid}
-            serviceName={serviceName}
-            characteristics={serviceCharacteristics}
-            selectedFormat={selectedFormat}
-            setSelectedFormat={setSelectedFormat}
-          />
-        )}
-        {
-          loading && (
-            <CharacteristicServiceSkeleton />
-          )
-        }
 
-      </KeyboardAwareScrollView>
-    </View>
+      {!loading && (
+        <CharacteristicsList
+          peripheralId={peripheralId}
+          serviceUuid={serviceUuid}
+          serviceName={serviceName}
+          characteristics={serviceCharacteristics}
+          selectedFormat={selectedFormat}
+          setSelectedFormat={setSelectedFormat}
+        />
+      )}
+      {
+        loading && (
+          <CharacteristicServiceSkeleton />
+        )
+      }
+
+    </KeyboardAwareScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {},
   formatContainer: {
     display: 'flex',
     flexDirection: 'row',
@@ -148,7 +145,7 @@ const styles = StyleSheet.create({
     zIndex: 100
   },
   dropDownPickerContainer: {
-    width: '30%',
+    width: '40%',
   }
 });
 

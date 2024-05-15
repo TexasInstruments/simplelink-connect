@@ -31,12 +31,12 @@
  */
 
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../../Themed';
+import { Text } from '../../../components/Themed';
 import React from 'react';
 import BleManager, { PeripheralInfo, Service } from 'react-native-ble-manager';
 import { useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../../types';
-import { TouchableOpacity } from '../../Themed';
+import { TouchableOpacity } from '../../../components/Themed';
 import { Icon } from '@rneui/themed';
 import Layout from '../../../constants/Layout';
 import { useState } from 'react';
@@ -90,9 +90,9 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
       ) : (
         <Icon name={icon?.iconName!} type={icon?.type} />
       )}
-      <View style={{ paddingLeft: 10, flexDirection: 'column' }}>
+      <View style={{ paddingLeft: 10, flexDirection: 'column', flex: 1 }}>
         <Text style={{ fontWeight: 'bold' }}>{serviceName}</Text>
-        <Text numberOfLines={1} ellipsizeMode="middle" style={{ color: Colors.gray, width: '85%' }}>
+        <Text numberOfLines={1} ellipsizeMode="middle" style={{ color: Colors.gray, }}>
           {serviceUuidString}
         </Text>
         <Text
