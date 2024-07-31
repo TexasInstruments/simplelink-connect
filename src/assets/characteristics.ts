@@ -73,6 +73,10 @@ export default [
     uuid: 'f000aa03-0451-4000-b000-000000000000',
   },
   {
+    name: 'Battery Level',
+    uuid: 'f0002a19-0451-4000-b000-000000000000'
+  },
+  {
     name: 'Data',
     uuid: 'ffe1',
   },
@@ -1895,5 +1899,17 @@ export default [
   {
     name: 'Server Data',
     uuid: 'f000c0c2-0451-4000-B000-000000000000'
+  },
+  {
+    name: 'SSID',
+    uuid: 'CC01',
+  },
+  {
+    name: 'Password',
+    uuid: 'CC02',
+  },
+  {
+    name: 'Connection',
+    uuid: 'CC03',
   },
 ] as MappedCharacteristic[];

@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { fetchCharacteristicData } from '../services/CharacteristicService';
+import { fetchCharacteristicData } from '../services/YamlDataService';
 
 interface CharacteristicContextProps {
     characteristicData: any | null;

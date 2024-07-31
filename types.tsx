@@ -66,12 +66,17 @@ export type RootStackParamList = {
   };
   FwUpdateServiceModel: { peripheralId: string };
   HealthTermometerServiceModel: { peripheralId: string };
+  CgmServiceModel: { peripheralId: string };
   TerminalServiceModel: { peripheralId: string };
   SensorTagModel: { peripheralId: string, serviceName: string };
+  GlucoseServiceModel: { peripheralId: string };
+  WifiProvisioning: { peripheralId: string, isLinuxDevice: boolean };
   ModalScreen: { peripheralId: string };
   SettingsModal: undefined;
   TerminalSettingsDrawer: undefined;
   NotFound: undefined;
+  FilterSortOptions: undefined;
+  ConfigRepository: undefined;
 };
 
 export type RootDrawerParamList = {
@@ -114,13 +119,11 @@ export type DeviceScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<RootTabParamList, 'DeviceTab'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
-
-export type TerminalServiceModelScreenProps = RootScreenprops<'TerminalServiceModel'>;
 export type IopParametersScreenProps = RootScreenprops<'IopParameters'>;
 export type GattScreenProps = RootScreenprops<'GattTesting'>;
 export type IopTestScreenProps = RootScreenprops<'IopTest'>;
-
-export type SensorTagServiceModelScreenProps = RootScreenprops<'SensorTagModel'>;
+export type FilterSortScreenProps = RootScreenprops<'FilterSortOptions'>;
+export type ConfigRepositoryScreenProps = RootScreenprops<'ConfigRepository'>;
 
 export type RootTabScreenProps<Screen extends keyof RootTabParamList> = CompositeScreenProps<
   BottomTabScreenProps<RootTabParamList, Screen>,
@@ -185,8 +188,16 @@ export interface IFilterSortState {
       enabled: boolean;
       value: string;
     };
+    address: {
+      enabled: boolean;
+      value: string;
+    };
     connectable: boolean;
     removeInactiveOutDevices: boolean;
+    profile: {
+      enabled: boolean;
+      value: string;
+    };
   };
   sort: {
     rssi: boolean;

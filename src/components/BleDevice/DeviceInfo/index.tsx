@@ -38,7 +38,7 @@ import DeviceState from './DeviceState';
 import Colors from '../../../constants/Colors';
 
 interface Props {
-  peripheralInfo?: PeripheralInfo;
+  peripheralInfo?: PeripheralInfo | undefined;
   deviceState: string;
   discover: (peripheralId: string) => void;
   connect: (peripheralId: string) => void;
@@ -63,7 +63,6 @@ const DeviceInfo: React.FC<Props> = ({
       service.uuid.toUpperCase() === OadResetServiceUuid
   );
 
-  console.log('oadserviceUuidList', oadserviceUuidList);
   //@ts-ignore
   let hasOadserviceUuid: boolean = oadserviceUuidList?.length > 0;
 
@@ -78,6 +77,7 @@ const DeviceInfo: React.FC<Props> = ({
         connect={connect}
         hasOadserviceUuid={hasOadserviceUuid}
         peripheralId={peripheralId}
+        peripheralInfo={peripheralInfo}
         {...props}
       />
     </View>

@@ -45,9 +45,9 @@ import CharacteristicServiceSkeleton from './CharacteristicService/Characteristi
 interface Props {
   serviceCharacteristics: BleManager.Characteristic[];
   serviceUuid: string;
-  serviceName: string;
+  serviceName: string | undefined;
   peripheralId: string;
-  peripheralName: string;
+  peripheralName: string | undefined;
   icon: Icon;
 }
 
@@ -94,8 +94,6 @@ const Characteristic: React.FC<Props> = ({
         serviceName={serviceName}
         serviceUuid={serviceUuid}
         icon={icon}
-        peripheralId={peripheralId}
-        peripheralName={peripheralName}
       />
 
       <View style={[styles.formatContainer]}>

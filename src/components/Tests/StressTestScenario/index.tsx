@@ -195,7 +195,7 @@ const StressTestScenario: React.FC = ({ }) => {
                 }
                 initiateSteps();
 
-                addLog('Start Running Test Scenario on ' + currentDevice.value + ' Peripherial ' + testParameters.current.main_loop_number + ' Times', LogLevel.INFO);
+                addLog('Start Running Test Scenario on ' + currentDevice.value + ' Peripheral ' + testParameters.current.main_loop_number + ' Times', LogLevel.INFO);
                 triggerNextMainLoop();
             }
         }
@@ -260,7 +260,7 @@ const StressTestScenario: React.FC = ({ }) => {
                 newSteps = [...newSteps,
                 {
                     id: StepsIDs.gattTesting,
-                    title: "Excecute GATT Testing",
+                    title: "Execute GATT Testing",
                     desc: desc,
                     progress: 0,
                     totalRounds: testParameters.current.main_loop_number * testParameters.current.num_loops_gatt_test,
@@ -600,7 +600,7 @@ const StressTestScenario: React.FC = ({ }) => {
         await stopScanAndDisconnect(periphralfInfo.current!.id);
 
         let endTime = performance.now();
-        testData.current!.info.total_excecution_time_ms = endTime - startTime.current;
+        testData.current!.info.total_execution_time_ms = endTime - startTime.current;
 
         addLog('Test stopped!', LogLevel.INFO);
 
@@ -710,7 +710,7 @@ const StressTestScenario: React.FC = ({ }) => {
             EventRegister.removeAllListeners();
 
             let endTime = performance.now();
-            testData.current!.info.total_excecution_time_ms = endTime - startTime.current;
+            testData.current!.info.total_execution_time_ms = endTime - startTime.current;
             addLog(JSON.stringify(testData.current, null, 2), LogLevel.INFO);
 
             addLog('Test Finished!', LogLevel.SUCCESS);
@@ -758,7 +758,7 @@ const StressTestScenario: React.FC = ({ }) => {
                     device_model: DeviceInfo.getModel(),
                     os_version: DeviceInfo.getSystemVersion(),
                     app_version: DeviceInfo.getVersion(),
-                    total_excecution_time_ms: 0
+                    total_execution_time_ms: 0
                 },
                 test_parameters: {
                     devices_list: testParameters.current.devices_name_list,
@@ -878,7 +878,7 @@ const StressTestScenario: React.FC = ({ }) => {
             if (currentGattLoopNumber.current >= 1) {
                 addLog('Sleeping before next gatt test for ' + testParameters.current.delay_between_gatt_tests + ' ms', LogLevel.WARNING)
                 await hold(testParameters.current.delay_between_gatt_tests);
-                // Initiate excecute gatt loop step progress
+                // Initiate execute gatt loop step progress
                 let s = steps.current.find(step => step.id == StepsIDs.gattTesting);
                 if (s) s.progress = 0;
             }

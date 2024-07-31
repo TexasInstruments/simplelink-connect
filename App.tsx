@@ -37,6 +37,10 @@ import useCachedResources from './src/hooks/useCachedResources';
 import useColorScheme from './src/hooks/useColorScheme';
 import Navigation from './src/navigation';
 import { TerminalConfigProvider } from './src/context/TerminalOptionsContext';
+import { ProfileListProvider } from './src/context/ProfileListContext';
+import { CharacteristicViewProvider } from './src/context/CharactristicViewContext';
+import { RepositoryDetailsProvider } from './src/context/FirmwareRepoContext';
+import { SpecificScreenConfigProvider } from './src/context/SpecificScreenOptionsContext';
 
 export default function App() {
   const [isLoadingComplete, showTutorial] = useCachedResources();
@@ -47,10 +51,18 @@ export default function App() {
   } else {
     return (
       <SafeAreaProvider>
-        <TerminalConfigProvider>
-          <Navigation colorScheme={colorScheme} showTutorial={showTutorial} />
-          <StatusBar />
-        </TerminalConfigProvider>
+        <CharacteristicViewProvider>
+          <TerminalConfigProvider>
+            <SpecificScreenConfigProvider>
+              <RepositoryDetailsProvider>
+                <ProfileListProvider>
+                  <Navigation colorScheme={colorScheme} showTutorial={showTutorial} />
+                  <StatusBar />
+                </ProfileListProvider>
+              </RepositoryDetailsProvider>
+            </SpecificScreenConfigProvider>
+          </TerminalConfigProvider>
+        </CharacteristicViewProvider>
       </SafeAreaProvider>
     );
   }

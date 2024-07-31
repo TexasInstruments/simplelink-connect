@@ -51,9 +51,9 @@ import { TouchableOpacity } from '../../Themed';
 import { Buffer } from 'buffer';
 import { uuidToCharacteristicName } from '../../../hooks/uuidToName';
 import ServiceResponse from './ServiceResponse';
-import * as encoding from 'text-encoding';
-import { encode as btoa, decode } from 'base-64';
 import { useCharacteristicContext } from '../../../context/CharacteristicContext';
+import { convertStringToByteArray } from '../../../hooks/convert';
+
 interface Props {
   peripheralId: string;
   serviceUuid: string;
@@ -76,8 +76,6 @@ const CharacteristicService: React.FC<Props> = ({
   selectedFormat,
   setSelectedFormat
 }) => {
-  console.log('CharacteristicService: serviceUuid', serviceUuid);
-  console.log('CharacteristicService: char.properties', char.properties);
 
   const { characteristicData, loading } = useCharacteristicContext();
 
@@ -119,8 +117,6 @@ const CharacteristicService: React.FC<Props> = ({
   const writeTextInputRef = useRef({})
 
   let initialFocus = useRef<boolean>(true);
-
-  console.log(char.properties);
 
   let charUuidString = char.characteristic;
   if (charUuidString.length === 4) {
@@ -273,15 +269,13 @@ const CharacteristicService: React.FC<Props> = ({
 
       let hexString = e.nativeEvent.text;
 
-      let writeByteArray = Uint8Array.from([]);
+      let writeByteArray: any;
 
       console.log('handleWriteSubmit: selectedFormat ' + selectedFormat);
 
       if (selectedFormat === 'UTF-8') {
         console.log('handleWriteSubmit: converting to UTF-8');
-
-        let utf8Encode = new encoding.TextEncoder();
-        writeByteArray = utf8Encode.encode(hexString);
+        writeByteArray = convertStringToByteArray(hexString);
       }
       else if (selectedFormat === 'Dec') {
         hexString = hexString.toLowerCase();
@@ -480,7 +474,7 @@ const CharacteristicService: React.FC<Props> = ({
         <View>
           <View style={[styles.container, { alignContent: 'center', justifyContent: 'space-between', flexDirection: 'row' }]}>
             <View style={{ flexDirection: 'row' }}>
-              <Text style={{ fontWeight: 'bold' }}>Notifications</Text>
+              <Text style={{ fontWeight: 'bold', alignSelf: 'center' }}>Notifications</Text>
             </View>
             <View style={{ flexDirection: 'row', alignItems: 'center', }}>
               <Text style={{ paddingRight: 10 }}>Enable</Text>
@@ -500,7 +494,7 @@ const CharacteristicService: React.FC<Props> = ({
           <View>
             <View style={[styles.container, { alignContent: 'center', justifyContent: 'space-between', flexDirection: 'row' }]}>
               <View style={{ flexDirection: 'row' }}>
-                <Text style={{ fontWeight: 'bold', paddingLeft: 12, paddingRight: 20 }}>Indications</Text>
+                <Text style={{ fontWeight: 'bold', paddingLeft: 12, paddingRight: 20, alignSelf: 'center' }}>Indications</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={{ paddingRight: 10 }}>Enable</Text>

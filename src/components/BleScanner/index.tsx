@@ -70,6 +70,7 @@ const BleScanner: React.FC<Props> = () => {
   const [peripherals, setPeripherals] = useState<Peripheral[]>([]);
   const [doSort, setDoSort] = useState<Boolean>(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [sortOption, setSortOption] = useState<'app_name' | 'rssi' | null>(null);
 
   let initialFocus = useRef<boolean>(true);
 
@@ -83,6 +84,7 @@ const BleScanner: React.FC<Props> = () => {
   );
 
   let fsContext = useContext(FilterSortState);
+
   const { fontScale } = useWindowDimensions();
 
   let removeCheckInterval = 0;
@@ -127,6 +129,27 @@ const BleScanner: React.FC<Props> = () => {
       bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', handleDisconnectedPeripheral);
     });
 
+    let checkSort = async () => {
+      try {
+        let rssi = await AsyncStorage.getItem('@rssi');
+        let app_name = await AsyncStorage.getItem('@app_name');
+
+        if (!rssi && !app_name) {
+          throw Error('RSSI Sort did not selected!');
+        }
+        if (rssi) {
+          setSortOption('rssi')
+        }
+        else {
+          setSortOption('app_name')
+        }
+
+      } catch (error) {
+        setSortOption(null);
+      }
+    };
+    checkSort();
+
     return () => {
       console.log('BleScanner: removeAllListeners');
       bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
@@ -134,6 +157,18 @@ const BleScanner: React.FC<Props> = () => {
       bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
     };
   }, []);
+
+  useEffect(() => {
+    if (fsContext.sort.app_name) {
+      setSortOption('app_name');
+    }
+    else if (fsContext.sort.rssi) {
+      setSortOption('rssi');
+    }
+    else {
+      setSortOption(null);
+    }
+  }, [fsContext.sort])
 
   useEffect(() => {
     console.log('useEffect [scanEnable]');
@@ -218,6 +253,21 @@ const BleScanner: React.FC<Props> = () => {
       );
     }
 
+    if (fsContext.filter.address.enabled && fsContext.filter.address.value !== '') {
+      scannedPeriphs.current = scannedPeriphs.current.filter((a) =>
+        a.id
+          ?.trim()
+          .toLocaleLowerCase()
+          .includes(fsContext.filter.address.value.trim().toLocaleLowerCase())
+      );
+    }
+
+    if (fsContext.filter.profile.enabled && fsContext.filter.profile.value !== '') {
+      scannedPeriphs.current = scannedPeriphs.current.filter((a) =>
+        a.serviceUUIDs?.includes(fsContext.filter.profile.value) || a.serviceUUIDs?.includes(fsContext.filter.profile.value.toLocaleLowerCase())
+      );
+    }
+
     if (fsContext.filter.rssi.enabled && fsContext.filter.rssi.value !== '') {
       //console.debug('[Filter] By Rssi');
 
@@ -251,9 +301,9 @@ const BleScanner: React.FC<Props> = () => {
   ]);
 
   const sortPeripheral = useMemo(() => {
-    console.debug('sortPeripheral');
+    console.debug('sortPeripheral by ', sortOption);
 
-    if (fsContext.sort.app_name) {
+    if (sortOption === 'app_name') {
       //console.debug('[Sort] By App name');
       scannedPeriphs.current = scannedPeriphs.current.sort((a, b) => {
         if (a.name && b.name) {
@@ -266,7 +316,7 @@ const BleScanner: React.FC<Props> = () => {
       });
     }
 
-    if (fsContext.sort.rssi) {
+    if (sortOption === 'rssi') {
       //console.debug('[Sort] By Rssi');
       scannedPeriphs.current = scannedPeriphs.current.sort((a, b) => {
         let aRssi = Math.abs(a.rssi);
@@ -584,7 +634,7 @@ const BleScanner: React.FC<Props> = () => {
 
       {/* Available Devices */}
       {
-        !fsContext.sort.rssi && !fsContext.sort.app_name && (
+        !sortOption && (
           <View
             style={{
               flexDirection: 'row',
@@ -603,7 +653,7 @@ const BleScanner: React.FC<Props> = () => {
         )
       }
       {
-        (fsContext.sort.rssi || fsContext.sort.app_name) && (
+        (sortOption) && (
           <View
             style={{
               flexDirection: 'row',

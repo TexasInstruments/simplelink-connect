@@ -30,7 +30,6 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { StyleSheet } from 'react-native';
 /* See README Design Notes section for more information regarding the SimpleBleScanner
 import BleScanner from '../src/components/SimpleBleScanner';
 */

@@ -84,8 +84,8 @@ export const IO_SERVICE = {
 
 //Battery Service
 export const BATTERY_LEVEL = {
-  service: '180f',
-  data: '2a19',
+  service: 'f000180f-0451-4000-b000-000000000000',
+  data: 'f0002a19-0451-4000-b000-000000000000',
 } as const;
 
 //Simple Keys Service

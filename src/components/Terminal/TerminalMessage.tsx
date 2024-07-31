@@ -9,7 +9,7 @@ interface RenderItemProps {
 }
 
 const TerminalRenderItem: React.FC<RenderItemProps> = ({ message, date, received, length }) => {
-  let { config, } = useTerminalConfigContext();
+  let { terminalConfig: config, } = useTerminalConfigContext();
 
   while (message.includes('\u0000')) {
     message = message.replace('\u0000', '');
@@ -17,10 +17,10 @@ const TerminalRenderItem: React.FC<RenderItemProps> = ({ message, date, received
 
   const getMessage = () => {
     if (received) {
-      return <AnsiComponent textStyle={{ color: '#03DAC5', flexWrap: 'wrap', flex: 1 }} ansi={message} />
+      return <AnsiComponent key={date} textStyle={{ color: '#03DAC5', flexWrap: 'wrap', flex: 1 }} ansi={message} />
     }
     else {
-      return <AnsiComponent textStyle={{ color: 'white', flexWrap: 'wrap', flex: 1 }} ansi={message} />
+      return <AnsiComponent key={date} textStyle={{ color: 'white', flexWrap: 'wrap', flex: 1 }} ansi={message} />
     }
   }
 

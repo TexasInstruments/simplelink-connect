@@ -34,7 +34,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from '../../components/Themed';
 import { InteractionManager, NativeEventEmitter, NativeModules, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { MovementSensorState, SensorTagServiceModelScreenProps } from '../../../types';
+import { MovementSensorState, } from '../../../types';
 import { Buffer } from 'buffer';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Icon } from '@rneui/themed';
@@ -63,12 +63,8 @@ import IOService from '../../components/SensorViews/IOService';
 import ConnectionControlService from '../../components/SensorViews/ConnectionControlService';
 import { serviceNameToIcon } from '../../hooks/uuidToName';
 
-interface Props extends SensorTagServiceModelScreenProps { }
-
-const SensorTagServiceModel: React.FC<Props> = ({ route }) => {
-  let peripheralId = route.params.peripheralId;
+const SensorTagServiceModel: React.FC<{ peripheralId: string, serviceName: string | undefined }> = ({ peripheralId, serviceName }) => {
   let theme = useColorScheme();
-  let serviceName = route.params.serviceName;
 
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
@@ -118,7 +114,7 @@ const SensorTagServiceModel: React.FC<Props> = ({ route }) => {
       }
     }
     updateIcon(serviceName)
-  }, [route.params.serviceName]);
+  }, [serviceName]);
 
   useFocusEffect(
     useCallback(() => {
@@ -404,7 +400,7 @@ const SensorTagServiceModel: React.FC<Props> = ({ route }) => {
           barometerData={barometerData} />
       )
     }
-    else if (serviceName.toLowerCase().includes("optical")) {
+    else if (serviceName.toLowerCase().includes("light")) {
       return (
         <OpticalSensor
           peripheralId={peripheralId}

@@ -31,75 +31,20 @@
  */
 
 import { View, StyleSheet } from 'react-native';
-import { Text } from '../../Themed';
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import ServiceParameters from './ServiceParameters';
 import ServicePresentation from './ServicePresentation';
-import { TouchableOpacity } from '../../Themed';
 import Colors from '../../../constants/Colors';
-import { uuidToServiceSpecificScreen } from '../../../hooks/uuidToName';
-import { CharacteristicsScreenNavigationProp, Icon, RootStackParamList } from '../../../../types';
-import { useNavigation } from '@react-navigation/native';
-import { SUPPORTED_SPAECIFIC_SCREEN } from '../../../constants/uuids';
-import { checkIfTestingSupported } from '../../Tests/testsUtils';
+import { Icon, } from '../../../../types';
+
 
 interface Props {
   serviceUuid: string;
-  serviceName: string;
+  serviceName: string | undefined;
   icon: Icon;
-  peripheralId: string;
-  peripheralName: string;
 }
 
-const GenericService: React.FC<Props> = ({ serviceUuid, serviceName, icon, peripheralId, peripheralName }: Props) => {
-  let navigation = useNavigation<CharacteristicsScreenNavigationProp>();
-
-  const [screenSpecific, setScreenSpecific] = useState<keyof RootStackParamList | null>(null);
-  const [stressTestOption, setTestOption] = useState<boolean>(false);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        let checkForScreenSpecificScreen = await uuidToServiceSpecificScreen({ uuid: serviceUuid });
-        if (!checkForScreenSpecificScreen || !isServiceSupportSensor()) throw Error('Service Specific Screen not implemented!');
-
-        setScreenSpecific(
-          checkForScreenSpecificScreen.serviceSpecificScreen as keyof RootStackParamList
-        );
-
-      } catch (error) {
-        setScreenSpecific(null);
-      }
-    })();
-
-    // Check if this service is supported gatt testing
-    if (checkIfTestingSupported(serviceUuid)) {
-      setTestOption(true);
-    }
-  }, [serviceUuid]);
-
-  let isServiceSupportSensor = () => {
-    return SUPPORTED_SPAECIFIC_SCREEN.find(sensor => serviceName.toLowerCase().includes(sensor))
-  }
-
-  let navigateToScreenSpecific = useCallback(() => {
-    if (!screenSpecific) {
-      return;
-    }
-
-    navigation.navigate(screenSpecific, {
-      peripheralId, serviceName
-    });
-  }, [screenSpecific]);
-
-  function navigateToTestScreen() {
-    if (!stressTestOption) {
-      return;
-    }
-
-    navigation.navigate('IopParameters', { testService: serviceName, peripheralId: peripheralId, peripheralName: peripheralName });
-  }
-
+const GenericService: React.FC<Props> = ({ serviceUuid, serviceName, icon }: Props) => {
 
   return (
     <View>
@@ -117,20 +62,6 @@ const GenericService: React.FC<Props> = ({ serviceUuid, serviceName, icon, perip
         <ServicePresentation icon={icon} />
         <ServiceParameters serviceName={serviceName} serviceUuid={serviceUuid} />
       </View>
-      {stressTestOption && (
-        <View style={[styles.container, { width: '100%', marginTop: 0, alignItems: 'flex-end' }]}>
-          <TouchableOpacity onPress={stressTestOption ? navigateToTestScreen : undefined} style={{ marginEnd: 15 }}>
-            <Text style={{ color: Colors.blue }}>Enter Stress Test Mode</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-      {screenSpecific && (
-        <View style={[styles.ServiceSpecficContainer]}>
-          <TouchableOpacity onPress={screenSpecific ? navigateToScreenSpecific : undefined}>
-            <Text style={{ color: Colors.blue }}>Change to Service Specific View</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </View>
   );
 };

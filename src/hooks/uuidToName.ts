@@ -30,8 +30,9 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-interface ServiceNameProsps {
+interface ServiceNameProps {
   uuid: string;
+  peripheralName?: string;
 }
 
 type ServiceSpecificScreenType = {
@@ -45,10 +46,12 @@ type ServiceSpecificScreenType = {
 };
 
 export const uuidToServiceName = async ({
-  uuid,
-}: ServiceNameProsps): Promise<string | undefined> => {
+  uuid, peripheralName
+}: ServiceNameProps): Promise<string | undefined> => {
   let data = await import('../assets/services');
-
+  if (peripheralName?.toLocaleLowerCase() === 'cc33xxble' && uuid.toLocaleLowerCase() === '180d') {
+    return 'Wi-Fi Provisioning Over BLE'
+  }
   let service = data.default.filter(
     (service) => service.serviceUuid.toLowerCase() === uuid.toLowerCase()
   );
@@ -57,10 +60,13 @@ export const uuidToServiceName = async ({
 };
 
 export const uuidToIcon = async ({
-  uuid,
-}: ServiceNameProsps): Promise<
+  uuid, peripheralName
+}: ServiceNameProps): Promise<
   { type: 'font-awesome' | 'svg' | 'font-awesome-5'; iconName: string } | undefined
 > => {
+  if (peripheralName?.toLocaleLowerCase() === 'cc33xxble' && uuid.toLocaleLowerCase() === '180d') {
+    return { type: 'font-awesome-5', iconName: 'wifi', }
+  }
   let data = await import('../assets/services');
 
   let service = data.default.filter(
@@ -85,9 +91,20 @@ export const serviceNameToIcon = async (
 };
 
 export const uuidToServiceSpecificScreen = async ({
-  uuid,
-}: ServiceNameProsps): Promise<ServiceSpecificScreenType | undefined> => {
+  uuid, peripheralName
+}: ServiceNameProps): Promise<ServiceSpecificScreenType | undefined> => {
   let data = await import('../assets/services');
+  if (peripheralName?.toLocaleLowerCase() === 'cc33xxble' && uuid.toLocaleLowerCase() === '180d') {
+    return {
+      serviceName: 'Wi-Fi Provisioning Over BLE',
+      serviceUuid: '180D',
+      icon: {
+        type: 'font-awesome-5',
+        iconName: 'wifi',
+      },
+      serviceSpecificScreen: 'WifiProvisioning',
+    }
+  }
 
   let service = data.default.filter(
     (service) =>

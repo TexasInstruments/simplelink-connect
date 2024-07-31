@@ -33,11 +33,10 @@
 import { StyleSheet } from 'react-native';
 import Colors from '../../../constants/Colors';
 import { Dropdown } from 'react-native-element-dropdown';
-import { SetStateAction, useEffect, useState } from 'react';
+import { SetStateAction, useEffect, useState, } from 'react';
 import { View, Text } from '../../Themed';
-import { IconButton } from 'react-native-paper';
-import FirmwareImageSettings from '../FirmwareImageSettings/index';
-import { Repository } from '../FWUpdate_Modal';
+import { FirmwareRepo, useFirmwareRepoContext } from '../../../context/FirmwareRepoContext';
+
 
 interface Props {
     hwTypes: any[],
@@ -45,10 +44,7 @@ interface Props {
     selectedHW: string | undefined,
     setSelectedHW: (hw: string) => void,
     setSelectedFW: (fw: string) => void,
-    setRepository: any,
     firmwares: any[],
-    repository: Repository,
-    currentRepoUrl: string
 }
 
 const SelectFirmwareImage: React.FC<Props> = ({
@@ -58,13 +54,14 @@ const SelectFirmwareImage: React.FC<Props> = ({
     firmwares,
     setSelectedFW,
     selectedFW,
-    repository,
-    setRepository,
-    currentRepoUrl
 
 }) => {
+    const { currentRepoDetails } = useFirmwareRepoContext();
+    const [repoDetails, setRepoDetails] = useState<FirmwareRepo | null>(null);
 
-    const [isModalVisible, setModalVisible] = useState(false);
+    useEffect(() => {
+        setRepoDetails(currentRepoDetails)
+    }, [currentRepoDetails])
 
     const getRelevantFirmwares = () => {
         if (selectedHW === 'All') {
@@ -74,42 +71,22 @@ const SelectFirmwareImage: React.FC<Props> = ({
         return relevantFW.length > 0 ? relevantFW : firmwares
     }
 
-    const openSettings = () => {
-        setModalVisible(true);
-    };
-
-    const closeSettings = () => {
-        setModalVisible(false);
-    };
-
-    const handleUrlChange = (newRepoUrl: string, repoName: string, accessToken: string, repoOwner: string, visibility: 'public' | 'private') => {
-        setRepository({
-            name: repoName,
-            owner: repoOwner,
-            accessToken: accessToken,
-            url: newRepoUrl,
-            visibility: visibility
-        });
-    };
-
     return (
         <View style={{ width: '100%', zIndex: 100 }}>
-            <View style={styles.header}>
-                <View style={{ flex: 1, backgroundColor: Colors.lightGray, }}>
-                    <Text style={{ fontSize: 20, fontWeight: 'bold' }}>
-                        Select Firmware Image
-                    </Text >
-                </View>
-                <IconButton
-                    icon="cog"
-                    iconColor='black'
-                    size={20}
-                    onPress={openSettings}
-                />
+            <View >
+                <Text style={styles.header}>
+                    Select Firmware Image
+                </Text >
             </View>
             <View style={{ paddingHorizontal: 10, marginTop: 5 }}>
-                <Text style={{ fontSize: 14, fontWeight: 'bold' }}>Repository URL:
-                    <Text style={{ fontSize: 14, fontWeight: 'normal' }}> {currentRepoUrl}</Text></Text>
+                <Text style={{ fontSize: 14, fontWeight: 'bold' }}>Server URL:
+                    {repoDetails?.useGitHub && (
+                        <Text style={{ fontSize: 14, fontWeight: 'normal' }}> {`https://github.com/${repoDetails?.owner}/${repoDetails?.name}`}</Text>
+                    )}
+                    {!(repoDetails?.useGitHub) && (
+                        <Text style={{ fontSize: 14, fontWeight: 'normal' }}> {repoDetails?.url}</Text>
+                    )}
+                </Text>
             </View>
             <Dropdown
                 style={[styles.dropdown]}
@@ -141,11 +118,6 @@ const SelectFirmwareImage: React.FC<Props> = ({
                     setSelectedFW(item.value);
                 }}
             />
-            <FirmwareImageSettings
-                currentRepository={repository}
-                isVisible={isModalVisible}
-                onClose={closeSettings}
-                onUrlChange={handleUrlChange} />
         </View>
     );
 };
@@ -153,11 +125,10 @@ const SelectFirmwareImage: React.FC<Props> = ({
 const styles = StyleSheet.create({
     header: {
         paddingLeft: 10,
+        fontSize: 20,
+        fontWeight: 'bold',
         backgroundColor: Colors.lightGray,
-        paddingVertical: 10,
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center'
+        paddingVertical: 20,
     },
     container: {
         backgroundColor: '#1b1b1b',

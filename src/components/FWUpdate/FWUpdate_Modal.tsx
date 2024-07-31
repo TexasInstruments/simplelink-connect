@@ -42,7 +42,6 @@ import BleManager from 'react-native-ble-manager';
 import { decode } from 'base-64';
 import { useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../types';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import IdleTimerManager from 'react-native-idle-timer';
 import DocumentPicker from 'react-native-document-picker';
 import { v4 } from 'uuid';
@@ -52,8 +51,8 @@ import { OadEvent, OadProtocolOpCode, OadResetServiceOpCodes } from './constants
 import { OadStatus } from './constants/Statuses';
 import { buf2hex } from '../../hooks/convert';
 import SelectFirmwareImage from './SelectFirmwareImage/index';
-import * as Keychain from 'react-native-keychain';
 import { Buffer } from 'buffer';
+import { useFirmwareRepoContext } from '../../context/FirmwareRepoContext';
 
 interface Props {
   peripheralId: string;
@@ -94,13 +93,8 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
   const [progress, setProgress] = useState<number>(0);
   const [imgLength, setImgLength] = useState<number>(0);
   const [localFileError, setLocalFileError] = useState<'success' | 'error' | 'cancelled' | 'fs' | 'unknownImgType' | null>(null);
-  const [currentRepoUrl, setCurrentRepoUrl] = useState('');
-  const [repository, setRepository] = useState<Repository>({
-    url: 'https://github.com/TexasInstruments/simplelink-connect-fw-bins',
-    name: 'simplelink-connect-fw-bins',
-    owner: 'TexasInstruments',
-    visibility: 'public'
-  })
+
+  const { currentRepoDetails, updateRepository } = useFirmwareRepoContext();
 
   let fakeUpdateInterval = useRef<ReturnType<typeof setInterval>>();
 
@@ -129,24 +123,21 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
   }, []);
 
   useEffect(() => {
-    async function getRepoDetails() {
-      let repo = await getUserRepository();
+    async function fetchFirmwares() {
       let accessToken = null;
-      if (repo.visibility === 'private') {
-        accessToken = await getAccessToken();
+      if (currentRepoDetails.visibility === 'private') {
+        accessToken = currentRepoDetails.accessToken;
       }
-      getAvailableFw(repo.name, repo.owner, accessToken)
+      getAvailableFw(currentRepoDetails.name, currentRepoDetails.owner, accessToken)
         .then(() => {
           console.log('getAvailableFw success');
         })
         .catch((error) => {
           console.log('getAvailableFw error ', error);
         });
-      setCurrentRepoUrl(repo.url);
-      return { ...repo, accessToken: accessToken }
     }
 
-    getRepoDetails().then((details) => { setRepository(details) })
+    fetchFirmwares();
 
     return () => {
       setUpdating(false);
@@ -156,27 +147,25 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
   }, []);
 
   useEffect(() => {
-    console.log('repo URL changed', repository.url);
+    console.log('repo URL changed', currentRepoDetails.url);
 
-    getAvailableFw(repository.name, repository.owner, repository.accessToken)
+    getAvailableFw(currentRepoDetails.name, currentRepoDetails.owner, currentRepoDetails.accessToken)
       .then(() => {
         console.log('getAvailableFw success');
       })
       .catch((error) => {
         console.log('getAvailableFw error ', error);
       });
-    setCurrentRepoUrl(repository.url);
 
     return () => {
       setUpdating(false);
       clearInterval(fakeUpdateInterval.current);
     };
-  }, [repository.url]);
+  }, [currentRepoDetails]);
 
   useEffect(() => {
-    console.log('selectedFW selected: ', selectedFW);
     if (selectedFW != undefined) {
-      getFwUdateImage();
+      getFwUpdateImage();
     }
   }, [selectedFW]);
 
@@ -202,7 +191,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
     } else if (localFileError == 'fs') {
       return { message: 'Error with parsing file!', color: 'red' };
     } else if (localFileError == 'unknownImgType') {
-      return { message: 'Unkown Image Type!', color: 'red' };
+      return { message: 'Unknown Image Type!', color: 'red' };
     } else {
       return { message: '', color: 'black' };
     }
@@ -219,37 +208,6 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
       clearTimeout(timeout);
     };
   }, [localFileErrorMessage]);
-
-  const getUserRepository = async () => {
-    let owner = await AsyncStorage.getItem('@repo_owner');
-    let name = await AsyncStorage.getItem('@repo_name');
-    let visibility = await AsyncStorage.getItem('@visibility');
-    let savedURL = `https://github.com/${owner}/${name}`
-
-    if (!owner || !name) {
-      owner = 'TexasInstruments'
-      name = 'simplelink-connect-fw-bins'
-      savedURL = 'https://github.com/TexasInstruments/simplelink-connect-fw-bins'
-      visibility = 'public'
-    }
-
-    let repo = { owner: owner, name: name, url: savedURL, visibility: visibility }
-    return repo
-
-  };
-
-  const getAccessToken = async () => {
-    try {
-      const credentials = await Keychain.getGenericPassword();
-      console.log(credentials);
-      return credentials ? credentials.password : null;
-    }
-    catch (error) {
-      console.log('no access token')
-      return null;
-    }
-
-  };
 
   const startFwUpdate = () => {
     console.log('startFwUpdate');
@@ -281,7 +239,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
 
   async function asyncStartFwUpdate(peripheralId: string) {
     console.log('calling getFwUdateImage: ', peripheralId);
-    fwImageByteArray = await getFwUdateImage();
+    fwImageByteArray = await getFwUpdateImage();
 
     let oadService = await checkOadServices(peripheralId);
 
@@ -303,21 +261,19 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
   }
 
   async function getAvailableFw(repoName: string, repoOwner: string, accessToken: string | undefined) {
-    const apiUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main`;
-
-    console.log('getAvailableFw: ', apiUrl);
-    console.log('accessToken: ', accessToken);
+    const apiUrl = currentRepoDetails.useGitHub ? `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main` : currentRepoDetails.url;
 
     const headers = {
       ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       'Cache-Control': 'no-store',
     };
 
-    fetch(`${apiUrl}/firmware.json`, { headers })
+    fetch(`${apiUrl}/firmware.json`, currentRepoDetails.useGitHub ? { headers } : undefined)
       .then(async (data) => {
         if (!data.ok) {
           setStatus('Server not found');
           console.error('fetch error: ', data.status, data.statusText);
+          alert(`Error fetching firmwares from ${apiUrl}/firmware.json. \nstatus: ${data.status + data.statusText}`)
           setFirmwares([])
         }
 
@@ -337,7 +293,6 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
 
           try {
             fetchedFirmwares = JSON.parse(content);
-
             //@ts-ignore
             let mappedFetchedFirmwares = fetchedFirmwares.map((fw) => ({
               label: fw.fileName.split('/').pop(),
@@ -346,7 +301,6 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
               hwType: fw.hwType,
               imageType: fw.imageType,
             }));
-            console.log(mappedFetchedFirmwares);
 
             setFirmwares(mappedFetchedFirmwares);
 
@@ -360,19 +314,17 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
       })
       .catch((error) => {
         setStatus('Server not found');
-        console.log('fetch error: ', error);
-        //reject(error);
+        console.error('fetch error: ', error);
+        alert(`Error fetching firmwares from ${apiUrl}/firmware.json. \nerror: ${error}`)
+
       });
   }
 
-  async function getFwUdateImage(): Promise<Uint8Array> {
-    /* After selecting Fw, get image from repo */
-    let repoDetails = await getUserRepository();
-
+  async function getFwUpdateImage(): Promise<Uint8Array> {
     let accessToken: any = null;
 
-    if (repoDetails.visibility === 'private') {
-      accessToken = await getAccessToken();
+    if (currentRepoDetails.visibility === 'private') {
+      accessToken = currentRepoDetails.accessToken;
     }
     let checkIfLocalFile = firmwares.find((fw) => fw.value == selectedFW);
 
@@ -392,11 +344,9 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
           Pragma: 'no-cache',
           Expires: '0',
         };
-        const apiUrl = `https://raw.githubusercontent.com/${repoDetails.owner}/${repoDetails.name}/main`;
+        const apiUrl = currentRepoDetails.useGitHub ? `https://raw.githubusercontent.com/${currentRepoDetails.owner}/${currentRepoDetails.name}/main` : currentRepoDetails.url;
 
-        fetch(apiUrl + '/' + (selectedFW ?? ''), {
-          headers,
-        })
+        fetch(apiUrl + '/' + (selectedFW ?? ''), currentRepoDetails.useGitHub ? { headers } : undefined)
           .then(async (data) => {
             if (!data.ok) {
               setStatus('Server not found');
@@ -1165,15 +1115,13 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
     <View style={{ flex: 1, width: '100%', marginHorizontal: 'auto' }}>
       <ScrollView >
         <SelectFirmwareImage
-          currentRepoUrl={currentRepoUrl}
           hwTypes={hwTypes}
           selectedHW={selectedHW}
           setSelectedHW={setSelectedHW}
           firmwares={firmwares}
           setSelectedFW={setSelectedFW}
           selectedFW={selectedFW}
-          repository={repository}
-          setRepository={setRepository} />
+        />
         <View
           style={{
             flexDirection: 'column',

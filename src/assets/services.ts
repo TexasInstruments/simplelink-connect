@@ -43,6 +43,24 @@ export type MappedService = {
 export default [
   /* Known TI Services */
   {
+    serviceName: 'Wi-Fi Provisioning over BLE',
+    serviceUuid: 'CC00',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'wifi',
+    },
+    serviceSpecificScreen: 'WifiProvisioning',
+  },
+  {
+    serviceName: 'Wi-Fi Provisioning over BLE',
+    serviceUuid: 'f000cc00-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'wifi',
+    },
+    serviceSpecificScreen: 'WifiProvisioning',
+  },
+  {
     serviceName: 'TI Simple Peripheral Service',
     serviceUuid: 'FFF0',
     icon: {
@@ -133,6 +151,7 @@ export default [
       type: 'font-awesome-5',
       iconName: 'wave-square',
     },
+    serviceSpecificScreen: 'CgmServiceModel',
   },
   {
     serviceName: 'Current Time Service',
@@ -205,6 +224,8 @@ export default [
       type: 'font-awesome-5',
       iconName: 'syringe',
     },
+    serviceSpecificScreen: 'GlucoseServiceModel'
+
   },
   {
     serviceName: 'Health Thermometer',
@@ -462,6 +483,8 @@ export default [
       type: 'font-awesome-5',
       iconName: 'battery-three-quarters',
     },
+    serviceSpecificScreen: 'SensorTagModel',
+
   },
   {
     serviceName: 'TI Accelerometer Service',

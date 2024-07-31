@@ -26,4 +26,22 @@ export const TI_DATA_STREAM_SERVICE = {
     data_out_char: 'F000C0C2-0451-4000-B000-000000000000'
 }
 
-export const SUPPORTED_SPAECIFIC_SCREEN = ["health thermometer", "ti terminal", "ti oad", "temp", "humidity", "barometer", "optical", "movement", "simple keys", "battery", "i/o", "control"] as const;
+export const SUPPORTED_SPAECIFIC_SCREEN = ["wi-fi provisioning over ble", "glucose", "continuous glucose monitoring", "health thermometer", "ti terminal", "ti oad", "temp", "humidity", "barometer", "light sensor service", "movement", "simple keys", "battery", "i/o", "control", "battery service"] as const;
+
+export const CGM_PROFILE = {
+    uuid: '181F',
+    cgm_measurement: '2AA7',
+    cgm_feature: '2AA8',
+    cgm_status: '2AA9',
+    cgm_session_start_time: '2AAA',
+    cgm_session_run_time: '2AAB',
+    record_access_cp: '2A52',
+    cgm_specific_op_cp: '2AAC'
+}
+
+export const GLUCOSE_PROFILE = {
+    uuid: '1808',
+    glucose_measurement: '2A18',
+    glucose_feature: '2a51',
+    record_access_cp: '2A52',
+}

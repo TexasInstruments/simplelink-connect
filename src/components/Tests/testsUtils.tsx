@@ -38,7 +38,7 @@ export interface TestData {
         device_model: string,
         os_version: string,
         app_version: string,
-        total_excecution_time_ms: number,
+        total_execution_time_ms: number,
     },
     test_parameters: {
         devices_list: string[],

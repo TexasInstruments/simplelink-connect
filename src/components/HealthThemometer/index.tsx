@@ -13,7 +13,6 @@ import { useFocusEffect } from '@react-navigation/native';
 
 interface Props {
     peripheralId: string;
-    serviceUuid: string;
 }
 
 const HealthThemometer: React.FC<Props> = ({ peripheralId }) => {

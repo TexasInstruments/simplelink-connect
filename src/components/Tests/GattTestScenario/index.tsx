@@ -109,7 +109,7 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
         clearTimeout(notifTimeout.current);
 
         let endTime = performance.now();
-        testData.current!.info.total_excecution_time_ms = endTime - startTime.current;
+        testData.current!.info.total_execution_time_ms = endTime - startTime.current;
         addLog(JSON.stringify(testData.current, null, 2), LogLevel.INFO);
         addLog('Test Finished!', LogLevel.SUCCESS);
 
@@ -212,7 +212,7 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
                     device_model: DeviceInfo.getModel(),
                     os_version: DeviceInfo.getSystemVersion(),
                     app_version: DeviceInfo.getVersion(),
-                    total_excecution_time_ms: 0
+                    total_execution_time_ms: 0
                 },
                 test_parameters: {
                     devices_list: [peripheralName!],
@@ -268,7 +268,7 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
 
             setLoading(false);
 
-            addLog('Start Running Test Scenario on ' + currentDevice.value + ' Peripherial ' + testParameters.current.main_loop_number + ' Times', LogLevel.INFO);
+            addLog('Start Running Test Scenario on ' + currentDevice.value + ' Peripheral ' + testParameters.current.main_loop_number + ' Times', LogLevel.INFO);
             // Create new result object
             testResult.current = {
                 main_loop_number: currentMainLoopNumber.current,
@@ -386,7 +386,7 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
             if (currentGattLoopNumber.current >= 1) {
                 addLog('Sleeping before next gatt test for ' + testParameters.current.delay_between_gatt_tests + ' ms', LogLevel.WARNING)
                 await hold(testParameters.current.delay_between_gatt_tests);
-                // Initiate excecute gatt loop step progress
+                // Initiate execute gatt loop step progress
                 resetProgresses();
             }
 

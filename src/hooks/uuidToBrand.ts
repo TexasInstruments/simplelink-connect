@@ -3,9 +3,9 @@ import { Brand } from '../../types';
 import { Buffer } from 'buffer';
 
 export const getIconByPeripheralInfo = (peripheral: any) => {
-  let serviceDataUUIDs = peripheral.advertising.serviceData;
-  let serviceUUIDs: string[] | undefined = peripheral.advertising.serviceUUIDs;
-  let manufacturerData = peripheral.advertising.manufacturerData;
+  let serviceDataUUIDs = peripheral?.advertising?.serviceData;
+  let serviceUUIDs: string[] | undefined = peripheral?.advertising.serviceUUIDs;
+  let manufacturerData = peripheral?.advertising.manufacturerData;
 
   peripheral.serviceUUIDs = serviceUUIDs;
 

@@ -8,7 +8,7 @@ export interface TerminalConfig {
 }
 
 interface TerminalConfigContextProps {
-  config: TerminalConfig,
+  terminalConfig: TerminalConfig,
   updateTermninalConfigurations: (c: TerminalConfig) => Promise<void>
 }
 
@@ -60,7 +60,7 @@ export const TerminalConfigProvider: React.FC<{ children: ReactNode }> = ({ chil
   }
 
   return (
-    <TerminalConfigContext.Provider value={{ config: terminalConfig, updateTermninalConfigurations }}>
+    <TerminalConfigContext.Provider value={{ terminalConfig: terminalConfig, updateTermninalConfigurations }}>
       {children}
     </TerminalConfigContext.Provider>
   );

@@ -47,3 +47,11 @@ export const getBytes = (from: string) => {
 export function buf2hex(buffer: any) {
   return [...new Uint8Array(buffer)].map((x) => x.toString(16).padStart(2, '0')).join('').toUpperCase();
 }
+
+export function convertStringToByteArray(str: string) {
+  var bytes = [];
+  for (var i = 0; i < str.length; ++i) {
+    bytes.push(str.charCodeAt(i));
+  }
+  return bytes
+}
