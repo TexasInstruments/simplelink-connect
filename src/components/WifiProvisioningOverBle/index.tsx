@@ -238,6 +238,8 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
                                 placeholder="Enter WiFi SSID"
                                 value={ssidInput}
                                 onChangeText={(owner) => { setSsidInput(owner.trim()); }}
+                                accessibilityLabel="ssidInput"
+                                testID="ssidInput"
                             />
                         </View>
                         <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Security</Text>
@@ -254,6 +256,10 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
                                 }}
                                 labelField="label"
                                 valueField="value"
+                                accessibilityLabel="securityDropdown"
+                                testID="securityDropdown"
+                                itemAccessibilityLabelField='value'
+                                itemTestIDField='value'
                             />
                         </View>
 
@@ -270,6 +276,8 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
                                             style={[styles.textInput, { shadowOpacity: 0, elevation: 0 }]}
                                             value={password}
                                             onChangeText={(token) => { setPassword(token); }}
+                                            accessibilityLabel="passwordInput"
+                                            testID="passwordInput"
                                         />
                                         <MaterialCommunityIcons
                                             style={styles.icon}
@@ -306,6 +314,8 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
                             style={[styles.buttonWrapper]}
                             onPress={handleConnect}
                             disabled={!isValid()}
+                            accessibilityLabel="conncectButton"
+                            testID="conncectButton"
                         >
                             <Text style={{ color: Colors.blue, fontSize: 18, opacity: !isValid() ? 0.2 : 1 }}>Connect</Text>
                         </TouchableOpacity>

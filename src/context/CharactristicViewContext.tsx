@@ -3,10 +3,10 @@ import { uuidToServiceSpecificScreen } from '../hooks/uuidToName';
 import { RootStackParamList } from '../../types';
 import { checkIfTestingSupported } from '../components/Tests/testsUtils';
 
-type CharactristicView = 'advanced' | 'specific';
+type CharacteristicView = 'advanced' | 'specific';
 
-interface CharactristicViewContextProps {
-    charactristicView: CharactristicView;
+interface CharacteristicViewContextProps {
+    characteristicView: CharacteristicView;
     toggleView: () => void;
     serviceUUID: string | undefined;
     updateService: (name: string, uuid: string) => void;
@@ -17,10 +17,10 @@ interface CharactristicViewContextProps {
     periNameId: { peripheralName: string | undefined, peripheralId: string }
 }
 
-const CharactristicViewContext = createContext<CharactristicViewContextProps | undefined>(undefined);
+const CharacteristicViewContext = createContext<CharacteristicViewContextProps | undefined>(undefined);
 
 export const CharacteristicViewProvider = ({ children }) => {
-    const [charactristicView, setCharactristicView] = useState<CharactristicView>('specific');
+    const [characteristicView, setCharacteristicView] = useState<CharacteristicView>('specific');
     const [serviceUUID, setServiceUUID] = useState<string | undefined>(undefined);
     const [serviceName, setServiceName] = useState<string | undefined>(undefined);
     const [hasSpecificScreen, setHasSpecificScreen] = useState<boolean>(false);
@@ -40,7 +40,7 @@ export const CharacteristicViewProvider = ({ children }) => {
     }, [serviceUUID]);
 
     const toggleView = useCallback(() => {
-        setCharactristicView((prev) => prev === 'specific' ? 'advanced' : 'specific')
+        setCharacteristicView((prev) => prev === 'specific' ? 'advanced' : 'specific')
     }, []);
 
     const updateService = (name: string, uuid: string) => {
@@ -56,9 +56,9 @@ export const CharacteristicViewProvider = ({ children }) => {
     }
 
     return (
-        <CharactristicViewContext.Provider
+        <CharacteristicViewContext.Provider
             value={{
-                charactristicView,
+                characteristicView: characteristicView,
                 toggleView,
                 serviceUUID,
                 updateService,
@@ -69,14 +69,14 @@ export const CharacteristicViewProvider = ({ children }) => {
                 periNameId
             }}>
             {children}
-        </CharactristicViewContext.Provider>
+        </CharacteristicViewContext.Provider>
     );
 };
 
 export const useCharacteristicViewContext = () => {
-    const context = useContext(CharactristicViewContext);
+    const context = useContext(CharacteristicViewContext);
     if (!context) {
-        throw new Error('CharactristicViewContext must be used within a CharacteristicProvider');
+        throw new Error('CharacteristicViewContext must be used within a CharacteristicProvider');
     }
     return context;
 };

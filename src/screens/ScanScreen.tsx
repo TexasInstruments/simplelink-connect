@@ -43,7 +43,10 @@ export default function ScanScreen({ navigation, route }: any) {
     navigation.setOptions({
       headerRight() {
         return (
-          <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
+          <TouchableOpacity
+            accessibilityLabel="openDrawerIcon"
+            testID="openDrawerIcon"
+            onPress={() => navigation.toggleDrawer()}>
             <Icon
               name="dots-vertical"
               type="material-community"

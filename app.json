@@ -2,7 +2,7 @@
   "expo": {
     "name": "SimpleLink™ Connect",
     "slug": "SimplelinkConnect",
-    "version": "1.3.6",
+    "version": "1.3.7",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
     "scheme": "myapp",
@@ -23,7 +23,7 @@
       "bundleIdentifier": "com.ti.connectivity.simplelinkconnect"
     },
     "android": {
-      "package": "com.ti.connectivity.simplelinkconnect",
+      "package": "com.ti.connectivity.simplelinkconnect"
     },
     "web": {
       "favicon": "./src/assets/images/favicon.png"

@@ -45,13 +45,26 @@ interface Props {
 const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
   let isConnectable = () => {
     if (
-      !peripheral.advertising.isConnectable ||
-      typeof !peripheral.advertising.isConnectable == undefined
+      !peripheral?.advertising?.isConnectable ||
+      typeof !peripheral?.advertising?.isConnectable == undefined
     )
       return false;
 
     return true;
   };
+
+  function concatLists(list1: string[] | undefined, list2: string[] | undefined): string {
+    if (list1 && list2) {
+      return [...new Set(list1.concat(list1))].join(', ');
+    }
+    if (list1) {
+      return list1.join(', ');
+    }
+    if (list2) {
+      return list2.join(', ');
+    }
+    return '';
+  }
 
   return (
     <View style={{ backgroundColor: 'blue' }}>
@@ -71,9 +84,9 @@ const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
           <Text style={[{ color: 'grey' }]}>
             Connectable: {isConnectable() ? 'Yes' : 'No'}
           </Text>
-          {peripheral.serviceUUIDs !== undefined && (
+          {(peripheral.serviceUUIDs !== undefined || peripheral.advertising.serviceUUIDs !== undefined) && (
             <Text style={[{ color: Colors.gray }]}>
-              Service UUIDs: {peripheral.serviceUUIDs.join(', ')}
+              Service UUIDs: {concatLists(peripheral.serviceUUIDs, peripheral.advertising.serviceUUIDs)}
             </Text>
           )}
           {peripheral.advertising?.manufacturerData?.bytes && (

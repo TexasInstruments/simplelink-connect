@@ -231,7 +231,6 @@ const TestForm: React.FC<Props> = (
 
         updateTestParams(testParams);
 
-        console.log('peripheral', peripheralId)
         if (peripheralId) {
             navigation.navigate('GattTesting', { testService: testService, peripheralId: peripheralId, peripheralName: peripheralName });
         }

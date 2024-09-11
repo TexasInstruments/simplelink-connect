@@ -61,6 +61,60 @@ export default [
     serviceSpecificScreen: 'WifiProvisioning',
   },
   {
+    serviceName: 'Chip Over BLE',
+    serviceUuid: 'FFF6',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'download',
+    },
+  },
+  {
+    serviceName: 'Matter Light Profile',
+    serviceUuid: '11A0',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'lightbulb',
+    },
+    serviceSpecificScreen: 'MatterLightServiceModel',
+  },
+  {
+    serviceName: 'Matter Light Profile',
+    serviceUuid: 'f00011a0-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'lightbulb',
+    },
+    serviceSpecificScreen: 'MatterLightServiceModel',
+  },
+  {
+    serviceName: 'Matter Diagnostic Service',
+    serviceUuid: 'f00011b0-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'stethoscope',
+    },
+  },
+  {
+    serviceName: 'TI ECG Service',
+    serviceUuid: 'BB00',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'chart-line',
+    },
+    serviceSpecificScreen: 'EcgServiceModel',
+
+  },
+  {
+    serviceName: 'TI ECG Service',
+    serviceUuid: 'f000bb00-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'chart-line',
+    },
+    serviceSpecificScreen: 'EcgServiceModel',
+
+  },
+  {
     serviceName: 'TI Simple Peripheral Service',
     serviceUuid: 'FFF0',
     icon: {
@@ -313,7 +367,7 @@ export default [
     serviceUuid: '1825',
     icon: {
       type: 'font-awesome-5',
-      iconName: 'exchange-alt',
+      iconName: 'fa-regular fa-flask-vial',
     },
   },
   {
@@ -399,6 +453,15 @@ export default [
   {
     serviceName: 'Temperature Service',
     serviceUuid: 'f000aa00-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'thermometer-empty',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
+  },
+  {
+    serviceName: 'Temperature Service',
+    serviceUuid: 'AA00',
     icon: {
       type: 'font-awesome-5',
       iconName: 'thermometer-empty',
@@ -493,6 +556,16 @@ export default [
       type: 'font-awesome',
       iconName: 'tachometer',
     },
+    serviceSpecificScreen: 'SensorTagModel',
+  },
+  {
+    serviceName: 'TI Accelerometer Service',
+    serviceUuid: 'ffa0',
+    icon: {
+      type: 'font-awesome',
+      iconName: 'tachometer',
+    },
+    serviceSpecificScreen: 'SensorTagModel',
   },
   {
     serviceName: 'TI Profile - Project Zero Button Service',

@@ -90,7 +90,7 @@ const CharacteristicService: React.FC<Props> = ({
   if (checkRead) { propertiesString += 'Read ' }
   if (checkWrite) { propertiesString += 'Write ' }
   if (checkWriteWithoutRsp) { propertiesString += 'WriteNoRsp ' }
-  if (checkNotify) { propertiesString += 'Notify' }
+  if (checkNotify) { propertiesString += 'Notify ' }
   if (checkIndicate) { propertiesString += 'Indicate' }
 
   const [charName, setCharName] = useState<string>(() => {
@@ -494,7 +494,7 @@ const CharacteristicService: React.FC<Props> = ({
           <View>
             <View style={[styles.container, { alignContent: 'center', justifyContent: 'space-between', flexDirection: 'row' }]}>
               <View style={{ flexDirection: 'row' }}>
-                <Text style={{ fontWeight: 'bold', paddingLeft: 12, paddingRight: 20, alignSelf: 'center' }}>Indications</Text>
+                <Text style={{ fontWeight: 'bold', alignSelf: 'center' }}>Indications</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={{ paddingRight: 10 }}>Enable</Text>

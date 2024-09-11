@@ -94,7 +94,6 @@ export const RepositoryDetailsProvider: React.FC<{ children: ReactNode }> = ({ c
   }, []);
 
   const updateFirmwareRepoDetails = async (repo: FirmwareRepo) => {
-    console.log(repo)
     if (repo.useGitHub) {
       let accessToken = '';
       if (repo.accessToken) {

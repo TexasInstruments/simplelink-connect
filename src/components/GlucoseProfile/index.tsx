@@ -244,7 +244,6 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
             const sampleLocation = typeSampleLocationBytes & 0x0F;
             str += `Sample Type: ${bytesToSampleType(type)}\n`;
             str += `Sample Location: ${bytesToSampleLocation(sampleLocation)} \n`;
-            console.log(str)
         }
         setMeasurmentsDataSet(prev => [...prev, { data: glucoseConcentration, label: sequenceNumber.toString() }]);
         return str + '\n';

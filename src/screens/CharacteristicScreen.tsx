@@ -36,7 +36,6 @@ import Characteristic from '../components/Characteristic';
 import { useEffect, useMemo, useState } from 'react';
 import { CharacteristicProvider } from '../context/CharacteristicContext';
 import { uuidToServiceSpecificScreen } from '../hooks/uuidToName';
-import { SUPPORTED_SPAECIFIC_SCREEN } from '../constants/uuids';
 import TerminalServiceModel from './ServiceSpecificViews/TerminalServiceModel';
 import FWUpdate_Modal from '../components/FWUpdate/FWUpdate_Modal';
 import CGM from '../components/ContiniousGlucoseMonitoring';
@@ -45,6 +44,9 @@ import SensorTagServiceModel from './ServiceSpecificViews/SensorTagServiceModel'
 import { useCharacteristicViewContext } from '../context/CharactristicViewContext';
 import GlucoseProfile from '../components/GlucoseProfile';
 import WifiProvisioningOverBLEScreen from '../components/WifiProvisioningOverBle';
+import MatterLight from '../components/MatterLight';
+import { SUPPORTED_SPAECIFIC_SCREEN } from '../constants/uuids';
+import ECG from '../components/ECG';
 
 interface Props extends RootStackScreenProps<'Characteristics'> { }
 
@@ -55,7 +57,7 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
   console.log('peripheralInfo: ', peripheralInfo.characteristics);
   console.log('serviceUuid: ', serviceUuid);
   const [screenSpecific, setScreenSpecific] = useState<keyof RootStackParamList | null>(null);
-  const { charactristicView, updateService, updatePeripheralInfo } = useCharacteristicViewContext();
+  const { characteristicView, updateService, updatePeripheralInfo } = useCharacteristicViewContext();
 
 
   let serviceCharacteristics: BleManager.Characteristic[] = useMemo(() => {
@@ -116,12 +118,18 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
           isLinuxDevice = true;
         }
         return <WifiProvisioningOverBLEScreen peripheralId={peripheralInfo.id} isLinuxDevice={isLinuxDevice} />
+
+      case 'MatterLightServiceModel':
+        return <MatterLight peripheralId={peripheralInfo.id} />
+
+      case 'EcgServiceModel':
+        return <ECG peripheralId={peripheralInfo.id} />
     }
   }
 
   return (
     <>
-      {(!screenSpecific || charactristicView === 'advanced') && (
+      {(!screenSpecific || characteristicView === 'advanced') && (
         <>
           <CharacteristicProvider>
             <Characteristic
@@ -135,7 +143,7 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
           </CharacteristicProvider>
         </>
       )}
-      {screenSpecific && charactristicView === 'specific' && (
+      {screenSpecific && characteristicView === 'specific' && (
         SpecificScreen()
       )}
     </>

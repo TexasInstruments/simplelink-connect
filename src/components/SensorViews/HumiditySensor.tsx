@@ -46,9 +46,10 @@ interface Props {
   peripheralId: string;
   humidityData: number[];
   temperatureData: number[];
+  icon: any;
 }
 
-const HumiditySensor: React.FC<Props> = ({ peripheralId, humidityData, temperatureData }) => {
+const HumiditySensor: React.FC<Props> = ({ peripheralId, humidityData, temperatureData, icon }) => {
   const [enable, setEnable] = useState<boolean>(false);
 
   useEffect(() => {
@@ -119,7 +120,7 @@ const HumiditySensor: React.FC<Props> = ({ peripheralId, humidityData, temperatu
 
   return (
     <View style={styles.container}>
-      <SensorPresentation name="Humidity" uuid={HUMIDITY_SENSOR.service} />
+      <SensorPresentation name="Humidity" uuid={HUMIDITY_SENSOR.service} icon={icon} />
       <View style={styles.chartContainer}>
         <View style={styles.switchContainer}>
           <Text style={{ paddingRight: 10 }}>Enable</Text>

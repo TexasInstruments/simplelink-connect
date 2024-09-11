@@ -45,9 +45,10 @@ import Legend from './Legend';
 interface Props {
   peripheralId: string;
   barometerData: number[];
+  icon: any;
 }
 
-const BarometricSensor: React.FC<Props> = ({ peripheralId, barometerData }) => {
+const BarometricSensor: React.FC<Props> = ({ peripheralId, barometerData, icon }) => {
   const [enable, setEnable] = useState<boolean>(false);
 
   useEffect(() => {
@@ -116,7 +117,7 @@ const BarometricSensor: React.FC<Props> = ({ peripheralId, barometerData }) => {
 
   return (
     <View style={{ display: 'flex', flexDirection: 'column' }}>
-      <SensorPresentation name="Barometer" uuid={BAROMETRIC_SENSOR.service} />
+      <SensorPresentation name="Barometer" uuid={BAROMETRIC_SENSOR.service} icon={icon} />
       <View style={styles.chartContainer}>
         <View style={styles.switchContainer}>
           <Text style={{ paddingRight: 10 }}>Enable</Text>

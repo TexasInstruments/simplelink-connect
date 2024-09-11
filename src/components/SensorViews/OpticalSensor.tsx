@@ -45,9 +45,10 @@ import Legend from './Legend';
 interface Props {
   peripheralId: string;
   opticalSensorData: number[];
+  icon: any;
 }
 
-const OpticalSensor: React.FC<Props> = ({ peripheralId, opticalSensorData }) => {
+const OpticalSensor: React.FC<Props> = ({ peripheralId, opticalSensorData, icon }) => {
   const [enable, setEnable] = useState<boolean>(false);
 
   useEffect(() => {
@@ -107,7 +108,7 @@ const OpticalSensor: React.FC<Props> = ({ peripheralId, opticalSensorData }) => 
 
   return (
     <View style={styles.container}>
-      <SensorPresentation name="Light" uuid={OPTICAL_SENSOR.service} />
+      <SensorPresentation name="Light" uuid={OPTICAL_SENSOR.service} icon={icon} />
       <View style={styles.chartContainer}>
         <View style={styles.switchContainer}>
           <Text style={{ paddingRight: 10 }}>Enable</Text>

@@ -8,9 +8,10 @@ import { useEffect, useState } from 'react';
 
 interface Props {
   peripheralId: string;
+  icon: any;
 }
 
-const ConnectionControlService: React.FC<Props> = ({ peripheralId }) => {
+const ConnectionControlService: React.FC<Props> = ({ peripheralId, icon }) => {
   const [enable, setEnable] = useState<boolean>(false);
 
   const [data, setData] = useState<{
@@ -132,6 +133,7 @@ const ConnectionControlService: React.FC<Props> = ({ peripheralId }) => {
   return (
     <View style={styles.container}>
       <SensorPresentation
+        icon={icon}
         name="Connection Control Service"
         uuid={CONNECTION_CONTROL_SERVICE.service}
       />

@@ -104,7 +104,11 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
           <View style={styles.menu}>
             <Divider />
 
-            <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('FilterSortOptions')}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleNavigation('FilterSortOptions')}
+              accessibilityLabel="filterSortOptions"
+              testID="filterSortOptions">
               <Icon name="filter" size={25} color={Colors.blue} style={styles.icon} />
               <Text style={[styles.menuText, { fontSize: 16 / fontScale, }]}>Filter and Sort Options</Text>
             </TouchableOpacity>
@@ -135,7 +139,7 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
         <View style={styles.footer}>
-          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>1.3.6</Text>
+          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>1.3.7</Text>
           <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
           <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Credits: </Text>Tony Cave (Bluwbee LTD)</Text>
         </View>

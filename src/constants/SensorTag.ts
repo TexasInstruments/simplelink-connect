@@ -102,3 +102,9 @@ export const CONNECTION_CONTROL_SERVICE = {
   request_disconnect: 'f000ccc3-0451-4000-b000-000000000000',
 } as const;
 
+// accelerometer service
+export const ACCELEROMETER_SERVICE = {
+  service: 'f000ffa0-0451-4000-b000-000000000000',
+  notification: 'f000ffa5-0451-4000-b000-000000000000',
+} as const;
+

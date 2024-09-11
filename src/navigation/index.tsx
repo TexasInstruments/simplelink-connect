@@ -118,7 +118,7 @@ export default function Navigation({
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
-  const { charactristicView, serviceName, hasSpecificScreen, hasTestOption } = useCharacteristicViewContext();
+  const { characteristicView, serviceName, hasSpecificScreen, hasTestOption } = useCharacteristicViewContext();
   const { fontScale } = useWindowDimensions();
 
   return (
@@ -128,7 +128,7 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
       <Stack.Screen name="Characteristics"
         component={CharacteristicsDrawer}
         options={({ navigation }) => ({
-          title: hasSpecificScreen ? (charactristicView === 'advanced' ? 'Characteristic' : serviceName) : 'Characteristic',
+          title: hasSpecificScreen ? (characteristicView === 'advanced' ? 'Characteristic' : serviceName) : 'Characteristic',
           headerTitleAlign: 'center',
           headerStyle: {
             backgroundColor: '#cc0000',
@@ -172,9 +172,6 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
             },
           }}
         />
-
-
-
       </Stack.Group>
       <Stack.Screen name="Tutorial" component={TutorialScreen} options={{ headerShown: false }} />
       <Stack.Screen

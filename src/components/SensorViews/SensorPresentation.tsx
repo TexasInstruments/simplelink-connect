@@ -34,19 +34,26 @@ import { Text } from '@rneui/themed';
 import { View } from '../Themed';
 import Colors from '../../constants/Colors';
 import { StyleSheet } from 'react-native';
+import { Icon } from '@rneui/themed';
 
 interface Props {
   name: string;
   uuid: string;
+  icon?: any;
 }
 
-const SensorPresentation: React.FC<Props> = ({ name, uuid }) => {
+const SensorPresentation: React.FC<Props> = ({ name, uuid, icon }) => {
   return (
     <View style={styles.container}>
-      <Text style={{ marginBottom: 5, fontWeight: 'bold', fontSize: 30 }}>
-        {name}
-      </Text>
-      <Text style={{ color: 'rgba(0,0,0' }}>UUID: {uuid}</Text>
+      <View style={[styles.container, { flexDirection: 'row', marginBottom: 2, paddingHorizontal: 0, paddingVertical: 0 },]}>
+        <View style={[styles.deviceInfoIconContainer, { backgroundColor: 'white', },]}>
+          <Icon name={icon ? icon?.iconName : "devices"} type={icon ? icon?.type : "fontawesome"} size={32} />
+        </View>
+        <Text style={{ fontWeight: 'bold', fontSize: 30, alignSelf: 'center', marginLeft: 10 }}>
+          {name}
+        </Text>
+      </View>
+      <Text style={{ color: 'rgba(0,0,0)', justifyContent: 'center', }}>UUID: {uuid}</Text>
     </View>
   );
 };
@@ -55,7 +62,18 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'column',
     backgroundColor: Colors.lightGray,
-    padding: 15,
+    paddingVertical: 15,
+    paddingHorizontal: 8
+  },
+  deviceInfoIconContainer: {
+    alignSelf: 'flex-start',
+    width: 50,
+    height: 50,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderColor: Colors.gray,
+    borderWidth: 1,
   },
 });
 

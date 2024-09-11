@@ -46,9 +46,10 @@ import Legend from './Legend';
 interface Props {
   peripheralId: string;
   movementData: MovementSensorState;
+  icon: any;
 }
 
-const MovementSensor: React.FC<Props> = ({ peripheralId, movementData }) => {
+const MovementSensor: React.FC<Props> = ({ peripheralId, movementData, icon }) => {
   const [enable, setEnable] = useState<boolean>(false);
 
   useEffect(() => {
@@ -112,7 +113,7 @@ const MovementSensor: React.FC<Props> = ({ peripheralId, movementData }) => {
 
   return (
     <View style={styles.container}>
-      <SensorPresentation name="Accelerometer" uuid={MOVEMENT_SENSOR.service} />
+      <SensorPresentation name="Accelerometer" uuid={MOVEMENT_SENSOR.service} icon={icon} />
       <View style={styles.chartContainer}>
         <View style={styles.switchContainer}>
           <Text style={{ paddingRight: 10 }}>Enable</Text>

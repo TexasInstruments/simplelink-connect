@@ -33,23 +33,22 @@
 import { Dimensions, StyleSheet, processColor } from 'react-native';
 import { Switch, View } from '../Themed';
 import SensorPresentation from './SensorPresentation';
-import { IR_TEMPERATURE_SENSOR } from '../../constants/SensorTag';
+import { ACCELEROMETER_SERVICE } from '../../constants/SensorTag';
 import { Text } from '@rneui/themed';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { LineChart } from 'react-native-charts-wrapper';
 import bleManager from 'react-native-ble-manager';
-import { getBytes } from '../../hooks/convert';
 import Legend from './Legend';
 import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
 import Colors from '../../constants/Colors';
 
 interface Props {
-  irTemperatureData: { obj: number[]; amb: number[] };
+  accelerometerData: { xaxis: number, yaxis: number, zaxis: number }[];
   peripheralId: string;
   icon: any;
 }
 
-const IRTemperatureSensor: React.FC<Props> = ({ irTemperatureData, peripheralId, icon }) => {
+const AccelerometerSensor: React.FC<Props> = ({ accelerometerData, peripheralId, icon }) => {
   const [enable, setEnable] = useState<boolean>(false);
   const { specificScreenConfig } = useSpecificScreenConfigContext();
 
@@ -61,78 +60,46 @@ const IRTemperatureSensor: React.FC<Props> = ({ irTemperatureData, peripheralId,
 
   useEffect(() => {
     if (enable) {
-      let writeBytes = getBytes('1');
       bleManager.startNotification(
         peripheralId,
-        IR_TEMPERATURE_SENSOR.service,
-        IR_TEMPERATURE_SENSOR.notification
+        ACCELEROMETER_SERVICE.service,
+        ACCELEROMETER_SERVICE.notification
       );
       console.log('start notification')
-
-      bleManager
-        .write(
-          peripheralId,
-          IR_TEMPERATURE_SENSOR.service,
-          IR_TEMPERATURE_SENSOR.configuration,
-          writeBytes,
-          writeBytes.length
-        )
-        .then(() => {
-          console.debug('IR Temperature sensor enabled');
-        });
     } else {
       bleManager.stopNotification(
         peripheralId,
-        IR_TEMPERATURE_SENSOR.service,
-        IR_TEMPERATURE_SENSOR.notification
+        ACCELEROMETER_SERVICE.service,
+        ACCELEROMETER_SERVICE.notification
       );
+      console.log('stop notification')
 
-      let writeBytes = getBytes('0');
-      bleManager
-        .write(
-          peripheralId,
-          IR_TEMPERATURE_SENSOR.service,
-          IR_TEMPERATURE_SENSOR.configuration,
-          writeBytes,
-          writeBytes.length
-        )
-        .then(() => {
-          console.debug('IR Temperature sensor disabled');
-        });
     }
   }, [enable]);
 
-  let lastAmbTempValue = useMemo(() => {
-    return irTemperatureData.amb[irTemperatureData.amb.length - 1].toFixed(2);
-  }, [irTemperatureData.amb]);
-
-  let lastObjTempValue = useMemo(() => {
-    return irTemperatureData.obj[irTemperatureData.obj.length - 1].toFixed(2);
-  }, [irTemperatureData.obj]);
+  let { lastX, lastY, lastZ } = useMemo(() => {
+    return {
+      lastX: accelerometerData[accelerometerData.length - 1].xaxis,
+      lastY: accelerometerData[accelerometerData.length - 1].xaxis,
+      lastZ: accelerometerData[accelerometerData.length - 1].xaxis,
+    };
+  }, [accelerometerData]);
 
   useEffect(() => {
     return () => {
       bleManager.stopNotification(
         peripheralId,
-        IR_TEMPERATURE_SENSOR.service,
-        IR_TEMPERATURE_SENSOR.notification
-      );
-      let writeBytes = getBytes('0');
-      bleManager.write(
-        peripheralId,
-        IR_TEMPERATURE_SENSOR.service,
-        IR_TEMPERATURE_SENSOR.configuration,
-        writeBytes,
-        writeBytes.length
+        ACCELEROMETER_SERVICE.service,
+        ACCELEROMETER_SERVICE.notification
       );
     };
   }, []);
 
-  function getChartData(data: { obj: number[], amb: number[] }) {
+  function getChartData(data: { xaxis: number, yaxis: number, zaxis: number }[]) {
     return {
       dataSets: [{
-        values: data.amb,
-        label: 'ambience',
+        values: data.map((d => d.xaxis)),
+        label: 'Xaxis',
         config: {
           color: processColor(Colors.blue),
           drawCircles: false,
@@ -141,10 +108,20 @@ const IRTemperatureSensor: React.FC<Props> = ({ irTemperatureData, peripheralId,
         }
       },
       {
-        values: data.obj,
-        label: 'object',
+        values: data.map((d => d.yaxis)),
+        label: 'Yaxis',
         config: {
           color: processColor(Colors.primary),
+          drawCircles: false,
+          lineWidth: 1,
+          drawValues: false
+        }
+      },
+      {
+        values: data.map((d => d.zaxis)),
+        label: 'Zaxis',
+        config: {
+          color: processColor('green'),
           drawCircles: false,
           lineWidth: 1,
           drawValues: false
@@ -187,29 +164,32 @@ const IRTemperatureSensor: React.FC<Props> = ({ irTemperatureData, peripheralId,
 
   return (
     <View style={styles.container}>
-
-      <SensorPresentation name="IR Temperature" uuid={IR_TEMPERATURE_SENSOR.service} icon={icon} />
+      <SensorPresentation name="TI Accelerometer" uuid={ACCELEROMETER_SERVICE.service} icon={icon} />
       <View style={styles.chartContainer}>
         <View style={styles.switchContainer}>
           <Text style={{ paddingRight: 10 }}>Enable</Text>
           <Switch value={enable} onValueChange={setEnable} />
         </View>
-        <LineChart
-          style={styles.chart}
-          data={getChartData(irTemperatureData)}
-          chartDescription={{ text: '' }}
-          xAxis={{
-            granularityEnabled: true,
-            granularity: 1,
-            drawLabels: true,
-            position: 'BOTTOM',
-          }}
-          yAxis={chartConfig.yAxis}
-          legend={chartConfig.legend}
-          marker={chartConfig.markerConfig}
-          {...chartConfig.config}
-        />
-        <Legend values={[`Ambience: ${lastAmbTempValue}°${currentTempUnits.current}`, `Object: ${lastObjTempValue}°${currentTempUnits.current}`]} />
+        {accelerometerData.length > 0 && (
+          <LineChart
+            style={styles.chart}
+            data={getChartData(accelerometerData, 'a')}
+            chartDescription={{ text: '' }}
+            xAxis={{
+              granularityEnabled: true,
+              granularity: 1,
+              drawLabels: true,
+              position: 'BOTTOM',
+            }}
+            yAxis={chartConfig.yAxis}
+            legend={chartConfig.legend}
+            marker={chartConfig.markerConfig}
+            {...chartConfig.config}
+          />
+        )}
+        {accelerometerData.length > 1 && (
+          <Legend values={[`Xaxis: ${lastX.toFixed(2)}`, `Yaxis: ${lastY.toFixed(2)}`, `Zaxis: ${lastZ.toFixed(2)}`]} />
+        )}
       </View>
     </View>
   );
@@ -239,4 +219,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default IRTemperatureSensor;
+export default AccelerometerSensor;

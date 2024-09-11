@@ -41,9 +41,10 @@ import { getBytes } from '../../hooks/convert';
 
 interface Props {
   peripheralId: string;
+  icon: any;
 }
 
-const IOService: React.FC<Props> = ({ peripheralId }) => {
+const IOService: React.FC<Props> = ({ peripheralId, icon }) => {
   const [ioServiceData, setIOServiceData] = useState<{
     ledOn: number;
     buzzer: number;
@@ -106,7 +107,7 @@ const IOService: React.FC<Props> = ({ peripheralId }) => {
 
   return (
     <View style={{ display: 'flex', flexDirection: 'column' }}>
-      <SensorPresentation name="I/O Service" uuid={IO_SERVICE.service} />
+      <SensorPresentation name="I/O Service" uuid={IO_SERVICE.service} icon={icon} />
       <View style={styles.chartContainer}>
         <View style={styles.switchContainer}>
           <View style={styles.serviceContainer}>

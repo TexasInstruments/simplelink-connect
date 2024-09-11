@@ -35,7 +35,7 @@ import React from 'react';
 import ServiceParameters from './ServiceParameters';
 import ServicePresentation from './ServicePresentation';
 import Colors from '../../../constants/Colors';
-import { Icon, } from '../../../../types';
+import { Icon } from '../../../../types';
 
 
 interface Props {

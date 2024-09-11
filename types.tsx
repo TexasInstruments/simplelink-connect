@@ -65,8 +65,10 @@ export type RootStackParamList = {
     icon: Icon;
   };
   FwUpdateServiceModel: { peripheralId: string };
+  EcgServiceModel: { peripheralId: string };
   HealthTermometerServiceModel: { peripheralId: string };
   CgmServiceModel: { peripheralId: string };
+  MatterLightServiceModel: { peripheralId: string };
   TerminalServiceModel: { peripheralId: string };
   SensorTagModel: { peripheralId: string, serviceName: string };
   GlucoseServiceModel: { peripheralId: string };

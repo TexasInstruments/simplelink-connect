@@ -85,11 +85,13 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
 
   return (
     <View style={[styles.container]}>
-      {icon?.type === 'svg' ? (
-        <TIcon name={icon.iconName} />
-      ) : (
-        <Icon name={icon?.iconName!} type={icon?.type} />
-      )}
+      <View style={{ width: 35 }}>
+        {icon?.type === 'svg' ? (
+          <TIcon name={icon.iconName} />
+        ) : (
+          <Icon name={icon?.iconName!} type={icon?.type} />
+        )}
+      </View>
       <View style={{ paddingLeft: 10, flexDirection: 'column', flex: 1 }}>
         <Text style={{ fontWeight: 'bold' }}>{serviceName}</Text>
         <Text numberOfLines={1} ellipsizeMode="middle" style={{ color: Colors.gray, }}>
@@ -107,6 +109,8 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
       </View>
       <View style={{ marginLeft: 'auto' }}>
         <TouchableOpacity
+          accessibilityLabel="serviceChevronIcon"
+          testID="serviceChevronIcon"
           onPress={() =>
             navigation.navigate('Characteristics', {
               peripheralInfo: peripheralInfo!,

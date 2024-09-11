@@ -146,8 +146,8 @@ android {
         applicationId 'com.ti.connectivity.simplelinkconnect'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 18
-        versionName "1.3.6"
+        versionCode 21
+        versionName "1.3.7"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
 
         if (isNewArchitectureEnabled()) {
@@ -350,6 +350,8 @@ dependencies {
 
     implementation 'org.jetbrains:annotations:16.0.2'
     // implementation "org.jetbrains.kotlin:kotlin-reflect:1.1.0"
+
+    implementation("com.facebook.soloader:soloader:0.10.4")
 
 }
 

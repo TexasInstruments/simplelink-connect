@@ -58,6 +58,7 @@ import FontAwesome from "react-native-vector-icons/FontAwesome";
 import RNRestart from 'react-native-restart';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+
 interface Props extends RootTabScreenProps<'ScanTab'> { }
 
 const BleScanner: React.FC<Props> = () => {
@@ -208,7 +209,6 @@ const BleScanner: React.FC<Props> = () => {
       setRefreshing(false);
     }
   };
-
 
   const handleDisconnectedPeripheral = (
     peripheralId: string,
@@ -376,6 +376,7 @@ const BleScanner: React.FC<Props> = () => {
   }
 
   function handleDiscoverPeripheral(peripheral: Peripheral) {
+
     return new Promise((resolve, reject) => {
       if (!lastScannedPeriphs.current.map((ele: any) => ele.id).includes(peripheral.id)) {
         lastScannedPeriphs.current.push(peripheral);
@@ -429,6 +430,9 @@ const BleScanner: React.FC<Props> = () => {
           //console.log('name changed', peripheral.id);
           scannedPeriphs.current[periphIdx].name = peripheral.name;
         }
+        if (scannedPeriphs.current[periphIdx].serviceUUIDs !== peripheral.advertising.serviceUUIDs) {
+          scannedPeriphs.current[periphIdx].serviceUUIDs = peripheral.advertising.serviceUUIDs;
+        }
         scannedPeriphs.current[periphIdx].advertiesmentCount = scannedPeriphs.current[periphIdx].advertiesmentCount + 1;
       }
       resolve(peripheral);
@@ -472,6 +476,7 @@ const BleScanner: React.FC<Props> = () => {
   }
 
   const requestConnect = (peripheral: Peripheral) => {
+
     // console.debug('requestConnect: ', peripheralId);
     setScanEnable(false);
     clearInterval(peripheralViewUpdateInterval.current);
