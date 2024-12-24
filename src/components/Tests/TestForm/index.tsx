@@ -460,7 +460,7 @@ const TestForm: React.FC<Props> = (
                         ...styles.button,
                         // marginHorizontal: 30,
                         height: 40,
-                        marginBottom: 20,
+                        marginBottom: 40,
                     }]}
                 >
                     <Text style={[{ ...styles.text, color: Colors.blue }]}>Run Test</Text>

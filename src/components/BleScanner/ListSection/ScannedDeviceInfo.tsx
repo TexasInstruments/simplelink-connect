@@ -67,7 +67,7 @@ const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
   }
 
   return (
-    <View style={{ backgroundColor: 'blue' }}>
+    <View >
       <View style={[styles.container, {
         display: isVisible ? 'flex' : 'none',
         backgroundColor: 'white'

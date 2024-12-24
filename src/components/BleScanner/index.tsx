@@ -41,6 +41,7 @@ import {
   ScrollView,
   RefreshControl,
   useWindowDimensions,
+  Alert
 } from 'react-native';
 import React, { useState, useEffect, useMemo, useContext, useRef, useCallback } from 'react';
 import BleManager, { Peripheral } from 'react-native-ble-manager';
@@ -71,6 +72,7 @@ const BleScanner: React.FC<Props> = () => {
   const [peripherals, setPeripherals] = useState<Peripheral[]>([]);
   const [doSort, setDoSort] = useState<Boolean>(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [bleState, setBleState] = useState<'on' | 'off'>('on');
   const [sortOption, setSortOption] = useState<'app_name' | 'rssi' | null>(null);
 
   let initialFocus = useRef<boolean>(true);
@@ -95,6 +97,8 @@ const BleScanner: React.FC<Props> = () => {
       const task = InteractionManager.runAfterInteractions(() => {
         if (initialFocus.current) {
           console.log('focused');
+          bleManagerEmitter.addListener('BleManagerDidUpdateState', handleUpdateState);
+          BleManager.checkState()
           initialFocus.current = false;
         } else {
           setScanEnable(true);
@@ -103,6 +107,7 @@ const BleScanner: React.FC<Props> = () => {
       requestAndroidPermissions().then(() => {
         handleConnectedAndBondedPeripherals();
       });
+
       return () => {
         console.log('unfocused');
         setScanEnable(false);
@@ -193,6 +198,19 @@ const BleScanner: React.FC<Props> = () => {
     handleConnectedAndBondedPeripherals();
     scan(scanEnable);
   }, [scanEnable]);
+
+  const handleUpdateState = (stateInfo: any) => {
+    if (stateInfo['state'] !== 'on' && stateInfo['state'] !== 'turning_on') {
+      Alert.alert(
+        '"SimpleLink Connect" would like to use Bluetooth',
+        'Please enable Bluetooth using phone Settings.',);
+      setScanEnable(false);
+      setBleState('off')
+    }
+    else {
+      setBleState('on')
+    }
+  }
 
   const updatePeripheralView = () => {
     setPeripherals((prev) => [...prev]);
@@ -601,7 +619,7 @@ const BleScanner: React.FC<Props> = () => {
 
   return (
     <View style={[{ flex: 1 }]}>
-      <EnablerSection scanEnable={scanEnable} setScanEnable={scanSwitchEnabler} />
+      <EnablerSection scanEnable={scanEnable} setScanEnable={scanSwitchEnabler} disabled={bleState == 'off'} />
       {/* Connected Devices */}
       {memoConnectedDevices.length > 0 && (
         <View style={{ maxHeight: '40%' }}>

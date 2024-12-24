@@ -642,10 +642,11 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
         console.log('MCUBoot imgLength: ', imgLength);
 
         let headerLen =
-          fwImageByteArray[8] +
-          (fwImageByteArray[9] << 8) +
-          (fwImageByteArray[10] << 16) +
-          (fwImageByteArray[11] << 24);
+          (fwImageByteArray[8] +
+            (fwImageByteArray[9] << 8)) +
+          ((fwImageByteArray[10]) +
+            (fwImageByteArray[11] << 8));
+
 
         console.log('tlv magic 0', fwImageByteArray[imgLength + headerLen]);
         console.log('tlv magic 1', fwImageByteArray[imgLength + headerLen + 1]);

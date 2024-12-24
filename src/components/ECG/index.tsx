@@ -6,7 +6,7 @@ import {
     NativeModules,
     Platform,
     ScrollView,
-    Switch,
+    StatusBar,
     TouchableOpacity,
     View,
     processColor,
@@ -21,6 +21,7 @@ import { LineChart } from 'react-native-charts-wrapper';
 import { Icon } from '@rneui/base';
 import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
 import { downloadDataToLocalStorage } from '../Tests/testsUtils';
+import Tooltip from 'react-native-walkthrough-tooltip';
 
 interface Props {
     peripheralId: string;
@@ -51,6 +52,38 @@ const SectionsIDs = {
     ecgCh3: 5,
     ecgCh4: 6,
 }
+
+const NormalIndicator = {
+    value: 1,
+    title: 'Normal',
+    text: 'NSR:      Normal sinus rhythm'
+}
+
+const NoIndicator = {
+    value: 7,
+    title: 'no_indicator',
+    text: ''
+}
+
+const MildIndicator = {
+    value: 2,
+    title: 'Mild',
+    text: `APB:             Atrial premature beat \nFusion:         Fusion of paced and normal beat \nBigeminy:    Ventricular bigeminy \nTrigeminy:   Ventricular trigeminy \nAFL:              Atrial flutter \nSVTA:           Supraventricular tachyarrhythmia \nPVC:             Premature ventricular contraction \nLBBBB:         Left bundle branch block beat \nRBBBB:        Right bundle branch block beat`
+}
+
+const SevereIndicator = {
+    value: 3,
+    title: 'Severe',
+    text: `AFIB:      Atrial fibrillation \nWPW:     Pre-excitation (PREX) \nIVR:         Idioventricular rhythm \nSDHB:    Second-degree heart block (BII)`
+}
+
+const EmergencyIndicator = {
+    value: 4,
+    title: 'Emergency',
+    text: `VFL:   Ventricular flutter \nVT:     Ventricular tachycardia`
+}
+
+const Indicators = [NoIndicator, NormalIndicator, MildIndicator, SevereIndicator, EmergencyIndicator]
 
 function median(values: DataChart[]): DataChart {
 
@@ -108,11 +141,17 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
     const filteredPcgRef = useRef<DataChart[]>([]);
     const paceHolterRef = useRef<{ amp: DataChart[], width: DataChart[], pol: DataChart[] }>({ amp: [], width: [], pol: [] });
 
+    //Indicator
+    const indicatorRef = useRef<number>(NoIndicator.value);
+    const [labelsTooltip, setLabelsTooltip] = useState({ normal: false, mild: false, severe: false, emergency: false });
+    const indicatorDataRef = useRef<{ time: string, formattedTime: string, value: string }[]>([]);
+
     const [baselineflag, setBaselineflag] = useState<number>(0);
     const [baseline, setBaseline] = useState<number>(0);
 
     const timeEcg = useRef<Date | null>(null);
     const timePcg = useRef<Date | null>(null);
+    const timeIndicator = useRef<Date | null>(null);
 
     const collapsedSections = useRef<CollapsedSections>({ ecg: true, ecgCh1: true, ecgCh2: true, ecgCh3: true, ecgCh4: true, pace: true, respiration: true });
     const [collapsedSectionsState, setCollapsedSectionsState] = useState<CollapsedSections>({ ecg: true, ecgCh1: true, ecgCh2: true, ecgCh3: true, ecgCh4: true, pace: true, respiration: true });
@@ -134,8 +173,12 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
             return () => {
                 task.cancel();
                 bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
-                BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID);
-                BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID);
+                try {
+                    BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID);
+                    BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID);
+                } catch (e) {
+                    console.log(e)
+                }
                 isProcessing.current = false;
                 console.log('notification stopped')
             };
@@ -167,6 +210,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
         setPcgData([])
         timeEcg.current = null;
         timePcg.current = null;
+        timeIndicator.current = null;
 
         ecgHolterDataRef.current = { channel1: [], channel2: [], channel3: [], channel4: [] };
         paceHolterRef.current = { amp: [], width: [], pol: [] };
@@ -174,6 +218,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
         filteredPcgRef.current = [];
         ecgPatchRef.current = [];
         pacePatchRef.current = [];
+        indicatorDataRef.current = []
 
         notificationSwitch.current = true;
         let needToExpand = Object.values(collapsedSections.current).filter(value => value === false).length < 2;
@@ -183,8 +228,10 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
             setRecordStarted(true);
         }
         isProcessing.current = true;
-        BleManager.startNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID);
-        BleManager.startNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID);
+
+        BleManager.startNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID).catch((e) => console.log(e));
+        BleManager.startNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID).catch((e) => console.log(e));
+
         console.log('notification started');
 
         if (recordDuration !== 'no limit') {
@@ -199,8 +246,10 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
         clearTimeout(recordTimeout.current);
         notificationSwitch.current = false;
         isProcessing.current = false;
-        BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID);
-        BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID);
+
+        BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID).catch((e) => console.log(e));
+        BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID).catch((e) => console.log(e));
+
         console.log('notification stopped');
 
         setEcgHolterData(ecgHolterDataRef.current);
@@ -212,7 +261,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
 
     }
 
-    function getDateTimeStr(dataType: 'ecg' | 'pcg' | 'pace'): { x: string, time: string } {
+    function getDateTimeStr(dataType: 'ecg' | 'pcg' | 'pace' | 'indication'): { x: string, time: string } {
         let nowTime = new Date();
 
         let timeDiffMs;
@@ -227,9 +276,13 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
             if (!timePcg.current) {
                 timePcg.current = new Date();
             }
-
-            let nowTime = new Date();
             timeDiffMs = nowTime.getTime() - timePcg.current.getTime();
+        }
+        else if (dataType == 'indication') {
+            if (!timeIndicator.current) {
+                timeIndicator.current = new Date();
+            }
+            timeDiffMs = nowTime.getTime() - timeIndicator.current.getTime();
         }
         else {
             return '';
@@ -328,6 +381,15 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
         if (!notificationSwitch.current) {
             return;
         }
+
+        const indicatorByte = parseInt(hexVal.slice(-2), 16);
+        console.log('Indicator:', indicatorByte)
+        indicatorRef.current = indicatorByte;
+        let label = Indicators.find(e => e.value === indicatorByte)?.title ?? 'Unknown Indicator'
+        let date = getDateTimeStr('indication')
+        indicatorDataRef.current = [...indicatorDataRef.current, { time: date.x, formattedTime: date.time, value: label }]
+
+        hexVal = hexVal.slice(0, -2);
 
         const newEcg1Data: DataChart[] = [];
         const newEcg2Data: DataChart[] = [];
@@ -497,6 +559,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                 const hexString = Array.from(notificationData)
                     .map(byte => byte.toString(16).padStart(2, '0'))
                     .join('');
+
                 parseEcgPatchData(hexString);
             }
         }
@@ -505,7 +568,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                 return;
             }
             const notificationData = new Uint8Array(value);
-            if (notificationData.length == 216) {
+            if (notificationData.length == 217) {
                 const hexString = Array.from(notificationData)
                     .map(byte => byte.toString(16).padStart(2, '0'))
                     .join('');
@@ -567,7 +630,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
         }
         collapsedSections.current = updated
         setCollapsedSectionsState(updated)
-    }
+    };
 
     function getChartData(data: DataChart[]) {
         const formattedData = data.map((data, index) => ({
@@ -792,7 +855,9 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
             }
 
             downloadDataToLocalStorage(csvCombined, 'ECG.csv', 'text/csv');
-        } else if (ecgHolterDataRef.current.channel1.length > 0) {
+        }
+        else if (ecgHolterDataRef.current.channel1.length > 0) {
+            console.log(indicatorDataRef.current.length, ecgHolterDataRef.current.channel1.length)
             const mergedEcgPaceHolter = ecgHolterDataRef.current.channel1.map((data, index) => {
                 return {
                     x: data.x,
@@ -809,21 +874,26 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
 
             let csvEcgPaceArray = convertToCSV(mergedEcgPaceHolter);
             let csvRespirationArray = convertToCSV(pcgRawDataRef.current);
+            let csvIndicationArray = convertToCSV(indicatorDataRef.current);
 
             // Ensure both arrays have the same length by filling the shorter one with empty values
-            const maxLength = Math.max(csvEcgPaceArray.length, csvRespirationArray.length);
+            const maxLength = Math.max(csvEcgPaceArray.length, csvRespirationArray.length, csvIndicationArray.length);
             while (csvEcgPaceArray.length < maxLength) {
                 csvEcgPaceArray.push(",,,,,,,,"); // Eight empty cells for ECG table
             }
             while (csvRespirationArray.length < maxLength) {
                 csvRespirationArray.push(",,,"); // Three empty cells for Respiration table
             }
+            while (csvIndicationArray.length < maxLength) {
+                csvIndicationArray.push(",,,"); // Three empty cells for Indication table
+            }
+
             // Add a margin (empty columns) between the tables
             let margin = ",,,"; // Adjust the number of commas to create the desired margin
             // Merge both arrays side by side with margin
-            let csvCombined = 'Time,Formatted Time,Pace Amplitude,Pace Width,Pace Polarity,ECG1,ECG2,ECG3,ECG4' + margin + 'Time,Formatted Time,Holter Respiration\r\n';
+            let csvCombined = 'Time,Formatted Time,Pace Amplitude,Pace Width,Pace Polarity,ECG1,ECG2,ECG3,ECG4' + margin + 'Time,Formatted Time,Holter Respiration' + margin + 'Time,Formatted Time,Indicator\r\n';
             for (let i = 0; i < maxLength; i++) {
-                csvCombined += csvEcgPaceArray[i] + margin + csvRespirationArray[i] + '\r\n';
+                csvCombined += csvEcgPaceArray[i] + margin + csvRespirationArray[i] + margin + csvIndicationArray[i] + '\r\n';
             }
             if (applyFilter.current) {
                 let sortedFilteredPcg = filteredPcgRef.current.sort((a, b) => parseFloat(a.x) - parseFloat(b.x));
@@ -831,12 +901,12 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
 
                 // Ensure the filtered respiration array also has the same length
                 while (csvRespirationFilteredArray.length < maxLength) {
-                    csvRespirationFilteredArray.push(",,,"); // One empty cell for filtered respiration
+                    csvRespirationFilteredArray.push(",,");
                 }
 
-                csvCombined = 'Time,Formatted Time,Pace Amplitude,Pace Width,Pace Polarity,ECG1,ECG2,ECG3,ECG4' + margin + 'Time,Formatted Time,Holter Respiration' + margin + 'Time,Formatted Time,Filtered Respiration\r\n';
+                csvCombined = 'Time,Formatted Time,Pace Amplitude,Pace Width,Pace Polarity,ECG1,ECG2,ECG3,ECG4' + margin + 'Time,Formatted Time,Holter Respiration' + margin + 'Time,Formatted Time,Filtered Respiration' + margin + 'Time,Formatted Time,Indicator\r\n';
                 for (let i = 0; i < maxLength; i++) {
-                    csvCombined += csvEcgPaceArray[i] + margin + csvRespirationArray[i] + margin + csvRespirationFilteredArray[i] + '\r\n';
+                    csvCombined += csvEcgPaceArray[i] + margin + csvRespirationArray[i] + margin + csvRespirationFilteredArray[i] + margin + csvIndicationArray[i] + '\r\n';
                 }
             }
 
@@ -927,6 +997,62 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
         );
     }, [lastPaceHolterData?.current, recordStarted, ecgPatchData, ecgHolterDataRef, pcgData, pcgRawDataRef.current, paceHolterRef.current.amp, pcgRawDataRef.current, pacePatchRef.current, ecgHolterData, pacePatchData, paceHolterData, filteredPcgData, filteredPcgRef.current, collapsedSectionsState, SectionsIDs, chartConfig.yAxis]);
 
+    const LEDCircle = (isTooltipVisible: boolean, setTooltipVisible: any, indicator: { text: string, title: string, value: number }) => {
+        return (
+            <View style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <View style={[styles.led, indicatorRef.current === indicator.value ? styles.ledOn : styles.ledOff]} />
+                <View style={{ marginTop: 10, display: 'flex', flexDirection: 'row' }}>
+                    {toolTip(isTooltipVisible, setTooltipVisible, indicator)}
+                    <Text style={{ fontSize: 12 / fontScale, fontWeight: '500' }}>{indicator.title}</Text>
+                </View>
+            </View >
+        );
+    };
+
+    const renderLabelSection = useMemo(() => {
+        return (
+            <>
+                {recordStarted && ecgHolterDataRef.current.channel1.length > 0 && (
+                    <View style={styles.chartContainer}>
+                        <View style={{ padding: 10, display: 'flex' }}>
+                            <Text style={{ fontSize: 16 / fontScale, fontWeight: '500', alignSelf: 'center' }}>Arrhythmia Classification</Text>
+                            <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 }}>
+                                {LEDCircle(labelsTooltip.normal, (isVisible: boolean) => { setLabelsTooltip({ normal: isVisible, mild: false, severe: false, emergency: false }) }, NormalIndicator)}
+                                {LEDCircle(labelsTooltip.mild, (isVisible: boolean) => { setLabelsTooltip({ mild: isVisible, normal: false, severe: false, emergency: false }) }, MildIndicator)}
+                                {LEDCircle(labelsTooltip.severe, (isVisible: boolean) => { setLabelsTooltip({ severe: isVisible, mild: false, normal: false, emergency: false }) }, SevereIndicator)}
+                                {LEDCircle(labelsTooltip.emergency, (isVisible: boolean) => { setLabelsTooltip({ emergency: isVisible, mild: false, severe: false, normal: false }) }, EmergencyIndicator)}
+                            </View>
+                        </View >
+                    </View>
+                )}
+            </>
+        );
+    }, [indicatorRef.current, recordStarted, ecgHolterDataRef.current.channel1, labelsTooltip]);
+
+    function toolTip(visible: boolean, setVisible: any, toolTip: { text: string, title: string, value: number }) {
+        return (<Tooltip
+            isVisible={visible}
+            content={
+                <View style={{ padding: 3 }}>
+                    <Text style={[styles.tooltipTitle]}>{toolTip.title}</Text>
+                    <Text style={[styles.tooltipText]}>{toolTip.text}</Text>
+                </View>
+            }
+            // placement="bottom"
+            onClose={() => setVisible(false)}
+            showChildInTooltip={false}
+            topAdjustment={Platform.OS === 'android' ? -StatusBar.currentHeight : 0}
+            arrowSize={{ height: 0, width: 0 }}
+            displayInsets={{ top: 40, bottom: 40, left: 24, right: 24 }}
+            contentStyle={{ borderRadius: 8, height: '100%', width: '100%' }}
+        >
+            <TouchableOpacity onPress={() => setVisible(true)}>
+                <Icon style={{ alignSelf: 'center' }} name='help-outline' type="MaterialIcons" size={16} />
+            </TouchableOpacity >
+        </Tooltip>)
+
+    }
+
     return (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 
@@ -967,6 +1093,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                                 <Text style={[styles.textButton]}>Export Data</Text>
                             </TouchableOpacity>
                         )}
+                        {ecgHolterDataRef.current.channel1.length > 0 && renderLabelSection}
                         {renderChartSections}
                     </>
                 ) :
@@ -1003,6 +1130,37 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
 };
 
 const styles = StyleSheet.create({
+    tooltipTitle: {
+        fontWeight: 'bold',
+        fontSize: 18,
+        textDecorationLine: 'underline',
+        flexWrap: 'wrap'
+    },
+    tooltipText: {
+        fontSize: 14,
+        flexWrap: 'wrap'
+    },
+    led: {
+        width: 45,
+        height: 45,
+        borderRadius: 50,
+    },
+    ledOn: {
+        backgroundColor: Colors.primary,
+        shadowColor: 'rgba(255, 0, 0, 1)', // Glow color
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 1,
+        shadowRadius: 15,
+        elevation: 10, // Shadow effect on Android
+    },
+    ledOff: {
+        backgroundColor: Colors.lightGray, // Dimmed red or gray color to simulate off state
+        shadowColor: 'rgba(0, 0, 0, 0.7)', // Subtle shadow for a "dead" appearance
+        shadowOffset: { width: -2, height: -2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 5,
+        elevation: 5,
+    },
     subject: {
         flexDirection: 'row',
         alignItems: 'center',

@@ -114,7 +114,7 @@ export const StepsIDs =
     exchangeMtu: "mtu"
 };
 
-export function increaseProgeess(steps: Step[], stepId: string, progress: number) {
+export function increaseProgress(steps: Step[], stepId: string, progress: number) {
     let currentStep = steps.find(step => step.id === stepId);
     if (currentStep) currentStep.progress += progress;
 }

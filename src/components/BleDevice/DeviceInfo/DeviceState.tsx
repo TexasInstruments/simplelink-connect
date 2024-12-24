@@ -30,9 +30,9 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, StyleSheet, Platform, Alert, Linking, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Platform, Alert, Linking, useWindowDimensions, NativeModules, NativeEventEmitter } from 'react-native';
 import { Text } from '../../Themed';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TouchableOpacity } from '../../Themed';
 import Colors from '../../../constants/Colors';
 import { DeviceScreenNavigationProp } from '../../../../types';
@@ -61,9 +61,18 @@ const DeviceState: React.FC<Props> = ({
   ...props
 }) => {
   let navigation = useNavigation<DeviceScreenNavigationProp>();
+
+  const BleManagerModule = NativeModules.BleManager;
+  const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+
   const { fontScale } = useWindowDimensions();
   const [isBonded, setIsBonded] = useState<boolean>(false);
 
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      bleManagerEmitter.addListener('BleManagerPeripheralDidBond', handleNewDeviceBonded);
+    }
+  }, [])
 
   const showAlert = () =>
     Alert.alert(
@@ -109,6 +118,13 @@ const DeviceState: React.FC<Props> = ({
     }
   }
 
+  const handleNewDeviceBonded = (e: any) => {
+    console.log('New device bonded', e)
+    if (e.id === peripheralId) {
+      setIsBonded(true);
+    }
+
+  }
 
   const checkIfPeripheripheralIsBonded = async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return false;

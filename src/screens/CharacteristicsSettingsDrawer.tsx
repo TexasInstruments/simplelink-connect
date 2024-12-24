@@ -578,7 +578,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
             <View style={{ height: 30 }} />
             <TouchableOpacity style={styles.button} onPress={hasTestOption ? navigateToTestScreen : undefined}>
               <Icon name="flask" size={20} color={Colors.blue} style={styles.icon} />
-              <Text allowFontScaling adjustsFontSizeToFit style={{ color: Colors.blue, flex: 1 }}>Enter Stress Test Mode</Text>
+              <Text allowFontScaling adjustsFontSizeToFit style={{ color: Colors.blue }}>Enter Stress Test Mode</Text>
             </TouchableOpacity>
           </>
         )}

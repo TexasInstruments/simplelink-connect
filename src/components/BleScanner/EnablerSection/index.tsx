@@ -39,9 +39,10 @@ import Colors from '../../../constants/Colors';
 interface Props {
   scanEnable: boolean;
   setScanEnable: (state: boolean) => void;
+  disabled: boolean
 }
 
-const EnablerSection: React.FC<Props> = ({ scanEnable, setScanEnable }) => {
+const EnablerSection: React.FC<Props> = ({ scanEnable, setScanEnable, disabled }) => {
   const { fontScale } = useWindowDimensions();
 
   return (
@@ -54,7 +55,7 @@ const EnablerSection: React.FC<Props> = ({ scanEnable, setScanEnable }) => {
       >
         Enable BluetoothLE Scan
       </Text>
-      <Switch onValueChange={(value) => setScanEnable(value)} value={scanEnable} />
+      <Switch onValueChange={(value) => setScanEnable(value)} value={scanEnable} disabled={disabled} style={{ opacity: disabled ? 0.2 : 1 }} />
     </View>
   );
 };

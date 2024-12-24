@@ -1,4 +1,4 @@
-import { InteractionManager, KeyboardAvoidingView, NativeEventEmitter, Switch, View } from 'react-native';
+import { InteractionManager, KeyboardAvoidingView, NativeEventEmitter, Switch, TouchableOpacity, View } from 'react-native';
 import { Text } from '../Themed';
 import { StyleSheet, NativeModules, Dimensions } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -10,12 +10,24 @@ import { Divider } from 'react-native-paper';
 import { LineChart } from 'react-native-chart-kit';
 import { chartConfig, chartStyles } from '../../constants/Charts';
 import { useFocusEffect } from '@react-navigation/native';
+import { AntDesign } from '@expo/vector-icons';
+import { downloadDataToLocalStorage } from '../Tests/testsUtils';
+import { ScrollView } from 'react-native-gesture-handler';
 
 interface Props {
     peripheralId: string;
 }
 
-const HealthThemometer: React.FC<Props> = ({ peripheralId }) => {
+interface TemperatureData {
+    temperatureMeasurement: number,
+    units: string,
+    timestamp: string,
+    date: string,
+    time: string,
+    location: string
+}
+
+const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
 
     const SERVICE_UUID = '1809';
     const CHAR_UUID = '2A1C';
@@ -25,7 +37,7 @@ const HealthThemometer: React.FC<Props> = ({ peripheralId }) => {
     const [time, setTime] = useState<string | null>(null);
     const [date, setDate] = useState<string | null>(null);
     const [temperatureType, setTemperatureType] = useState<string | null>(null);
-    const [temperatureDataSet, setTemperatureDataSet] = useState<number[]>([0]);
+    const [temperatureDataSet, setTemperatureDataSet] = useState<TemperatureData[]>([]);
     const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
     const [selectedInterval, setSelectedInterval] = useState('10'); // Default interval is 10 seconds
 
@@ -115,6 +127,21 @@ const HealthThemometer: React.FC<Props> = ({ peripheralId }) => {
         return def;
     }
 
+    function parseTemperature(valueArray: any) {
+
+        // Extract signed mantissa (first 3 bytes)
+        const mantissa = (valueArray[2] << 16) | (valueArray[1] << 8) | valueArray[0];
+        const signedMantissa = mantissa >= 0x8000 ? mantissa - 0x10000 : mantissa;
+
+        // Extract signed exponent (last byte)
+        const exponent = valueArray[3];
+
+        const signedExponent = exponent >= 0x80 ? exponent - 0x100 : exponent;
+        const floatValue = signedMantissa * Math.pow(10, signedExponent);
+
+        return floatValue;
+    }
+
     const handleIndication =
         ({ value, peripheral, characteristic, service }: any) => {
             console.log(`notification: ${value}, characteristic: ${characteristic}`);
@@ -122,20 +149,23 @@ const HealthThemometer: React.FC<Props> = ({ peripheralId }) => {
             if (characteristic.toLowerCase().includes(CHAR_UUID.toLowerCase()) && value) {
 
                 const valueArray = new Uint8Array(value);
-
                 // Parse flags
                 const flags = valueArray[0];
                 const temperatureUnitsFlag = !!(flags & 0b00000001);
                 const timeStampFlag = !!(flags & 0b00000010);
                 const temperatureTypeFlag = !!(flags & 0b00000100);
 
-                // Parse temperature measurement value
+                // Parse temperature measurement value as a float
                 const temperatureMeasurementValue = valueArray.slice(1, 5); // Bytes 2 to 5
+
+                const tempMeasure = parseTemperature(temperatureMeasurementValue);
+                const tempMeasureRounded = parseFloat(tempMeasure.toFixed(2));
 
                 // Parse timestamp (if present)
                 let timestamp = null;
                 let hexString = Buffer.from(value).toString('hex');
-
+                let timeString = '';
+                let dateString = '';
                 if (timeStampFlag) {
                     const year = valueArray[5] + valueArray[6] * 256; // Bytes 6 and 7
                     const seconds = valueArray[7];
@@ -150,8 +180,8 @@ const HealthThemometer: React.FC<Props> = ({ peripheralId }) => {
                         month: "long",
                         day: "numeric",
                     };
-                    const timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    const dateString = timestamp.toLocaleDateString("en-US", options);
+                    timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                    dateString = timestamp.toLocaleDateString("en-US", options);
 
                     console.log('Time:', timeString);
                     console.log('Date:', dateString);
@@ -167,20 +197,28 @@ const HealthThemometer: React.FC<Props> = ({ peripheralId }) => {
                 let units = temperatureUnitsFlag ? 'Fahrenheit' : 'Celsius'
                 console.log("Temperature Units Flag:", units);
 
-                let tempMeasure = new Uint32Array(temperatureMeasurementValue.buffer)[0];
-                setTemperature({ temp: tempMeasure, unit: units });
+                setTemperature({ temp: tempMeasureRounded, unit: units });
+                console.log("Temperature Type:", temperatureType);
 
+                const location = tempTypeToDefinition(temperatureType)
+                setTemperatureType(location);
+
+                const newData: TemperatureData = {
+                    temperatureMeasurement: tempMeasureRounded,
+                    timestamp: new Date().toTimeString().split(' ')[0],
+                    date: dateString,
+                    time: timeString,
+                    location: location,
+                    units: units
+                }
                 // Add new sample to data array
                 setTemperatureDataSet(prevData => {
-                    let newSet = [...prevData, tempMeasure]
+                    let newSet = [...prevData, newData];
                     if (newSet.length > 20) {
                         newSet.shift();
                     }
-                    return newSet
+                    return newSet;
                 });
-
-                console.log("Temperature Type:", temperatureType);
-                setTemperatureType(tempTypeToDefinition(temperatureType));
 
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, CHAR_UUID);
             }
@@ -191,16 +229,38 @@ const HealthThemometer: React.FC<Props> = ({ peripheralId }) => {
         // labels: pollingCounter,
         datasets: [
             {
-                data: temperatureDataSet,
+                data: temperatureDataSet.map((x) => x.temperatureMeasurement),
                 strokeWidth: 2
             }
         ],
         legend: ["Temperature Measurement"]
     };
 
+    function convertToCSV(dataArray: TemperatureData[]): string {
+
+        // Define headers for CSV
+        const headers = ["Timestamp", "Temperature Measurement", "units", "Location", "Time", "Date"];
+
+        // Map the headers and data rows to strings
+        const csvRows = [
+            headers.join(","), // Header row
+            ...dataArray.map(row => `${row.timestamp},${row.temperatureMeasurement},${row.units},${row.location},${row.time},${row.date}`)
+        ];
+
+        // Join all rows with newline characters
+        return csvRows.join("\n");
+    }
+
+    const exportData = () => {
+        console.log("press enter to export")
+        let csvStr = convertToCSV(temperatureDataSet);
+
+        downloadDataToLocalStorage(csvStr, "Health_Thermometer_Service.csv", 'text/csv');
+    }
+
     return (
         <KeyboardAvoidingView style={[styles.container]}>
-            <View style={{ flex: 1, }}>
+            <ScrollView>
                 <View style={[styles.dataBox]}>
                     <Text style={[styles.title]}>Temperature</Text>
                     <Text style={[styles.data]}>{temperature ? temperature.temp + (temperature?.unit == 'Fahrenheit' ? '°F' : '°C') : 'N/A'}</Text>
@@ -259,14 +319,19 @@ const HealthThemometer: React.FC<Props> = ({ peripheralId }) => {
                     <LineChart
                         data={chartData}
                         width={Dimensions.get("window").width - 40}
-                        height={220}
+                        height={180}
                         chartConfig={chartConfig}
                         charStyle={chartStyles}
                         style={{ borderRadius: 10, opacity: indicationsSwitch ? 1 : 0.3 }}
                     />
                 )}
 
-            </View>
+                <TouchableOpacity style={[styles.button]} onPress={exportData}>
+                    <Text style={{ color: Colors.blue, fontSize: 14, marginRight: 8 }}>Export Data</Text>
+                    <AntDesign name="download" size={20} color={Colors.blue} />
+                </TouchableOpacity>
+
+            </ScrollView>
 
         </KeyboardAvoidingView>
     );
@@ -286,20 +351,20 @@ const styles = StyleSheet.create({
     },
     container: {
         paddingHorizontal: 20,
-        paddingVertical: 30,
+        paddingTop: 20,
         alignContent: 'center',
         height: '100%',
         backgroundColor: Colors.lightGray
     },
     dataBox: {
         backgroundColor: 'white',
-        marginBottom: 15,
+        marginBottom: 10,
         display: 'flex',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        paddingHorizontal: 10,
+        paddingHorizontal: 20,
         borderRadius: 10,
-        height: 50,
+        height: 40,
         alignItems: 'center',
     },
     item: {
@@ -307,7 +372,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 10,
+        paddingHorizontal: 20,
         height: 50,
     },
     dateTimeBox: {
@@ -321,6 +386,27 @@ const styles = StyleSheet.create({
     },
     data: {
         fontSize: 16,
+    },
+    button: {
+        backgroundColor: 'white',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 20,
+        marginBottom: 10,
+        shadowColor: 'rgba(0,0,0,0.4)',
+        elevation: 2,
+        shadowOpacity: 0.5,
+        shadowRadius: 0,
+        shadowOffset: {
+            height: 1,
+            width: 0,
+        },
+        display: 'flex',
+        flexDirection: 'row',
+        alignSelf: 'center',
+        marginTop: 10,
+        alignContent: 'center',
+        alignItems: 'center',
     }
 })
-export default HealthThemometer;
+export default HealthThermometer;

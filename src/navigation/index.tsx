@@ -141,6 +141,7 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           headerShown: true,
           headerLeft: (props) => (
             <TouchableOpacity
+              testID='backButton' accessibilityLabel='backButton'
               {...props}
               onPress={() => navigation.goBack()}
             >
@@ -152,7 +153,7 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
               return null;
             } else {
               return (
-                <TouchableOpacity style={{ paddingRight: 15 }} onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}>
+                <TouchableOpacity style={{ paddingRight: 15 }} onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())} testID='openSettings' accessibilityLabel='openSettings'>
                   <FontAwesome name="gear" size={24} color="white" />
                 </TouchableOpacity>
               )
@@ -190,7 +191,7 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           headerLeft: (props) => {
             return (
               //We could use some svg icon
-              <TouchableOpacity {...props} onPress={() => navigation.pop()} >
+              <TouchableOpacity {...props} onPress={() => navigation.pop()} testID='backButton' accessibilityLabel='backButton'>
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
@@ -212,7 +213,7 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           headerLeft: (props) => {
             return (
               //We could use some svg icon
-              <TouchableOpacity {...props} onPress={() => navigation.pop()} >
+              <TouchableOpacity {...props} onPress={() => navigation.pop()} testID='backButton' accessibilityLabel='backButton'>
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
@@ -235,7 +236,7 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           headerLeft: (props) => {
             return (
               //We could use some svg icon
-              <TouchableOpacity {...props} onPress={() => { navigation.pop(); console.log(navigation) }} >
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); console.log(navigation) }} testID='backButton' accessibilityLabel='backButton'>
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
@@ -256,8 +257,7 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           headerTintColor: 'white',
           headerLeft: (props) => {
             return (
-              //We could use some svg icon
-              <TouchableOpacity {...props} onPress={() => { navigation.pop(); console.log(navigation) }} >
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); console.log(navigation) }} testID='backButton' accessibilityLabel='backButton'>
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
@@ -279,7 +279,7 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           headerLeft: (props) => {
             return (
               //We could use some svg icon
-              <TouchableOpacity {...props} onPress={() => { navigation.pop(); console.log(navigation) }} >
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); console.log(navigation) }} testID='backButton' accessibilityLabel='backButton'>
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
@@ -381,7 +381,7 @@ function BottomTabNavigator() {
             };
 
             return (
-              <TouchableOpacity {...props} style={{ paddingLeft: 15 }} onPress={goBack}>
+              <TouchableOpacity {...props} style={{ paddingLeft: 15 }} onPress={goBack} testID='backButton' accessibilityLabel='backButton'>
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>
             );

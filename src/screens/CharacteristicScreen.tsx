@@ -39,7 +39,7 @@ import { uuidToServiceSpecificScreen } from '../hooks/uuidToName';
 import TerminalServiceModel from './ServiceSpecificViews/TerminalServiceModel';
 import FWUpdate_Modal from '../components/FWUpdate/FWUpdate_Modal';
 import CGM from '../components/ContiniousGlucoseMonitoring';
-import HealthThemometer from '../components/HealthThemometer';
+import HealthThermometer from '../components/HealthThermometer';
 import SensorTagServiceModel from './ServiceSpecificViews/SensorTagServiceModel';
 import { useCharacteristicViewContext } from '../context/CharactristicViewContext';
 import GlucoseProfile from '../components/GlucoseProfile';
@@ -104,7 +104,7 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
         return <CGM peripheralId={peripheralInfo.id} />
 
       case 'HealthTermometerServiceModel':
-        return <HealthThemometer peripheralId={peripheralInfo.id} />
+        return <HealthThermometer peripheralId={peripheralInfo.id} />
 
       case 'SensorTagModel':
         return <SensorTagServiceModel peripheralId={peripheralInfo.id} serviceName={serviceName} />

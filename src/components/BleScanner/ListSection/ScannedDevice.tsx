@@ -136,7 +136,7 @@ const ScannedDevice: React.FC<Device> = ({
           </TouchableOpacity>
           {!peripheral.isConnected && (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="signal" type="font-awesome" onPress={requestConnect} color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
+              <Icon name="signal" type="font-awesome" color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
               <Text style={{ width: 35, textAlign: 'center', color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black', fontSize: 14 / fontScale }}> {peripheral.rssi} </Text>
               <TouchableOpacity
                 onPress={peripheral.advertismentInActive ? () => { } : peripheral.filter ? () => { } : requestConnect}
@@ -215,6 +215,7 @@ const ScannedDevice: React.FC<Device> = ({
             />
           </View>
         )}
+
         <ScannedDeviceInfo peripheral={peripheral} isVisible={visibleInfo} />
       </View>
     </View >

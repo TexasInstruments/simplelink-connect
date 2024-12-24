@@ -139,7 +139,7 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
         <View style={styles.footer}>
-          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>1.3.7</Text>
+          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>1.3.8</Text>
           <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
           <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Credits: </Text>Tony Cave (Bluwbee LTD)</Text>
         </View>

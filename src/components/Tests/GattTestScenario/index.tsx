@@ -9,7 +9,7 @@ import { Buffer } from 'buffer';
 import BleManager, { Peripheral } from 'react-native-ble-manager';
 import { EventRegister } from 'react-native-event-listeners'
 import DeviceInfo from 'react-native-device-info';
-import { LogLevel, DeviceName, Step, StepsIDs, TestResult, TestData, increaseProgeess, increaseRound, setMTUSize, write, read, handleExportLogs, handleExportResults, getNumOfPassed, TestParams, data_stream, TEST_CASE, simple_peripheral } from '../testsUtils';
+import { LogLevel, DeviceName, Step, StepsIDs, TestResult, TestData, increaseProgress, increaseRound, setMTUSize, write, read, handleExportLogs, handleExportResults, getNumOfPassed, TestParams, data_stream, TEST_CASE, simple_peripheral } from '../testsUtils';
 import TestStep from '../TestStep';
 import ActionButtons from '../ActionButtons';
 import LoaderKit from 'react-native-loader-kit'
@@ -51,6 +51,7 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
 
     const notificationSize = useRef<number>(0);
     const notifTimeout = useRef<any>(null);
+    const firstNotifTimeout = useRef<any>(null);
 
     const BleManagerModule = NativeModules.BleManager;
     const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
@@ -84,7 +85,6 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
         }
 
     }, [gattLoopFinished]);
-
 
     function resetProgresses() {
         let progressesToReset = [StepsIDs.read, StepsIDs.write, StepsIDs.receiveNotification]
@@ -292,24 +292,25 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
         const randomBytes = generateRandomBytes(testParameters.current.write_data_size);
         // Write to characteristic
         try {
-            increaseProgeess(steps.current, StepsIDs.write, 0.10);
-            await write(writeChar, serviceUuid, randomBytes, testParameters.current.write_data_size, addLog, periphralfInfo.current?.id, testResult.current);
-
+            increaseProgress(steps.current, StepsIDs.write, 0.10);
             // start timeout for notification
             notifTimeout.current = setTimeout(() => {
-                addLog('Notification timeout after 45 seconds', LogLevel.ERROR);
+                addLog('Notification timeout after 20 seconds', LogLevel.ERROR);
                 testResult.current!.got_expected_notification = false;
                 testResult.current!.test_pass = false;
-                testResult.current!.error_message = 'Notification timeout after 45 seconds';
+                testResult.current!.error_message = 'Notification timeout after 20 seconds';
 
                 setGattLoopFinished(true);
             }, NOTIFICATION_TIMEOUT);
 
-            increaseProgeess(steps.current, StepsIDs.write, 1);
+
+            await write(writeChar, serviceUuid, randomBytes, testParameters.current.write_data_size, addLog, periphralfInfo.current?.id, testResult.current);
+
+            increaseProgress(steps.current, StepsIDs.write, 1);
             increaseRound(steps.current, StepsIDs.write);
 
         } catch (e) {
-            increaseProgeess(steps.current, StepsIDs.write, 1);
+            increaseProgress(steps.current, StepsIDs.write, 1);
             increaseRound(steps.current, StepsIDs.write);
             setGattLoopFinished(true);
             return
@@ -327,23 +328,23 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
 
         let readenData;
 
-        increaseProgeess(steps.current, StepsIDs.write, 0.5);
+        increaseProgress(steps.current, StepsIDs.write, 0.5);
 
         try {
             await write(readWriteChar, serviceUuid, randomBytes, testParameters.current.write_data_size, addLog, periphralfInfo.current?.id!, testResult.current!);
-            increaseProgeess(steps.current, StepsIDs.write, 1);
+            increaseProgress(steps.current, StepsIDs.write, 1);
             increaseRound(steps.current, StepsIDs.write);
-            increaseProgeess(steps.current, StepsIDs.read, 0.5);
+            increaseProgress(steps.current, StepsIDs.read, 0.5);
 
             readenData = await read(readWriteChar, serviceUuid, periphralfInfo.current?.id!, addLog, testResult.current!);
-            increaseProgeess(steps.current, StepsIDs.read, 1);
+            increaseProgress(steps.current, StepsIDs.read, 1);
             increaseRound(steps.current, StepsIDs.read);
 
         }
         catch (e) {
-            increaseProgeess(steps.current, StepsIDs.write, 1);
+            increaseProgress(steps.current, StepsIDs.write, 1);
             increaseRound(steps.current, StepsIDs.write);
-            increaseProgeess(steps.current, StepsIDs.read, 1);
+            increaseProgress(steps.current, StepsIDs.read, 1);
             increaseRound(steps.current, StepsIDs.read);
             setGattLoopFinished(true);
             return
@@ -410,20 +411,67 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
 
         // Update MTU value - Android only API 21+, iOS initiates an MTU exchange automatically upon connection
         if (Platform.OS === 'android') {
-            increaseProgeess(steps.current, StepsIDs.exchangeMtu, 0.50);
+            increaseProgress(steps.current, StepsIDs.exchangeMtu, 0.50);
             await setMTUSize(periphralfInfo.current?.id!, testParameters.current.mtu_size, addLog);
-            increaseProgeess(steps.current, StepsIDs.exchangeMtu, 1);
+            increaseProgress(steps.current, StepsIDs.exchangeMtu, 1);
             increaseRound(steps.current, StepsIDs.exchangeMtu);
         }
 
         // Enable notifications
         if (testParameters.current.test_case === TEST_CASE.WRITE_NOTIFY) {
             addLog('Enabling Notifications', LogLevel.INFO)
-            increaseProgeess(steps.current, StepsIDs.enableNotif, 0.50);
+            increaseProgress(steps.current, StepsIDs.enableNotif, 0.50);
 
             try {
-                await BleManager.startNotification(periphralfInfo.current!.id, serviceUUID.current, notifChar.current);
-                increaseProgeess(steps.current, StepsIDs.enableNotif, 1);
+                // In TI simple peripheral service a notification should be received when enabling notifications.
+                if (testParameters.current.supported_service == simple_peripheral && currentGattLoopNumber.current == 0) {
+                    await new Promise<void>((resolve, reject) => {
+                        // Step 1: Add the listener for notifications
+                        const notificationListener = bleManagerEmitter.addListener(
+                            'BleManagerDidUpdateValueForCharacteristic',
+                            ({ value, peripheral, characteristic, service }) => {
+                                if (characteristic.toLocaleLowerCase().includes(notifChar.current.toLocaleLowerCase())) {
+                                    let hexString = Buffer.from(value).toString('hex');
+                                    addLog(`First Notification Received: ${hexString}`, LogLevel.SUCCESS);
+
+                                    // Clean up the listener and timeout
+                                    notificationListener.remove();
+                                    clearTimeout(firstNotifTimeout.current);
+
+                                    triggerNextGattLoop();
+
+                                    // Resolve the promise to allow the process to continue
+                                    resolve();
+                                }
+                            }
+                        );
+
+                        // Step 2: Start notifications after the listener is added
+                        addLog('Enable notification', LogLevel.SUCCESS);
+                        BleManager.startNotification(periphralfInfo.current!.id, serviceUUID.current, notifChar.current)
+                            .then(() => {
+                                console.log('Notification started, waiting for the first notification...');
+                            })
+                            .catch((error) => {
+                                addLog(`Failed to start notifications: ${error}`, LogLevel.ERROR);
+                                notificationListener.remove();
+                                reject(error);
+                            });
+
+                        // Step 3: Set up a timeout in case no notification is received
+                        firstNotifTimeout.current = setTimeout(() => {
+                            addLog(`Timeout waiting for the first notification`, LogLevel.ERROR);
+                            notificationListener.remove();
+                            reject(new Error('Timeout waiting for the first notification'));
+                        }, NOTIFICATION_TIMEOUT);
+                    });
+
+                }
+                else if (testParameters.current.supported_service != simple_peripheral) {
+                    await BleManager.startNotification(periphralfInfo.current!.id, serviceUUID.current, notifChar.current);
+
+                }
+                increaseProgress(steps.current, StepsIDs.enableNotif, 1);
                 increaseRound(steps.current, StepsIDs.enableNotif);
 
             } catch (error: any) {
@@ -452,7 +500,7 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
                         // Check the notification is in the expected size
                         if (notificationSize.current == testParameters.current.expected_notifications_size) {
                             testResult.current!.got_expected_notification = true;
-                            increaseProgeess(steps.current, StepsIDs.receiveNotification, 1);
+                            increaseProgress(steps.current, StepsIDs.receiveNotification, 1);
                             increaseRound(steps.current, StepsIDs.receiveNotification);
                             setGattLoopFinished(true);
                         }
@@ -462,14 +510,14 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
                             testResult.current!.got_expected_notification = false;
                             testResult.current!.test_pass = false;
                             testResult.current!.error_message = "Notification size does not macth to expected size";
-                            increaseProgeess(steps.current, StepsIDs.receiveNotification, 1);
+                            increaseProgress(steps.current, StepsIDs.receiveNotification, 1);
                             increaseRound(steps.current, StepsIDs.receiveNotification);
                             setGattLoopFinished(true);
 
                         }
 
                         else {  // need to wait for another notification
-                            increaseProgeess(steps.current, StepsIDs.receiveNotification, notificationSize.current / testParameters.current.expected_notifications_size);
+                            increaseProgress(steps.current, StepsIDs.receiveNotification, notificationSize.current / testParameters.current.expected_notifications_size);
                             addLog(`Waiting for notification size ${testParameters.current.expected_notifications_size - notificationSize.current}`, LogLevel.INFO)
 
                             // start new timeout for notification
@@ -489,7 +537,14 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
         }
 
         // Execute gatt test for testParameters.current.num_loops_gatt_test
-        triggerNextGattLoop();
+        if (testParameters.current.test_case === TEST_CASE.WRITE_NOTIFY) {
+            if (testParameters.current.supported_service != simple_peripheral) {
+                triggerNextGattLoop();
+            }
+        }
+        else {
+            triggerNextGattLoop();
+        }
     }
 
     function initiateTestValues() {

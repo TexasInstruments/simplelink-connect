@@ -255,11 +255,11 @@ PODS:
     - DGCharts (= 5.0.0)
     - React
     - SwiftyJSON (= 5.0)
-  - react-native-document-picker (9.1.1):
+  - react-native-document-picker (9.3.1):
     - React-Core
   - react-native-get-random-values (1.8.0):
     - React-Core
-  - react-native-idle-timer (2.2.1):
+  - react-native-idle-timer (2.2.3):
     - React-Core
   - react-native-loader-kit (2.0.8):
     - NVActivityIndicatorView (= 5.1.1)
@@ -340,7 +340,7 @@ PODS:
     - React-perflogger (= 0.69.9)
   - RNCAsyncStorage (1.17.12):
     - React-Core
-  - RNDeviceInfo (10.13.0):
+  - RNDeviceInfo (10.14.0):
     - React-Core
   - RNFlashList (1.1.0):
     - React-Core
@@ -348,7 +348,7 @@ PODS:
     - React-Core
   - RNGestureHandler (2.5.0):
     - React-Core
-  - RNKeychain (8.1.3):
+  - RNKeychain (8.2.0):
     - React-Core
   - RNReanimated (2.9.1):
     - DoubleConversion
@@ -380,7 +380,7 @@ PODS:
   - RNScreens (3.15.0):
     - React-Core
     - React-RCTImage
-  - RNSVG (12.3.0):
+  - RNSVG (12.5.1):
     - React-Core
   - SwiftyJSON (5.0.0)
   - Yoga (1.14.0)
@@ -621,9 +621,9 @@ SPEC CHECKSUMS:
   React-logger: 96d904c5bc87c2660d48e6a36fb2edf65f9cfb11
   react-native-ble-manager: f8add48474ad08a0bd3e46b2d1ebff5e00a628b7
   react-native-charts-wrapper: cd83d9b1acb8e06ebd18bf297de597906e1cc87d
-  react-native-document-picker: 3599b238843369026201d2ef466df53f77ae0452
+  react-native-document-picker: 940269e45632f48eb5e81543381ffd15a970d849
   react-native-get-random-values: a6ea6a8a65dc93e96e24a11105b1a9c8cfe1d72a
-  react-native-idle-timer: f1920a59fe776340d004ff9de13c4a6eedcc8807
+  react-native-idle-timer: b4e9ff189950bcd3ba03257d9f033f3432341db8
   react-native-loader-kit: ed18c8ce83b69083211912326897d8286f37d797
   react-native-restart: 7595693413fe3ca15893702f2c8306c62a708162
   react-native-safe-area-context: 6c12e3859b6f27b25de4fee8201cfb858432d8de
@@ -640,14 +640,14 @@ SPEC CHECKSUMS:
   React-runtimeexecutor: df1518d092e8c74cafddc56690d1ac386ec24d7a
   ReactCommon: fac40473e2c4117522384027ab33ad0cb6717dc5
   RNCAsyncStorage: 09fc8595e6d6f6d5abf16b23a56b257d9c6b7c5b
-  RNDeviceInfo: 5e4695f906aeb624855cee8d568a46037e4a50f7
+  RNDeviceInfo: 59344c19152c4b2b32283005f9737c5c64b42fba
   RNFlashList: 031c182b95ead44fd0715f6029a744cd5e10d51f
   RNFS: 4ac0f0ea233904cb798630b3c077808c06931688
   RNGestureHandler: bad495418bcbd3ab47017a38d93d290ebd406f50
-  RNKeychain: f1b48665a4646f61191eb048c4c05c58d9a7596f
+  RNKeychain: bfe3d12bf4620fe488771c414530bf16e88f3678
   RNReanimated: 2cf7451318bb9cc430abeec8d67693f9cf4e039c
   RNScreens: 4a1af06327774490d97342c00aee0c2bafb497b7
-  RNSVG: 302bfc9905bd8122f08966dc2ce2d07b7b52b9f8
+  RNSVG: d7d7bc8229af3842c9cfc3a723c815a52cdd1105
   SwiftyJSON: 36413e04c44ee145039d332b4f4e2d3e8d6c4db7
   Yoga: 7a4d48cfb35dfa542151e615fa73c1a0d88caf21
 

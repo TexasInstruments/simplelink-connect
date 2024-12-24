@@ -10,7 +10,7 @@ import { EventRegister } from 'react-native-event-listeners'
 import TestStep from '../../Tests/TestStep';
 import RNRestart from 'react-native-restart';
 import DeviceInfo from 'react-native-device-info';
-import { hold, getCurrentDateTimeString, generateRandomBytes, LogLevel, DeviceName, Step, StepsIDs, TestResult, TestData, increaseProgeess, increaseRound, setMTUSize, write, read, handleExportLogs, handleExportResults, getNumOfPassed, TestParams, TEST_CASE, data_stream, simple_peripheral, sendEmail, NOTIFICATION_TIMEOUT } from '../testsUtils';
+import { hold, getCurrentDateTimeString, generateRandomBytes, LogLevel, DeviceName, Step, StepsIDs, TestResult, TestData, increaseProgress, increaseRound, setMTUSize, write, read, handleExportLogs, handleExportResults, getNumOfPassed, TestParams, TEST_CASE, data_stream, simple_peripheral, sendEmail, NOTIFICATION_TIMEOUT } from '../testsUtils';
 import ActionButtons from '../ActionButtons';
 import IdleTimerManager from 'react-native-idle-timer';
 
@@ -22,7 +22,7 @@ const StressTestScenario: React.FC = ({ }) => {
     if (!testParametersContext) {
         return null;
     }
-    const [logs, setLogs] = useState<{ message: string, sevirity: string }[]>([{ message: 'Click on the button to start testing', sevirity: LogLevel.INFO }]);
+    const [logs, setLogs] = useState<{ message: string, severity: string }[]>([{ message: 'Click on the button to start testing', severity: LogLevel.INFO }]);
     const [status, setStatus] = useState<string>('');
     const [currentDevice, setCurrentDevice] = useState<DeviceName>({ value: "", timestamp: 0 });
 
@@ -32,19 +32,20 @@ const StressTestScenario: React.FC = ({ }) => {
 
     const steps = useRef<Step[]>([]);
 
-    const currentAdrressIndex = useRef<number>(0);
+    const currentAddressIndex = useRef<number>(0);
     const currentMainLoopNumber = useRef<number>(0);
     const currentGattLoopNumber = useRef<number>(0);
 
-    const peripherialDiscoveredTimeout = useRef<any>(null);
+    const peripheralDiscoveredTimeout = useRef<any>(null);
     const connectTimeout = useRef<any>(null);
     const notifTimeout = useRef<any>(null);
+    const firstNotifTimeout = useRef<any>(null);
 
     const testData = useRef<TestData | null>(null);
     const testResult = useRef<TestResult | null>(null);
     const notifChar = useRef<string>('');
     const serviceUUID = useRef<string>('');
-    const periphralfInfo = useRef<Peripheral | null>(null);
+    const peripheralInfo = useRef<Peripheral | null>(null);
     const startTime = useRef<number>(0);
     const startConnectionTime = useRef<number>(0);
     const testParameters = useRef<TestParams>(testParametersContext);
@@ -57,7 +58,7 @@ const StressTestScenario: React.FC = ({ }) => {
     const connectionPromises: Promise<void>[] = [];
 
     const lastResults = useRef<TestData | null>(null);
-    const lastLogs = useRef<{ message: string, sevirity: string }[]>([]);
+    const lastLogs = useRef<{ message: string, severity: string }[]>([]);
 
     useEffect(() => {
 
@@ -106,10 +107,10 @@ const StressTestScenario: React.FC = ({ }) => {
                 bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral')
                 try {
                     increaseRound(steps.current, StepsIDs.disconnect);
-                    increaseProgeess(steps.current, StepsIDs.disconnect, 0.3);
-                    let isConnected = await BleManager.isPeripheralConnected(periphralfInfo.current!.id, [])
+                    increaseProgress(steps.current, StepsIDs.disconnect, 0.3);
+                    let isConnected = await BleManager.isPeripheralConnected(peripheralInfo.current!.id, [])
                     if (isConnected) {
-                        let res = await disconnectPeripheral(periphralfInfo.current!.id);
+                        let res = await disconnectPeripheral(peripheralInfo.current!.id);
 
                         // stop connection duration timer 
                         let endConnectionTime = performance.now();
@@ -129,7 +130,7 @@ const StressTestScenario: React.FC = ({ }) => {
                     }
                 }
                 catch (err) {
-                    increaseProgeess(steps.current, StepsIDs.disconnect, 1);
+                    increaseProgress(steps.current, StepsIDs.disconnect, 1);
                     // resetProgresses();
                 }
 
@@ -334,20 +335,20 @@ const StressTestScenario: React.FC = ({ }) => {
         // if "Pair and Bond" is true we should connect with bond.
         if (Platform.OS == 'android' && testParameters.current.pair_and_bond) {
             increaseRound(steps.current, StepsIDs.pairAndBond);
-            increaseProgeess(steps.current, StepsIDs.pairAndBond, 0.2);
-            let isBonded = await isPeripheralBonded(periphralfInfo.current!!.id);
+            increaseProgress(steps.current, StepsIDs.pairAndBond, 0.2);
+            let isBonded = await isPeripheralBonded(peripheralInfo.current!!.id);
             if (!isBonded) {
                 try {
                     addLog('Trying to bond peripheral ' + peripheralId, LogLevel.INFO);
-                    increaseProgeess(steps.current, StepsIDs.pairAndBond, 0.4);
+                    increaseProgress(steps.current, StepsIDs.pairAndBond, 0.4);
 
-                    await createBond(periphralfInfo.current!!.id);
-                    increaseProgeess(steps.current, StepsIDs.pairAndBond, 1);
+                    await createBond(peripheralInfo.current!!.id);
+                    increaseProgress(steps.current, StepsIDs.pairAndBond, 1);
 
                     testResult.current!.bonded = true;
 
                 } catch (error: any) {
-                    increaseProgeess(steps.current, StepsIDs.pairAndBond, 1);
+                    increaseProgress(steps.current, StepsIDs.pairAndBond, 1);
                     testResult.current!.bonded = false;
                     testResult.current!.test_pass = false;
                     testResult.current!.error_message = error;
@@ -367,7 +368,7 @@ const StressTestScenario: React.FC = ({ }) => {
                 }
             }
             else {
-                increaseProgeess(steps.current, StepsIDs.pairAndBond, 1)
+                increaseProgress(steps.current, StepsIDs.pairAndBond, 1)
                 addLog('Peripheral already bond.', LogLevel.INFO)
             }
 
@@ -388,28 +389,32 @@ const StressTestScenario: React.FC = ({ }) => {
 
                     testResult.current!.test_pass = false;
                     testResult.current!.connection = false;
-                    testResult.current!.error_message = "Peripheral connection timeout";
+                    testResult.current!.error_message = 'Peripheral connection timeout';
 
+                    testData.current?.results.push(testResult.current!);
+
+                    clearTimeout(connectTimeout.current);
+                    increaseProgress(steps.current, StepsIDs.connect, 1);
                     // Move to the next loop
                     setLoopFinished(true);
 
                 }
             });
         }, 5000);
-        increaseProgeess(steps.current, StepsIDs.connect, 0.10)
+        increaseProgress(steps.current, StepsIDs.connect, 0.10)
 
         // Check if there are any pending connection promises
-        if (connectionPromises.length > 0) {
-            console.log('Another connection is already in progress');
-            return;
-        }
+        // if (connectionPromises.length > 0) {
+        //     console.log('Another connection is already in progress');
+        //     return;
+        // }
 
         // Create a new promise for the connection
         const connectionPromise: Promise<void> = new Promise((resolve, reject) => {
             let options = Platform.OS === 'android' ? { phy: testParameters.current.connection_phy } : undefined
             BleManager.connect(peripheralId, options)
                 .then(() => {
-                    increaseProgeess(steps.current, StepsIDs.connect, 0.30);
+                    increaseProgress(steps.current, StepsIDs.connect, 0.30);
                     addLog('Device Connected', LogLevel.SUCCESS);
                     clearTimeout(connectTimeout.current);
                     testResult.current!.connection = true;
@@ -426,7 +431,7 @@ const StressTestScenario: React.FC = ({ }) => {
                     testData.current?.results.push(testResult.current!);
 
                     setLoopFinished(true);
-                    increaseProgeess(steps.current, StepsIDs.connect, 1)
+                    increaseProgress(steps.current, StepsIDs.connect, 1)
                     clearTimeout(connectTimeout.current);
                     reject(error); // Reject the promise on connection error
                 });
@@ -442,7 +447,7 @@ const StressTestScenario: React.FC = ({ }) => {
                 startConnectionTime.current = performance.now();
 
                 testResult.current!.connection = true;
-                increaseProgeess(steps.current, StepsIDs.connect, 1)
+                increaseProgress(steps.current, StepsIDs.connect, 1)
 
                 // Connection resolved, remove it from the array
                 const index = connectionPromises.indexOf(connectionPromise);
@@ -500,10 +505,10 @@ const StressTestScenario: React.FC = ({ }) => {
             // Founded the requested peripheral
             if (peripheral.name?.toLocaleLowerCase() === currentDevice.value.toLocaleLowerCase() || peripheral.advertising.localName?.toLocaleLowerCase() === currentDevice.value.toLocaleLowerCase()) {
                 addLog('Found requested peripheral!', LogLevel.SUCCESS);
-                increaseProgeess(steps.current, StepsIDs.scan, 1);
+                increaseProgress(steps.current, StepsIDs.scan, 1);
 
-                periphralfInfo.current = peripheral;
-                clearTimeout(peripherialDiscoveredTimeout.current)
+                peripheralInfo.current = peripheral;
+                clearTimeout(peripheralDiscoveredTimeout.current)
                 bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
                 addLog('Stop Scanning', LogLevel.INFO);
                 bleManagerEmitter.removeAllListeners('BleManagerStopScan');
@@ -541,10 +546,10 @@ const StressTestScenario: React.FC = ({ }) => {
         }
     }
 
-    function addLog(message: string, sevirity: string) {
+    function addLog(message: string, severity: string) {
         console.log(message)
-        setLogs((prevLogs) => [...prevLogs, { message: `[${new Date().toTimeString().split(' ')[0]}] ${message}`, sevirity: sevirity }]);
-        if (sevirity !== LogLevel.INFO) {
+        setLogs((prevLogs) => [...prevLogs, { message: `[${new Date().toTimeString().split(' ')[0]}] ${message}`, severity: severity }]);
+        if (severity !== LogLevel.INFO) {
             setStatus(message);
         }
     }
@@ -563,7 +568,7 @@ const StressTestScenario: React.FC = ({ }) => {
             BleManager.disconnect(peripheralId)
                 .then(() => {
                     addLog('Peripheral disconnected!', LogLevel.SUCCESS);
-                    increaseProgeess(steps.current, StepsIDs.disconnect, 1);
+                    increaseProgress(steps.current, StepsIDs.disconnect, 1);
                     resolve({ success: true, message: "" });
                 })
                 .catch((error: any) => {
@@ -576,7 +581,7 @@ const StressTestScenario: React.FC = ({ }) => {
     function initiateTestValues() {
         currentGattLoopNumber.current = 0;
         currentMainLoopNumber.current = 0;
-        currentAdrressIndex.current = 0;
+        currentAddressIndex.current = 0;
         testData.current = null;
         testResult.current = {
             main_loop_number: currentMainLoopNumber.current,
@@ -593,11 +598,12 @@ const StressTestScenario: React.FC = ({ }) => {
         bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
 
         clearTimeout(connectTimeout.current);
-        clearTimeout(peripherialDiscoveredTimeout.current);
+        clearTimeout(peripheralDiscoveredTimeout.current);
         clearTimeout(notifTimeout.current);
+        clearTimeout(firstNotifTimeout.current);
 
         // stop scanning and disconnect
-        await stopScanAndDisconnect(periphralfInfo.current!.id);
+        await stopScanAndDisconnect(peripheralInfo.current!.id);
 
         let endTime = performance.now();
         testData.current!.info.total_execution_time_ms = endTime - startTime.current;
@@ -636,7 +642,7 @@ const StressTestScenario: React.FC = ({ }) => {
         // End Main Loop
         if (currentMainLoopNumber.current >= testParameters.current.main_loop_number) {
             addLog('Finished Main Loops for ' + currentDevice.value, LogLevel.SUCCESS);
-            if (currentAdrressIndex.current < testParameters.current.devices_name_list.length) {
+            if (currentAddressIndex.current < testParameters.current.devices_name_list.length) {
                 currentMainLoopNumber.current = 0;
             }
 
@@ -678,7 +684,7 @@ const StressTestScenario: React.FC = ({ }) => {
         bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
 
         // Set timeout for discovering the peripheral
-        peripherialDiscoveredTimeout.current = setTimeout(async () => {
+        peripheralDiscoveredTimeout.current = setTimeout(async () => {
             addLog('Scanning Timeout after 12000 ms', LogLevel.ERROR);
             bleManagerEmitter.removeAllListeners('BleManagerStopScan');
             bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
@@ -697,7 +703,7 @@ const StressTestScenario: React.FC = ({ }) => {
             // Move to the next loop
             setLoopFinished(true);
         }, 12000);
-        increaseProgeess(steps.current, StepsIDs.scan, 0.15);
+        increaseProgress(steps.current, StepsIDs.scan, 0.15);
         increaseRound(steps.current, StepsIDs.scan);
         // Scan for input bd device
         scan(true);
@@ -706,7 +712,7 @@ const StressTestScenario: React.FC = ({ }) => {
 
     function nextDevice() {
         // Test is finished
-        if (currentAdrressIndex.current >= testParameters.current.devices_name_list.length) {
+        if (currentAddressIndex.current >= testParameters.current.devices_name_list.length) {
             EventRegister.removeAllListeners();
 
             let endTime = performance.now();
@@ -724,9 +730,9 @@ const StressTestScenario: React.FC = ({ }) => {
 
         // Trigger test with next bd device
         else {
-            let nextDevice = testParameters.current.devices_name_list[currentAdrressIndex.current];
+            let nextDevice = testParameters.current.devices_name_list[currentAddressIndex.current];
             setCurrentDevice({ value: nextDevice, timestamp: Date.now() });
-            currentAdrressIndex.current += 1;
+            currentAddressIndex.current += 1;
         }
     }
 
@@ -740,10 +746,11 @@ const StressTestScenario: React.FC = ({ }) => {
             // Clean all bonding data 
             if (Platform.OS === 'android') {
                 let bondedPeripherals = await BleManager.getBondedPeripherals();
-
                 for (const bp of bondedPeripherals) {
-                    addLog('Trying to remove ' + bp.id + ' bond', LogLevel.INFO)
-                    await removeBond(bp.id);
+                    if (bp.name && testParameters.current.devices_name_list.includes(bp.name)) {
+                        addLog('Trying to remove ' + bp.id + ' bond', LogLevel.INFO)
+                        await removeBond(bp.id);
+                    }
                 }
             }
 
@@ -794,18 +801,19 @@ const StressTestScenario: React.FC = ({ }) => {
         const randomBytes = generateRandomBytes(testParameters.current.write_data_size);
         // Write to characteristic
         try {
-
-            await write(writeChar, serviceUuid, randomBytes, testParameters.current.write_data_size, addLog, periphralfInfo.current?.id, testResult.current);
-
             // start timeout for notification
             notifTimeout.current = setTimeout(() => {
-                addLog('Notification timeout after 45 seconds', LogLevel.ERROR);
+                addLog('Notification timeout after 20 seconds', LogLevel.ERROR);
                 testResult.current.got_expected_notification = false;
                 testResult.current.test_pass = false;
                 testResult.current.error_message = 'Notification timeout after 20 seconds';
 
                 setGattLoopFinished(true);
             }, NOTIFICATION_TIMEOUT);
+
+            await write(writeChar, serviceUuid, randomBytes, testParameters.current.write_data_size, addLog, peripheralInfo.current?.id, testResult.current);
+
+
         } catch (e) {
             setGattLoopFinished(true);
             return
@@ -821,18 +829,18 @@ const StressTestScenario: React.FC = ({ }) => {
 
 
         // Write to characteristic
-        increaseProgeess(steps.current, StepsIDs.gattTesting, 0.20);
+        increaseProgress(steps.current, StepsIDs.gattTesting, 0.20);
 
         const randomBytes = generateRandomBytes(testParameters.current.write_data_size);
         let readenData;
         try {
-            await write(readWriteChar, serviceUuid, randomBytes, testParameters.current.write_data_size, addLog, periphralfInfo.current?.id!, testResult.current!);
-            increaseProgeess(steps.current, StepsIDs.gattTesting, 0.40);
-            readenData = await read(readWriteChar, serviceUuid, periphralfInfo.current?.id!, addLog, testResult.current!);
-            increaseProgeess(steps.current, StepsIDs.gattTesting, 1);
+            await write(readWriteChar, serviceUuid, randomBytes, testParameters.current.write_data_size, addLog, peripheralInfo.current?.id!, testResult.current!);
+            increaseProgress(steps.current, StepsIDs.gattTesting, 0.40);
+            readenData = await read(readWriteChar, serviceUuid, peripheralInfo.current?.id!, addLog, testResult.current!);
+            increaseProgress(steps.current, StepsIDs.gattTesting, 1);
 
         } catch (e) {
-            increaseProgeess(steps.current, StepsIDs.gattTesting, 1);
+            increaseProgress(steps.current, StepsIDs.gattTesting, 1);
             setGattLoopFinished(true);
             return
         }
@@ -867,7 +875,8 @@ const StressTestScenario: React.FC = ({ }) => {
             currentGattLoopNumber.current = 0;
             bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
             if (testParameters.current.test_case === TEST_CASE.WRITE_NOTIFY) { // Disable Notifications if needed
-                BleManager.stopNotification(periphralfInfo.current!.id, serviceUUID.current, notifChar.current);
+                console.log("Disable Notification")
+                BleManager.stopNotification(peripheralInfo.current!.id, serviceUUID.current, notifChar.current);
             }
             setLoopFinished(true);
         }
@@ -903,15 +912,15 @@ const StressTestScenario: React.FC = ({ }) => {
 
     async function startGattTesting() {
         if (testParameters.current.gatt_data_testing) {
-            increaseProgeess(steps.current, StepsIDs.gattTesting, 0.10);
+            increaseProgress(steps.current, StepsIDs.gattTesting, 0.10);
 
-            let s = await BleManager.retrieveServices(periphralfInfo.current?.id!);
+            let s = await BleManager.retrieveServices(peripheralInfo.current?.id!);
 
             // Update MTU value - Android only API 21+, iOS initiates an MTU exchange automatically upon connection
             if (Platform.OS === 'android') {
-                increaseProgeess(steps.current, StepsIDs.gattTesting, 0.20);
+                increaseProgress(steps.current, StepsIDs.gattTesting, 0.20);
 
-                await setMTUSize(periphralfInfo.current?.id!, testParameters.current.mtu_size, addLog)
+                await setMTUSize(peripheralInfo.current?.id!, testParameters.current.mtu_size, addLog)
             }
 
             // Enable notifications
@@ -919,8 +928,56 @@ const StressTestScenario: React.FC = ({ }) => {
                 addLog('Enabling Notifications', LogLevel.INFO)
                 try {
 
-                    await BleManager.startNotification(periphralfInfo.current!.id, serviceUUID.current, notifChar.current);
-                    increaseProgeess(steps.current, StepsIDs.gattTesting, 0.40);
+                    // In TI simple peripheral service a notification should be received when enabling notifications.
+                    if (testParameters.current.supported_service == simple_peripheral && currentGattLoopNumber.current == 0) {
+                        await new Promise<void>((resolve, reject) => {
+                            // Step 1: Add the listener for notifications
+                            const notificationListener = bleManagerEmitter.addListener(
+                                'BleManagerDidUpdateValueForCharacteristic',
+                                ({ value, peripheral, characteristic, service }) => {
+                                    if (characteristic.toLocaleLowerCase().includes(notifChar.current.toLocaleLowerCase())) {
+                                        let hexString = Buffer.from(value).toString('hex');
+                                        addLog(`First Notification Received: ${hexString}`, LogLevel.SUCCESS);
+
+                                        // Clean up the listener and timeout
+                                        notificationListener.remove();
+                                        clearTimeout(firstNotifTimeout.current);
+
+                                        triggerNextGattLoop();
+
+                                        // Resolve the promise to allow the process to continue
+                                        resolve();
+                                    }
+                                }
+                            );
+
+                            // Step 2: Start notifications after the listener is added
+                            addLog('Enable notification', LogLevel.SUCCESS);
+                            BleManager.startNotification(peripheralInfo.current!.id, serviceUUID.current, notifChar.current)
+                                .then(() => {
+                                    console.log('Notification started, waiting for the first notification...');
+                                })
+                                .catch((error) => {
+                                    addLog(`Failed to start notifications: ${error}`, LogLevel.ERROR);
+                                    notificationListener.remove();
+                                    reject(error);
+                                });
+
+                            // Step 3: Set up a timeout in case no notification is received
+                            firstNotifTimeout.current = setTimeout(() => {
+                                addLog(`Timeout waiting for the first notification`, LogLevel.ERROR);
+                                notificationListener.remove();
+                                reject(new Error('Timeout waiting for the first notification'));
+                            }, NOTIFICATION_TIMEOUT);
+                        });
+
+                    }
+                    else if (testParameters.current.supported_service != simple_peripheral) {
+                        await BleManager.startNotification(peripheralInfo.current!.id, serviceUUID.current, notifChar.current);
+
+                    }
+
+                    increaseProgress(steps.current, StepsIDs.gattTesting, 0.40);
 
                 } catch (error: any) {
                     addLog('Error starting notifications: ' + error, LogLevel.ERROR);
@@ -944,13 +1001,13 @@ const StressTestScenario: React.FC = ({ }) => {
 
                             let hexString = ''
                             hexString = Buffer.from(value).toString('hex');
-                            addLog('Got Notification with size: ' + value.length, LogLevel.SUCCESS);
+                            addLog(`Got Notification ${value} with size: ` + value.length, LogLevel.SUCCESS);
 
                             notificationSize.current += value.length;
                             // Check the notification is in the expected size
                             if (notificationSize.current == testParameters.current.expected_notifications_size) {
                                 testResult.current.got_expected_notification = true;
-                                increaseProgeess(steps.current, StepsIDs.gattTesting, 1);
+                                increaseProgress(steps.current, StepsIDs.gattTesting, 1);
                                 setGattLoopFinished(true);
                             }
 
@@ -959,13 +1016,13 @@ const StressTestScenario: React.FC = ({ }) => {
                                 testResult.current.got_expected_notification = false;
                                 testResult.current!.test_pass = false;
                                 testResult.current!.error_message = "Notification size does not macth to expected size";
-                                increaseProgeess(steps.current, StepsIDs.gattTesting, 1);
+                                increaseProgress(steps.current, StepsIDs.gattTesting, 1);
                                 setGattLoopFinished(true);
 
                             }
 
                             else { // else - need to wait for another notification
-                                increaseProgeess(steps.current, StepsIDs.gattTesting, notificationSize.current / testParameters.current.expected_notifications_size);
+                                increaseProgress(steps.current, StepsIDs.gattTesting, notificationSize.current / testParameters.current.expected_notifications_size);
                                 addLog(`Waiting for notification size ${testParameters.current.expected_notifications_size - notificationSize.current}`, LogLevel.INFO)
                                 // start new timeout for notification
                                 notifTimeout.current = setTimeout(() => {
@@ -987,7 +1044,14 @@ const StressTestScenario: React.FC = ({ }) => {
             }
 
             // Execute gatt test for testParameters.current.num_loops_gatt_test
-            triggerNextGattLoop();
+            if (testParameters.current.test_case === TEST_CASE.WRITE_NOTIFY) {
+                if (testParameters.current.supported_service != simple_peripheral) {
+                    triggerNextGattLoop();
+                }
+            }
+            else {
+                triggerNextGattLoop();
+            }
         }
         else {
             // Wait before disconnect
@@ -1019,7 +1083,7 @@ const StressTestScenario: React.FC = ({ }) => {
                         </Text>
 
                         <Text style={[styles.desc]}>
-                            Current Device: {currentDevice.value} ({currentAdrressIndex.current}/{testParameters.current.devices_name_list.length})
+                            Current Device: {currentDevice.value} ({currentAddressIndex.current}/{testParameters.current.devices_name_list.length})
                         </Text>
                         <Text style={[styles.desc]}>
                             Current Main Loop: {currentMainLoopNumber.current}/{testParameters.current.main_loop_number}
