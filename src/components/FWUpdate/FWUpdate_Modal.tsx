@@ -1104,7 +1104,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
     if (hexMagicNumber === '3db8f396' || hexMagicNumber === '3db8f397') {
       return 'mcuboot';
     }
-    else if (hexMagicNumber === '43433236') {
+    else if (hexMagicNumber === '43433236' || hexMagicNumber === '43433136') {
       return 'bim';
     }
     else {
