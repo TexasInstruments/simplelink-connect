@@ -125,7 +125,6 @@ const BleScanner: React.FC<Props> = () => {
     return unsubscribe;
   }, [navigation]);
 
-
   useEffect(() => {
     requestAndroidPermissions().then(() => {
       console.log('starting ble manager');

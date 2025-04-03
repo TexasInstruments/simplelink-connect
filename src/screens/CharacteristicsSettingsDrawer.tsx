@@ -268,7 +268,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
       return;
     }
     navigation.closeDrawer(); // Close the drawer
-    navigation.navigate('IopParameters', { testService: serviceName, peripheralId: periNameId.peripheralId, peripheralName: periNameId.peripheralName });
+    navigation.navigate('TestParameters', { testService: serviceName, peripheralId: periNameId.peripheralId, peripheralName: periNameId.peripheralName });
   }
 
   // OAD configuration
@@ -379,15 +379,14 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
         {(serviceUUID?.toLocaleLowerCase() === Wifi_Provisioning_UUID || serviceUUID?.toLocaleLowerCase() === Wifi_Provisioning_UUID_linux) && characteristicView === 'specific' && (
           <>
             <Separator text="Connection Timeout" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
-            <View style={styles.dropdownContainer}>
-              {renderLabel('graphPoints')}
+            <View style={[styles.dropdownContainer, { marginBottom: 20 }]}>
               <Dropdown
                 style={[styles.dropdown, isConnectionTimeoutFocused && { borderColor: Colors.active }]}
                 placeholderStyle={styles.placeholderStyle}
                 selectedTextStyle={styles.selectedTextStyle}
                 itemTextStyle={styles.item}
                 data={CONNECTION_TIMEOUT_OPTIONS}
-                placeholder={!isConnectionTimeoutFocused ? 'Select number of point to display on the graph' : '...'}
+                placeholder={!isConnectionTimeoutFocused ? 'Select Timeout' : '...'}
                 value={connectionTimeout}
                 onChange={(v: any) => {
                   changeConnectionTimeoutState(v.value)

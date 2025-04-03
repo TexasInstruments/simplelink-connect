@@ -61,7 +61,7 @@ npm install -g ios-deploy
 ### Build and run the app
 Insure your phone is connected over USB and on the same WiFi network and run
 ```
-react-native run-ios --device "Name of iPhone"
+npx react-native run-ios --device "Name of iPhone"
 ```
 
 You will see an error first time you launch "No Bundle URL Present". There will also be a popup to allow the app to find and connect to devices on your local network. Click allow, then click "Reload JS" in the error window.

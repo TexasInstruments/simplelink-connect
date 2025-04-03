@@ -11,8 +11,8 @@ import { LineChart } from 'react-native-chart-kit';
 import { chartConfig, chartStyles } from '../../constants/Charts';
 import { useFocusEffect } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
-import { downloadDataToLocalStorage } from '../Tests/testsUtils';
 import { ScrollView } from 'react-native-gesture-handler';
+import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 
 interface Props {
     peripheralId: string;

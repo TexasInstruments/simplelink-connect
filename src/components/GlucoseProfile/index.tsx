@@ -12,11 +12,11 @@ import { OP_CODES_ACCESS_CONTROL, RecordAccessControlDialog } from '../Continiou
 import { Buffer } from 'buffer';
 import { Icon } from '@rneui/base';
 import { CustomSnackBar } from '../ContiniousGlucoseMonitoring/CustomSnackBar';
-import { downloadDataToLocalStorage } from '../Tests/testsUtils';
 import { LineChart } from 'react-native-charts-wrapper';
 import { AntDesign } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Tooltip from 'react-native-walkthrough-tooltip';
+import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 
 interface Props {
     peripheralId: string;

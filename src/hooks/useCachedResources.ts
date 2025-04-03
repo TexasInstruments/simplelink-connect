@@ -31,14 +31,12 @@
  */
 
 import { FontAwesome } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 
 export default function useCachedResources() {
   const [isLoadingComplete, setLoadingComplete] = useState(false);
-  const [showTutorial, setShowTutorial] = useState<boolean>(false);
 
   // Load any resources or data that we need prior to rendering the app
   useEffect(() => {
@@ -46,13 +44,6 @@ export default function useCachedResources() {
       try {
         SplashScreen.preventAutoHideAsync();
 
-        let checkForTutorialSkip = await AsyncStorage.getItem('@tutorial');
-
-        if (!checkForTutorialSkip) {
-          setShowTutorial(true);
-        } else {
-          setShowTutorial(false);
-        }
 
         // Load fonts
         await Font.loadAsync({
@@ -62,7 +53,6 @@ export default function useCachedResources() {
       } catch (e) {
         // We might want to provide this error information to an error reporting service
         console.warn(e);
-        setShowTutorial(false);
       } finally {
         setLoadingComplete(true);
         SplashScreen.hideAsync();
@@ -70,7 +60,8 @@ export default function useCachedResources() {
     }
 
     loadResourcesAndDataAsync();
+
   }, []);
 
-  return [isLoadingComplete, showTutorial] as const;
+  return [isLoadingComplete] as const;
 }

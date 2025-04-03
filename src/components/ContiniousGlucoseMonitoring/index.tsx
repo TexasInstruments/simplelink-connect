@@ -13,11 +13,11 @@ import { CONTROL_POINT_RESP, OP_CODES_CONTROL_POINT, SpecificOpsControlPointDial
 import { Buffer } from 'buffer';
 import { Icon } from '@rneui/base';
 import { CustomSnackBar } from './CustomSnackBar';
-import { downloadDataToLocalStorage } from '../Tests/testsUtils';
 import { LineChart } from 'react-native-charts-wrapper';
 import { AntDesign } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Tooltip from 'react-native-walkthrough-tooltip';
+import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 
 interface Props {
     peripheralId: string;

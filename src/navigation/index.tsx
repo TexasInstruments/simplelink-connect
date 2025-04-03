@@ -41,7 +41,7 @@ import { NavigationContainer, DefaultTheme, DarkTheme, Theme, DrawerActions } fr
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import * as React from 'react';
-import { ColorSchemeName, NativeEventEmitter, NativeModules, Platform, useWindowDimensions } from 'react-native';
+import { ColorSchemeName, NativeEventEmitter, NativeModules, Platform, View, useWindowDimensions } from 'react-native';
 import Colors from '../constants/Colors';
 import useColorScheme from '../hooks/useColorScheme';
 import NotFoundScreen from '../screens/NotFoundScreen';
@@ -59,14 +59,35 @@ import { TouchableOpacity } from '../components/Themed';
 import SettingsModal from '../screens/SettingsModal';
 import FilterSortProvider from '../context/FilterSortContext';
 import FwUpdateServiceModel from '../screens/ServiceSpecificViews/FwUpdateServiceModel';
-import TutorialScreen from '../screens/TutorialScreen';
+import ScannerTutorialScreen from '../screens/ScannerTutorialScreen';
 import CharacteristicsSettingsDrawer from '../screens/CharacteristicsSettingsDrawer';
-import IopParametersScreen from '../screens/IopTestViews/IopParametersScreen';
-import IopTestScreen from '../screens/IopTestViews/IopTestScreen';
-import GattTestScreen from '../screens/IopTestViews/GattTestScreen';
+import TestParametersScreen from '../screens/StressTestViews/TestParametersScreen';
+import StressTestScreen from '../screens/StressTestViews/StressTestScreen';
+import GattTestScreen from '../screens/StressTestViews/GattTestScreen';
 import { useCharacteristicViewContext } from '../context/CharactristicViewContext';
 import FilterSortOptionsScreen from '../screens/FilterSortOptionsScreen';
 import ConfigRepositoryUrlScreen from '../screens/ConfigRepositoryUrlScreen';
+import BleMesh from '../components/BleMesh';
+import BleMeshScanner from '../components/BleMesh/BleMeshScanner';
+import BleMeshProvisionNode from '../components/BleMesh/BleMeshProvisionNode';
+import BleMeshNetworkKeys from '../components/BleMesh/BleMeshNetworkKeys';
+import HomeScreen from '../screens/HomeScreen';
+import BrandIcon from '../components/BrandIcon';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import BleMeshApplicationKeys from '../components/BleMesh/BleMeshApplicationKeys';
+import { GenericModelView } from '../components/BleMesh/ModelViews/GenericModelView';
+import { downloadDataToLocalStorage } from '../services/DownloadFileUtils';
+import { Menu } from 'react-native-paper';
+import BleMeshConfigureNode from '../components/BleMesh/BleMeshConfigureNode';
+import { callMeshModuleFunction } from '../components/BleMesh/meshUtils';
+import BleMeshProxies from '../components/BleMesh/BleMeshProxies';
+import BleMeshBindAppKeysScreen from '../components/BleMesh/BleMesNodeQuickSetup/BindApplicationKeys';
+import BleMeshSubscribeModelsScreen from '../components/BleMesh/BleMesNodeQuickSetup/Subscribe';
+import BleMeshSetPublicationModelsScreen from '../components/BleMesh/BleMesNodeQuickSetup/Publication';
+import TestResultsScreen from '../screens/StressTestViews/TestResultsScreen';
+import BleMeshProvisionerScreen from '../components/BleMesh/BleMeshProvisioners';
+import MeshTutorialScreen from '../screens/MeshTutorialScreen';
 
 let DefaultThemeExtended: Theme = {
   dark: false,
@@ -94,10 +115,8 @@ let DarkThemeExtended: Theme = {
 
 export default function Navigation({
   colorScheme,
-  showTutorial,
 }: {
   colorScheme: ColorSchemeName;
-  showTutorial: boolean;
 }) {
   return (
     <FilterSortProvider>
@@ -105,7 +124,7 @@ export default function Navigation({
         linking={LinkingConfiguration}
         theme={colorScheme === 'dark' ? DarkThemeExtended : DefaultThemeExtended}
       >
-        <RootNavigator showTutorial={showTutorial} />
+        <RootNavigator />
       </NavigationContainer>
     </FilterSortProvider>
   );
@@ -117,13 +136,60 @@ export default function Navigation({
  */
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
+function RootNavigator() {
   const { characteristicView, serviceName, hasSpecificScreen, hasTestOption } = useCharacteristicViewContext();
   const { fontScale } = useWindowDimensions();
+  const [meshMenuVisible, setMeshMenuVisible] = React.useState(false);
+  const { MeshModule } = NativeModules;
+
+  const openMenu = () => setMeshMenuVisible(true);
+  const closeMenu = () => setMeshMenuVisible(false);
+
+  const exportMeshNetwork = async () => {
+    try {
+      let networkJson = await callMeshModuleFunction('exportNetwork') as string;
+      downloadDataToLocalStorage(networkJson, 'mesh_network.json', 'application/json');
+      closeMenu();
+
+    } catch (error) {
+      console.log('Error exporting network: ', error);
+    }
+  }
+
+  const resetMeshNetwork = async () => {
+    await callMeshModuleFunction('resetNetwork');
+    await callMeshModuleFunction('setMeshNetworkName', 'TI Mesh Network');
+    closeMenu();
+
+  }
 
   return (
-    <Stack.Navigator initialRouteName={showTutorial ? 'Tutorial' : 'Root'} id="stack">
-      <Stack.Screen name="Root" component={BottomTabNavigator} options={{ headerShown: false }} />
+    <Stack.Navigator initialRouteName={'HomeScreen'} id="stack">
+
+      <Stack.Screen
+        name="HomeScreen"
+        component={HomeScreen}
+        options={() => ({
+          title: 'SimpleLink Connect',
+          headerTitleAlign: 'start',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 20 / fontScale,
+            fontWeight: '500',
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              <View style={{ marginRight: 10 }}>
+                <BrandIcon size={25} name={"TI"} color='white' />
+              </View>
+            )
+          }
+        })}
+      />
+      <Stack.Screen name="Scanner" component={BottomTabNavigator} options={{ headerShown: false }} />
       <Stack.Screen name="NotFound" component={NotFoundScreen} options={{ title: 'Oops!' }} />
       <Stack.Screen name="Characteristics"
         component={CharacteristicsDrawer}
@@ -174,10 +240,11 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           }}
         />
       </Stack.Group>
-      <Stack.Screen name="Tutorial" component={TutorialScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="ScannerTutorial" component={ScannerTutorialScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="MeshTutorial" component={MeshTutorialScreen} options={{ headerShown: false }} />
       <Stack.Screen
-        name="IopParameters"
-        component={IopParametersScreen}
+        name="TestParameters"
+        component={TestParametersScreen}
         options={({ navigation }) => ({
           title: 'Stress Test',
           headerTitleAlign: 'center',
@@ -191,10 +258,10 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           headerLeft: (props) => {
             return (
               //We could use some svg icon
-              <TouchableOpacity {...props} onPress={() => navigation.pop()} testID='backButton' accessibilityLabel='backButton'>
+              <TouchableOpacity {...props} onPress={() => navigation.navigate('HomeScreen')} testID='backButton' accessibilityLabel='backButton'>
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
-          }
+          },
         })}
       />
       <Stack.Screen
@@ -221,8 +288,31 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
       />
 
       <Stack.Screen
-        name="IopTest"
-        component={IopTestScreen}
+        name="TestResultsScreen"
+        component={TestResultsScreen}
+        options={({ navigation }) => ({
+          title: 'Test Results',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => navigation.pop()} testID='backButton' accessibilityLabel='backButton'>
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity>)
+          }
+        })}
+      />
+
+      <Stack.Screen
+        name="StressTest"
+        component={StressTestScreen}
         options={({ navigation }) => ({
           title: 'Stress Test',
           headerTitleStyle: {
@@ -257,7 +347,7 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           headerTintColor: 'white',
           headerLeft: (props) => {
             return (
-              <TouchableOpacity {...props} onPress={() => { navigation.pop(); console.log(navigation) }} testID='backButton' accessibilityLabel='backButton'>
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} testID='backButton' accessibilityLabel='backButton'>
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
@@ -279,12 +369,290 @@ function RootNavigator({ showTutorial }: { showTutorial: boolean }) {
           headerLeft: (props) => {
             return (
               //We could use some svg icon
-              <TouchableOpacity {...props} onPress={() => { navigation.pop(); console.log(navigation) }} testID='backButton' accessibilityLabel='backButton'>
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} testID='backButton' accessibilityLabel='backButton'>
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
         })}
       />
+      <Stack.Screen
+        name="BleMesh"
+        component={BleMesh}
+        options={({ navigation }) => ({
+          title: 'BLE Mesh',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              <TouchableOpacity {...props} onPress={() => { navigation.navigate('HomeScreen') }} >
+                <Icon name="home" size={24} color="white" />
+              </TouchableOpacity>)
+          },
+          headerRight: () => {
+            return (
+              <Menu
+                contentStyle={{ backgroundColor: 'white' }}
+                visible={meshMenuVisible}
+                onDismiss={closeMenu}
+                anchor={
+                  <TouchableOpacity style={{ paddingRight: 15 }} onPress={openMenu}>
+                    <MaterialCommunityIcons name="dots-vertical" size={24} color="white" />
+                  </TouchableOpacity>
+                }
+              >
+                {/* https://pictogrammers.com/library/mdi/ */}
+                <Menu.Item onPress={() => { navigation.navigate('BleMeshProvisionerScreen'); closeMenu() }} title="Provisioners" leadingIcon="transit-connection-horizontal" />
+                <Menu.Item onPress={() => { navigation.navigate('BleMeshProxies'); closeMenu() }} title="Proxies" leadingIcon="arrow-decision" />
+                <Menu.Item onPress={() => { navigation.navigate('BleMeshNetworkKeys'); closeMenu() }} title="Configure network keys" leadingIcon="key" />
+                <Menu.Item onPress={() => { navigation.navigate('BleMeshApplicationKeys'); closeMenu() }} title="Configure app keys" leadingIcon="key" />
+                <Menu.Item onPress={exportMeshNetwork} title="Export network" leadingIcon="download" />
+                <Menu.Item onPress={resetMeshNetwork} title="Reset network" leadingIcon="trash-can-outline" />
+                <Menu.Item onPress={() => { navigation.navigate('MeshTutorial'); closeMenu(); }} title="Show Tutorial" leadingIcon="information" />
+
+              </Menu >
+            );
+          },
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshNetworkKeys"
+        component={BleMeshNetworkKeys}
+        options={({ navigation }) => ({
+          title: 'BLE Mesh',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity >)
+          }
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshProxies"
+        component={BleMeshProxies}
+        options={({ navigation }) => ({
+          title: 'BLE Mesh',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity >)
+          }
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshProvisionerScreen"
+        component={BleMeshProvisionerScreen}
+        options={({ navigation }) => ({
+          title: 'BLE Mesh Provisioners',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity >)
+          }
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshBindAppKeysScreen"
+        component={BleMeshBindAppKeysScreen}
+        options={({ navigation }) => ({
+          title: 'Bind Application Keys',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity >)
+          }
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshSubscribeModelsScreen"
+        component={BleMeshSubscribeModelsScreen}
+        options={({ navigation }) => ({
+          title: 'Subscribe',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity >)
+          }
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshSetPublicationModelsScreen"
+        component={BleMeshSetPublicationModelsScreen}
+        options={({ navigation }) => ({
+          title: 'Set Publication',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity >)
+          }
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshApplicationKeys"
+        component={BleMeshApplicationKeys}
+        options={({ navigation }) => ({
+          title: 'BLE Mesh',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity>)
+          }
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshScanner"
+        component={BleMeshScanner}
+        options={({ navigation }) => ({
+          title: 'Add Node',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity>)
+          }
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshProvisionNode"
+        component={BleMeshProvisionNode}
+        options={({ navigation }) => ({
+          title: 'Provision Node',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={async () => { navigation.navigate('BleMesh'); await callMeshModuleFunction('disconnect'); console.log('CALLING DISCONNECT') }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity>)
+          }
+        })}
+      />
+      <Stack.Screen
+        name="BleMeshConfigureNode"
+        component={BleMeshConfigureNode}
+        options={({ navigation }) => ({
+          title: 'Configure Node',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              <TouchableOpacity {...props} onPress={() => { navigation.navigate('BleMesh'); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity>)
+          }
+        })}
+      />
+      <Stack.Group screenOptions={{ presentation: 'modal' }}>
+        <Stack.Screen
+          name="GenericModelView"
+          component={GenericModelView}
+          options={{
+            title: 'Node Model',
+            headerTintColor: 'white',
+            headerTitleStyle: {
+              fontSize: 17 / fontScale
+            },
+            headerTitleAlign: 'center'
+          }}
+        />
+      </Stack.Group>
     </Stack.Navigator>
   );
 }
@@ -307,11 +675,31 @@ function DrawerNavigation() {
       }}
       drawerContent={(props) => <SettingsModal {...props} />}
     >
-      <Drawer.Screen name="DrawerRoot" component={ScanScreen} options={{
-        title: 'Scanner',
-        headerTitleAlign: 'left',
-        headerTintColor: 'white',
-      }} />
+      <Drawer.Screen name="DrawerRoot"
+        component={ScanScreen}
+        options={({ route, navigation }) => ({
+          title: 'Scanner',
+          headerTitleStyle: { color: 'white' },
+          tabBarIcon: ({ }) => <TabBarIcon name="code" color={'color'} />,
+          headerLeft: (props) => {
+            const goHome = () => {
+              const BleManagerModule = NativeModules.BleManager;
+              const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+              bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
+              bleManagerEmitter.removeAllListeners('BleManagerStopScan');
+              bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
+              navigation.navigate('HomeScreen');
+            };
+
+            return (
+              <TouchableOpacity {...props} style={{ paddingLeft: 15 }} onPress={goHome}>
+                <Icon name="home" size={24} color="white" />
+              </TouchableOpacity>
+            );
+          },
+        })}
+
+      />
     </Drawer.Navigator>
   );
 }
@@ -363,6 +751,7 @@ function BottomTabNavigator() {
           headerTitleAlign: 'center',
           headerShown: false,
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={'color'} />,
+
         })}
       />
       <BottomTab.Screen

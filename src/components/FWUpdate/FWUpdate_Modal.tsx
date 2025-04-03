@@ -53,6 +53,7 @@ import { buf2hex } from '../../hooks/convert';
 import SelectFirmwareImage from './SelectFirmwareImage/index';
 import { Buffer } from 'buffer';
 import { useFirmwareRepoContext } from '../../context/FirmwareRepoContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Props {
   peripheralId: string;
@@ -1113,7 +1114,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
   }
 
   return (
-    <View style={{ flex: 1, width: '100%', marginHorizontal: 'auto' }}>
+    <SafeAreaView edges={['left', 'right', 'bottom']}>
       <ScrollView >
         <SelectFirmwareImage
           hwTypes={hwTypes}
@@ -1221,7 +1222,7 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
           )
         }
       </ScrollView >
-    </View >
+    </SafeAreaView >
   );
 };
 

@@ -26,6 +26,10 @@ target 'SimplelinkConnect' do
     :app_path => "#{Dir.pwd}/.."
   )
 
+  pod 'nRFMeshProvision'
+  pod 'RxSwift'
+  pod 'RxCocoa'
+  
   # Uncomment to opt-in to using Flipper
   # Note that if you have use_frameworks! enabled, Flipper will not work
   #

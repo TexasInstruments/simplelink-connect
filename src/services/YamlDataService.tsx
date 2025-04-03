@@ -10,6 +10,7 @@ const TI_CHAR = [
     { name: 'SSID', uuid: 'CC01', },
     { name: 'Password', uuid: 'CC02', },
     { name: 'Connection', uuid: 'CC03', },
+    { name: 'Security Type', uuid: 'CC04', },
     { name: 'Data', uuid: 'f000aa65-0451-4000-b000-000000000000', },
     { name: 'Configuration', uuid: 'f000aa66-0451-4000-b000-000000000000', },
     { name: 'Configuration', uuid: 'f000aa02-0451-4000-b000-000000000000', },

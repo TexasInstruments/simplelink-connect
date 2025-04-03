@@ -7,10 +7,11 @@ const Icon = createIconSetFromFontello(fontelloConfig);
 interface Props {
   name: BrandIconName;
   size?: number;
+  color?: string;
 }
 
-const BrandIcon: React.FC<Props> = ({ name, size }) => {
-  return <Icon name={name} size={size ? size : 16} />;
+const BrandIcon: React.FC<Props> = ({ name, size, color }) => {
+  return <Icon name={name} size={size ? size : 16} color={color ? color : "black"} />;
 };
 
 export default BrandIcon;

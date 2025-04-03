@@ -45,7 +45,7 @@ const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [Linking.createURL('/')],
   config: {
     screens: {
-      Root: {
+      Scanner: {
         screens: {
           ScanTab: {
             screens: {

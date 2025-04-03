@@ -15,6 +15,10 @@ interface Props {
     isLinuxDevice: boolean;
 }
 
+const OPEN = 0x0;
+const WPA2 = 0x2;
+const WPA3 = 0xC;
+
 const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxDevice }) => {
 
     const { specificScreenConfig } = useSpecificScreenConfigContext();
@@ -25,9 +29,11 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
 
     const [ssidInput, setSsidInput] = useState<string>('');
     const [password, setPassword] = useState<string>('');
-    const [security, setSecurity] = useState<'open' | 'wpa2' | undefined>('open');
+    const [security, setSecurity] = useState<number>(OPEN);
     const [connectionTimeout, setConnectionTimeout] = useState<number>(specificScreenConfig.wifiProvisioningConnectionTimeout);
     const [log, setLog] = useState<{ color: string, text: string }>();
+    const [securityOptions, setSecurityOptions] = useState<{ label: string, value: number }[]>([{ label: 'Open', value: OPEN }, { label: 'WPA2', value: WPA2 },])
+    const [isWPA3Available, setIsWPA3Available] = useState<boolean>(false)
 
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
@@ -42,10 +48,11 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
     const SsidUuid = 'cc01'
     const PasswordUuid = 'cc02'
     const ConnectionCharUuid = 'cc03'
+    const SecurityTypeCharUuid = 'cc04'
 
     useFocusEffect(
         useCallback(() => {
-            const task = InteractionManager.runAfterInteractions(() => {
+            const task = InteractionManager.runAfterInteractions(async () => {
                 if (!isLinuxDevice) {
                     bleManagerEmitter.addListener(
                         'BleManagerDidUpdateValueForCharacteristic', handleConnectionNotifications);
@@ -56,6 +63,11 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
 
                 setLog({ color: 'black', text: 'Waiting for ssid and password' });
                 setLoading(false);
+                let isAvailable = await checkWPA3available();
+                if (isAvailable) {
+                    setSecurityOptions(prev => [...prev, { label: 'WPA3', value: WPA3 }]);
+                }
+                setIsWPA3Available(isAvailable);
             });
 
             return () => {
@@ -76,15 +88,31 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
         setConnectionTimeout(specificScreenConfig.wifiProvisioningConnectionTimeout)
     }, [specificScreenConfig.wifiProvisioningConnectionTimeout])
 
-    const securityOptions = [
-        { label: 'Open', value: 'open' },
-        { label: 'WPA2', value: 'wpa2' },
-    ];
-
     const isValid = () => {
         if (loading) return false;
-        if (security === 'wpa2' && !password) return false;
+        if ((security === WPA2 || security === WPA3) && !password) return false;
         else return ssidInput
+    }
+
+    const checkWPA3available = async () => {
+        // Check if the peripheral has security type characteristic
+        let peripheral = await BleManager.retrieveServices(peripheralId);
+
+        if (peripheral) {
+
+            let characteristic = peripheral.characteristics?.find((c: any) => c.service.toLocaleLowerCase() === ServiceUuid && c.characteristic.toLocaleLowerCase() === SecurityTypeCharUuid);
+            if (characteristic) {
+                console.log('WPA3 available');
+                return true
+            }
+            else {
+                console.log('WPA3 not available');
+                return false
+            }
+
+        }
+
+        return false
     }
 
     const handleConnectionNotifications =
@@ -120,7 +148,14 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
         setLoading(true);
 
         if (isLinuxDevice) {
-            let writeByteArray = convertStringToByteArray(ssidInput + ',' + password);
+            let writeByteArray;
+            if (isWPA3Available) {
+                writeByteArray = convertStringToByteArray(ssidInput + ',' + password + ',' + security);
+            }
+            else {
+                writeByteArray = convertStringToByteArray(ssidInput + ',' + password);
+            }
+
             // @ts-ignore
             let writeBytes = Array.from(writeByteArray);
             console.log('write ssid:', ssidInput, ' and password:', password, 'to characteristic:', ConnectionCharLinux)
@@ -134,10 +169,9 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
             return;
         }
 
+
         // Write ssid to char 1
         let writeByteArray = convertStringToByteArray(ssidInput);
-
-        // @ts-ignore
         let writeBytes = Array.from(writeByteArray);
         try {
             console.log('write ssid:', ssidInput, 'to characteristic:', SsidUuid)
@@ -152,8 +186,30 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
             return;
         }
 
+        // Write security to char 4
+        if (isWPA3Available) {
+            let writeByteArraySecType = [security];
+            // @ts-ignore
+            let writeBytesSecType = Array.from(writeByteArraySecType);
+
+            try {
+                console.log('write security type: ', security, 'to characteristic:', SecurityTypeCharUuid)
+                await BleManager.write(peripheralId, ServiceUuid, SecurityTypeCharUuid, writeBytesSecType, writeBytesSecType.length);
+                console.log('write security: succeed')
+                setLog({ color: 'black', text: `write security: ${security} to characteristic ${SecurityTypeCharUuid} succeed!` })
+            }
+
+            catch (err) {
+                console.error('write security failed:', err);
+                setLog({ color: 'red', text: `write security: ${security} to characteristic ${SecurityTypeCharUuid} failed!` })
+                setLoading(false);
+                return;
+            }
+
+        }
+
         // Write password to char 2
-        if (security === 'wpa2') {
+        if (security === WPA2 || security === WPA3) {
             let writeByteArrayPass = convertStringToByteArray(password);
             // @ts-ignore
             let writeBytesPass = Array.from(writeByteArrayPass);
@@ -258,12 +314,12 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
                                 valueField="value"
                                 accessibilityLabel="securityDropdown"
                                 testID="securityDropdown"
-                                itemAccessibilityLabelField='value'
-                                itemTestIDField='value'
+                                itemTestIDField="label"
+                                itemAccessibilityLabelField="label"
                             />
                         </View>
 
-                        {security === 'wpa2' && (
+                        {(security === WPA2 || security === WPA3) && (
                             <>
                                 <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1} testID='password' accessibilityLabel='password'>Password</Text>
                                 <View style={[styles.optionBox]}>
@@ -314,8 +370,8 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
                             style={[styles.buttonWrapper]}
                             onPress={handleConnect}
                             disabled={!isValid()}
-                            accessibilityLabel="conncectButton"
-                            testID="conncectButton"
+                            accessibilityLabel="connectButton"
+                            testID="connectButton"
                         >
                             <Text style={{ color: Colors.blue, fontSize: 18, opacity: !isValid() ? 0.2 : 1 }}>Connect</Text>
                         </TouchableOpacity>

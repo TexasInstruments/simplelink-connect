@@ -45,6 +45,7 @@ import {
 } from '@react-navigation/native';
 import { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import BleManager from 'react-native-ble-manager';
+import { Element, Model } from './src/components/BleMesh/meshUtils';
 
 declare global {
   namespace ReactNavigation {
@@ -53,11 +54,13 @@ declare global {
 }
 
 export type RootStackParamList = {
-  Root: NavigatorScreenParams<RootTabParamList> | undefined;
-  Tutorial: undefined;
-  IopParameters: { testService: string | null, peripheralId: string | null, peripheralName: string | null };
-  IopTest: undefined;
+  Scanner: NavigatorScreenParams<RootTabParamList> | undefined;
+  ScannerTutorial: undefined;
+  MeshTutorial: undefined;
+  TestParameters: { testService: string | null, peripheralId: string | null, peripheralName: string | null };
+  StressTest: undefined;
   GattTesting: { testService: string | null, peripheralId: string | null, peripheralName: string | null };
+  TestResultsScreen: { isGattTestingOnly: boolean };
   Characteristics: {
     serviceUuid: string;
     serviceName: string;
@@ -79,6 +82,20 @@ export type RootStackParamList = {
   NotFound: undefined;
   FilterSortOptions: undefined;
   ConfigRepository: undefined;
+  BleMesh: undefined;
+  BleMeshNetworkKeys: undefined;
+  BleMeshProxies: undefined;
+  BleMeshProvisionerScreen: undefined;
+  BleMeshApplicationKeys: undefined;
+  BleMeshScanner: { scanProvisionedNodes: boolean, unicastAddr?: number | undefined };
+  BleMeshProvisionNode: undefined;
+  BleMeshConfigureNode: { unicastAddr: number, isConnecting: boolean };
+  BleMeshNodeModel: { unicastAddr: number };
+  BleMeshBindAppKeysScreen: { unicastAddr: number, elements: Element[] };
+  BleMeshSubscribeModelsScreen: { unicastAddr: number, elements: Element[] };
+  BleMeshSetPublicationModelsScreen: { unicastAddr: number, elements: Element[] };
+  HomeScreen: undefined;
+  GenericModelView: { unicastAddr: number, model: Model };
 };
 
 export type RootDrawerParamList = {
@@ -114,16 +131,21 @@ export type CharacteristicsScreenNavigationProp = NativeStackNavigationProp<
 
 export type TutorialScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
-  'Tutorial'
+  'ScannerTutorial',
+  'MeshTutorial'
 >;
 
 export type DeviceScreenNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<RootTabParamList, 'DeviceTab'>,
   NativeStackNavigationProp<RootStackParamList>
 >;
-export type IopParametersScreenProps = RootScreenprops<'IopParameters'>;
+export type TestParametersScreenProps = RootScreenprops<'TestParameters'>;
+export type BleMeshNodeConfigScreenProps = RootScreenprops<'BleMeshConfigureNode'>;
+export type BleMeshNodeModelScreenProps = RootScreenprops<'BleMeshNodeModel'>;
+export type BleMeshScanScreenProps = RootScreenprops<'BleMeshScanner'>;
 export type GattScreenProps = RootScreenprops<'GattTesting'>;
-export type IopTestScreenProps = RootScreenprops<'IopTest'>;
+export type TestResultsProps = RootScreenprops<'TestResultsScreen'>;
+export type StressTestScreenProps = RootScreenprops<'StressTest'>;
 export type FilterSortScreenProps = RootScreenprops<'FilterSortOptions'>;
 export type ConfigRepositoryScreenProps = RootScreenprops<'ConfigRepository'>;
 
@@ -260,3 +282,53 @@ export type BrandIconName =
   | 'qualcomm'
   | 'disney'
   | 'TI';
+
+const companyNameToBrandIconName = (companyName: string | undefined) => {
+  switch (companyName) {
+    case 'LG Electronics':
+      return 'lg';
+    case 'Apple, Inc.':
+      return 'apple';
+    case 'Samsung Electronics Co. Ltd.':
+      return 'samsung';
+    case 'Sony Corporation':
+      return 'sony';
+    case 'HP':
+      return 'hp';
+    case 'Bose Corporation':
+      return 'bose';
+    case 'HUAWEI Technologies Co.,Ltd. ( );':
+      return 'huawei';
+    case 'Amazon Fulfillment Service':
+      return 'amazon';
+    case 'MetaSystem S.p.A.':
+    case 'Meta Watch Ltd.':
+      return 'meta';
+    case 'Google':
+      return 'google';
+    case 'Microsoft':
+      return 'microsoft';
+    case 'Razer Inc.':
+      return 'razer';
+    case 'Xiaomi Inc.':
+      return 'xiaomi';
+    case 'Toshiba Corp.':
+      return 'toshiba';
+    case 'Qualcomm':
+      return 'qualcomm';
+    case 'Walt Disney':
+      return 'disney';
+    case 'Texas Instruments Inc.':
+      return 'TI';
+    default:
+      return '';
+  }
+}
+
+export const companyNameToBrandIcon = (companyName: string | undefined) => {
+  return {
+    name: companyNameToBrandIconName(companyName),
+    type: 'brands'
+  }
+}
+

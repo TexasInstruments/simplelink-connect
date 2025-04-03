@@ -20,8 +20,9 @@ import { useFocusEffect } from '@react-navigation/native';
 import { LineChart } from 'react-native-charts-wrapper';
 import { Icon } from '@rneui/base';
 import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
-import { downloadDataToLocalStorage } from '../Tests/testsUtils';
+import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 import Tooltip from 'react-native-walkthrough-tooltip';
+
 
 interface Props {
     peripheralId: string;

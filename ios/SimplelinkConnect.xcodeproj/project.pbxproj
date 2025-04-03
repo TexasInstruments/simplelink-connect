@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
 		1FBC7E502ABDC82C00652064 /* brands.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1FBC7E4F2ABDC82C00652064 /* brands.ttf */; };
@@ -28,6 +27,29 @@
 		226FCC082981995200671080 /* MaterialIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 226FCBF92981995200671080 /* MaterialIcons.ttf */; };
 		226FCC0A2981A8F400671080 /* ti.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 226FCC092981A8F300671080 /* ti.ttf */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		505B299C2CA14A8900359C16 /* MeshModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 505B299B2CA14A8900359C16 /* MeshModule.swift */; };
+		505B299E2CA14B3B00359C16 /* MeshModuleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 505B299D2CA14B3B00359C16 /* MeshModuleBridge.m */; };
+		50C8E9DA2CE0B4EE004E00A7 /* CompanyIdentifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C8E9D92CE0B4EE004E00A7 /* CompanyIdentifiers.swift */; };
+		50C8E9DF2CE49560004E00A7 /* MeshRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C8E9DE2CE4955F004E00A7 /* MeshRepository.swift */; };
+		50CB78202D2E75B6009EEEF8 /* VendorMessageSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50CB781F2D2E75B6009EEEF8 /* VendorMessageSet.swift */; };
+		50E2BD332D67557200DE5856 /* QuickSetupNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E2BD322D67557200DE5856 /* QuickSetupNode.swift */; };
+		50E2BD352D67573000DE5856 /* MeshTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E2BD342D67573000DE5856 /* MeshTask.swift */; };
+		50F3173C2CEF692900DDCD4D /* NetworkConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F3173B2CEF692900DDCD4D /* NetworkConnection.swift */; };
+		50F3173E2CEF6AEF00DDCD4D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F3173D2CEF6AEF00DDCD4D /* AppDelegate.swift */; };
+		50F317442CEF739A00DDCD4D /* BMGenericDefaultTransitionTimeServerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317432CEF739A00DDCD4D /* BMGenericDefaultTransitionTimeServerDelegate.swift */; };
+		50F317462CEF742100DDCD4D /* BMGenericOnOffServerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317452CEF742100DDCD4D /* BMGenericOnOffServerDelegate.swift */; };
+		50F317482CEF74A100DDCD4D /* BMSceneServerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317472CEF74A100DDCD4D /* BMSceneServerDelegate.swift */; };
+		50F3174A2CEF74F700DDCD4D /* BMSceneSetupServerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317492CEF74F700DDCD4D /* BMSceneSetupServerDelegate.swift */; };
+		50F3174C2CEF758D00DDCD4D /* BMSensorClientDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F3174B2CEF758D00DDCD4D /* BMSensorClientDelegate.swift */; };
+		50F3174E2CEF7B5C00DDCD4D /* BMGenericPowerOnOffClientDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F3174D2CEF7B5C00DDCD4D /* BMGenericPowerOnOffClientDelegate.swift */; };
+		50F317502CEF7B8C00DDCD4D /* BMGenericDefaultTransitionTimeClientDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F3174F2CEF7B8C00DDCD4D /* BMGenericDefaultTransitionTimeClientDelegate.swift */; };
+		50F317522CEF7BBA00DDCD4D /* BMGenericLevelServerDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317512CEF7BBA00DDCD4D /* BMGenericLevelServerDelegate.swift */; };
+		50F317542CEF7BE300DDCD4D /* BMGenericState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317532CEF7BE300DDCD4D /* BMGenericState.swift */; };
+		50F317562CEF7C9D00DDCD4D /* BMGenericOnOffClientDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317552CEF7C9D00DDCD4D /* BMGenericOnOffClientDelegate.swift */; };
+		50F317582CEF7E1000DDCD4D /* BMGenericLevelClientDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317572CEF7E1000DDCD4D /* BMGenericLevelClientDelegate.swift */; };
+		50F3175A2CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317592CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift */; };
+		50F3175C2CEF83AC00DDCD4D /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
+		50FD53DE2CE5FC0200FF61F3 /* BleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50FD53DD2CE5FC0200FF61F3 /* BleManager.swift */; };
 		AA3F935FBD7C0AC991C3D6F3 /* libPods-SimplelinkConnect.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 35D5F6C6CD0C1744D0865003 /* libPods-SimplelinkConnect.a */; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
@@ -60,6 +82,29 @@
 		226FCBF92981995200671080 /* MaterialIcons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = MaterialIcons.ttf; sourceTree = "<group>"; };
 		226FCC092981A8F300671080 /* ti.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = ti.ttf; path = ../../../src/assets/fonts/ti.ttf; sourceTree = "<group>"; };
 		35D5F6C6CD0C1744D0865003 /* libPods-SimplelinkConnect.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SimplelinkConnect.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		505B299B2CA14A8900359C16 /* MeshModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshModule.swift; sourceTree = "<group>"; };
+		505B299D2CA14B3B00359C16 /* MeshModuleBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MeshModuleBridge.m; sourceTree = "<group>"; };
+		505B299F2CA14D6700359C16 /* MeshModule-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MeshModule-Bridging-Header.h"; sourceTree = "<group>"; };
+		50C8E9D92CE0B4EE004E00A7 /* CompanyIdentifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyIdentifiers.swift; sourceTree = "<group>"; };
+		50C8E9DE2CE4955F004E00A7 /* MeshRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshRepository.swift; sourceTree = "<group>"; };
+		50CB781F2D2E75B6009EEEF8 /* VendorMessageSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VendorMessageSet.swift; sourceTree = "<group>"; };
+		50E2BD322D67557200DE5856 /* QuickSetupNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickSetupNode.swift; sourceTree = "<group>"; };
+		50E2BD342D67573000DE5856 /* MeshTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshTask.swift; sourceTree = "<group>"; };
+		50F3173B2CEF692900DDCD4D /* NetworkConnection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkConnection.swift; sourceTree = "<group>"; };
+		50F3173D2CEF6AEF00DDCD4D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		50F317432CEF739A00DDCD4D /* BMGenericDefaultTransitionTimeServerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMGenericDefaultTransitionTimeServerDelegate.swift; sourceTree = "<group>"; };
+		50F317452CEF742100DDCD4D /* BMGenericOnOffServerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMGenericOnOffServerDelegate.swift; sourceTree = "<group>"; };
+		50F317472CEF74A100DDCD4D /* BMSceneServerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMSceneServerDelegate.swift; sourceTree = "<group>"; };
+		50F317492CEF74F700DDCD4D /* BMSceneSetupServerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMSceneSetupServerDelegate.swift; sourceTree = "<group>"; };
+		50F3174B2CEF758D00DDCD4D /* BMSensorClientDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMSensorClientDelegate.swift; sourceTree = "<group>"; };
+		50F3174D2CEF7B5C00DDCD4D /* BMGenericPowerOnOffClientDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMGenericPowerOnOffClientDelegate.swift; sourceTree = "<group>"; };
+		50F3174F2CEF7B8C00DDCD4D /* BMGenericDefaultTransitionTimeClientDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMGenericDefaultTransitionTimeClientDelegate.swift; sourceTree = "<group>"; };
+		50F317512CEF7BBA00DDCD4D /* BMGenericLevelServerDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMGenericLevelServerDelegate.swift; sourceTree = "<group>"; };
+		50F317532CEF7BE300DDCD4D /* BMGenericState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMGenericState.swift; sourceTree = "<group>"; };
+		50F317552CEF7C9D00DDCD4D /* BMGenericOnOffClientDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMGenericOnOffClientDelegate.swift; sourceTree = "<group>"; };
+		50F317572CEF7E1000DDCD4D /* BMGenericLevelClientDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMGenericLevelClientDelegate.swift; sourceTree = "<group>"; };
+		50F317592CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMLightLCClientDelegate.swift; sourceTree = "<group>"; };
+		50FD53DD2CE5FC0200FF61F3 /* BleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleManager.swift; sourceTree = "<group>"; };
 		654E1F797BEB3A97B3E3934D /* Pods-SimplelinkConnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimplelinkConnect.debug.xcconfig"; path = "Target Support Files/Pods-SimplelinkConnect/Pods-SimplelinkConnect.debug.xcconfig"; sourceTree = "<group>"; };
 		6CF535B777054E49891D465B /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "SimplelinkConnect/noop-file.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = SimplelinkConnect/SplashScreen.storyboard; sourceTree = "<group>"; };
@@ -132,6 +177,49 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		50C8E9DB2CE37ADA004E00A7 /* Mesh */ = {
+			isa = PBXGroup;
+			children = (
+				50CB781E2D2E7586009EEEF8 /* Vendor Model */,
+				50F3175B2CEF7FDE00DDCD4D /* Models */,
+				50C8E9D92CE0B4EE004E00A7 /* CompanyIdentifiers.swift */,
+				50C8E9DE2CE4955F004E00A7 /* MeshRepository.swift */,
+				50FD53DD2CE5FC0200FF61F3 /* BleManager.swift */,
+				50F3173B2CEF692900DDCD4D /* NetworkConnection.swift */,
+				50F3173D2CEF6AEF00DDCD4D /* AppDelegate.swift */,
+				50E2BD322D67557200DE5856 /* QuickSetupNode.swift */,
+				50E2BD342D67573000DE5856 /* MeshTask.swift */,
+			);
+			path = Mesh;
+			sourceTree = "<group>";
+		};
+		50CB781E2D2E7586009EEEF8 /* Vendor Model */ = {
+			isa = PBXGroup;
+			children = (
+				50CB781F2D2E75B6009EEEF8 /* VendorMessageSet.swift */,
+			);
+			path = "Vendor Model";
+			sourceTree = "<group>";
+		};
+		50F3175B2CEF7FDE00DDCD4D /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				50F317452CEF742100DDCD4D /* BMGenericOnOffServerDelegate.swift */,
+				50F317432CEF739A00DDCD4D /* BMGenericDefaultTransitionTimeServerDelegate.swift */,
+				50F317472CEF74A100DDCD4D /* BMSceneServerDelegate.swift */,
+				50F317492CEF74F700DDCD4D /* BMSceneSetupServerDelegate.swift */,
+				50F3174B2CEF758D00DDCD4D /* BMSensorClientDelegate.swift */,
+				50F3174D2CEF7B5C00DDCD4D /* BMGenericPowerOnOffClientDelegate.swift */,
+				50F3174F2CEF7B8C00DDCD4D /* BMGenericDefaultTransitionTimeClientDelegate.swift */,
+				50F317512CEF7BBA00DDCD4D /* BMGenericLevelServerDelegate.swift */,
+				50F317532CEF7BE300DDCD4D /* BMGenericState.swift */,
+				50F317552CEF7C9D00DDCD4D /* BMGenericOnOffClientDelegate.swift */,
+				50F317572CEF7E1000DDCD4D /* BMGenericLevelClientDelegate.swift */,
+				50F317592CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
@@ -142,6 +230,10 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				50C8E9DB2CE37ADA004E00A7 /* Mesh */,
+				505B299F2CA14D6700359C16 /* MeshModule-Bridging-Header.h */,
+				505B299D2CA14B3B00359C16 /* MeshModuleBridge.m */,
+				505B299B2CA14A8900359C16 /* MeshModule.swift */,
 				13B07FAE1A68108700A75B9A /* SimplelinkConnect */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -330,12 +422,18 @@
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/RNDeviceInfo/RNDeviceInfoPrivacyInfo.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/AccessibilityResources.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RxCocoa/RxCocoa_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RxRelay/RxRelay_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RxSwift/RxSwift_Privacy.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNDeviceInfoPrivacyInfo.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AccessibilityResources.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RxCocoa_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RxRelay_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RxSwift_Privacy.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -368,10 +466,32 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
+				50F3175C2CEF83AC00DDCD4D /* AppDelegate.mm in Sources */,
+				50F3174E2CEF7B5C00DDCD4D /* BMGenericPowerOnOffClientDelegate.swift in Sources */,
+				50CB78202D2E75B6009EEEF8 /* VendorMessageSet.swift in Sources */,
+				50C8E9DA2CE0B4EE004E00A7 /* CompanyIdentifiers.swift in Sources */,
+				50E2BD332D67557200DE5856 /* QuickSetupNode.swift in Sources */,
+				50F317582CEF7E1000DDCD4D /* BMGenericLevelClientDelegate.swift in Sources */,
+				50F3174C2CEF758D00DDCD4D /* BMSensorClientDelegate.swift in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
+				50F317482CEF74A100DDCD4D /* BMSceneServerDelegate.swift in Sources */,
+				50F317462CEF742100DDCD4D /* BMGenericOnOffServerDelegate.swift in Sources */,
 				B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */,
+				50F3175A2CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift in Sources */,
+				50C8E9DF2CE49560004E00A7 /* MeshRepository.swift in Sources */,
+				50F317442CEF739A00DDCD4D /* BMGenericDefaultTransitionTimeServerDelegate.swift in Sources */,
+				50FD53DE2CE5FC0200FF61F3 /* BleManager.swift in Sources */,
+				50F3174A2CEF74F700DDCD4D /* BMSceneSetupServerDelegate.swift in Sources */,
+				50F317522CEF7BBA00DDCD4D /* BMGenericLevelServerDelegate.swift in Sources */,
+				50F317562CEF7C9D00DDCD4D /* BMGenericOnOffClientDelegate.swift in Sources */,
+				50F317502CEF7B8C00DDCD4D /* BMGenericDefaultTransitionTimeClientDelegate.swift in Sources */,
+				50E2BD352D67573000DE5856 /* MeshTask.swift in Sources */,
+				50F317542CEF7BE300DDCD4D /* BMGenericState.swift in Sources */,
+				50F3173E2CEF6AEF00DDCD4D /* AppDelegate.swift in Sources */,
+				50F3173C2CEF692900DDCD4D /* NetworkConnection.swift in Sources */,
+				505B299C2CA14A8900359C16 /* MeshModule.swift in Sources */,
 				F24099C8AD2B49A8B3678E06 /* noop-file.swift in Sources */,
+				505B299E2CA14B3B00359C16 /* MeshModuleBridge.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -394,11 +514,78 @@
 					"$(inherited)",
 					"FB_SONARKIT_ENABLED=1",
 				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${PODS_ROOT}/Headers/Public\"",
+					"\"${PODS_ROOT}/Headers/Public/BVLinearGradient\"",
+					"\"${PODS_ROOT}/Headers/Public/DoubleConversion\"",
+					"\"${PODS_ROOT}/Headers/Public/EXApplication\"",
+					"\"${PODS_ROOT}/Headers/Public/EXConstants\"",
+					"\"${PODS_ROOT}/Headers/Public/EXErrorRecovery\"",
+					"\"${PODS_ROOT}/Headers/Public/EXFileSystem\"",
+					"\"${PODS_ROOT}/Headers/Public/EXFont\"",
+					"\"${PODS_ROOT}/Headers/Public/EXSharing\"",
+					"\"${PODS_ROOT}/Headers/Public/EXSplashScreen\"",
+					"\"${PODS_ROOT}/Headers/Public/Expo\"",
+					"\"${PODS_ROOT}/Headers/Public/ExpoModulesCore\"",
+					"\"${PODS_ROOT}/Headers/Public/FBLazyVector\"",
+					"\"${PODS_ROOT}/Headers/Public/RCT-Folly\"",
+					"\"${PODS_ROOT}/Headers/Public/RCTRequired\"",
+					"\"${PODS_ROOT}/Headers/Public/RCTTypeSafety\"",
+					"\"${PODS_ROOT}/Headers/Public/RNCAsyncStorage\"",
+					"\"${PODS_ROOT}/Headers/Public/RNDeviceInfo\"",
+					"\"${PODS_ROOT}/Headers/Public/RNFS\"",
+					"\"${PODS_ROOT}/Headers/Public/RNFlashList\"",
+					"\"${PODS_ROOT}/Headers/Public/RNGestureHandler\"",
+					"\"${PODS_ROOT}/Headers/Public/RNKeychain\"",
+					"\"${PODS_ROOT}/Headers/Public/RNReanimated\"",
+					"\"${PODS_ROOT}/Headers/Public/RNSVG\"",
+					"\"${PODS_ROOT}/Headers/Public/RNScreens\"",
+					"\"${PODS_ROOT}/Headers/Public/React-Codegen\"",
+					"\"${PODS_ROOT}/Headers/Public/React-Core\"",
+					"\"${PODS_ROOT}/Headers/Public/React-RCTAnimation\"",
+					"\"${PODS_ROOT}/Headers/Public/React-RCTBlob\"",
+					"\"${PODS_ROOT}/Headers/Public/React-RCTText\"",
+					"\"${PODS_ROOT}/Headers/Public/React-bridging\"",
+					"\"${PODS_ROOT}/Headers/Public/React-callinvoker\"",
+					"\"${PODS_ROOT}/Headers/Public/React-cxxreact\"",
+					"\"${PODS_ROOT}/Headers/Public/React-jsi\"",
+					"\"${PODS_ROOT}/Headers/Public/React-jsiexecutor\"",
+					"\"${PODS_ROOT}/Headers/Public/React-jsinspector\"",
+					"\"${PODS_ROOT}/Headers/Public/React-logger\"",
+					"\"${PODS_ROOT}/Headers/Public/React-perflogger\"",
+					"\"${PODS_ROOT}/Headers/Public/React-runtimeexecutor\"",
+					"\"${PODS_ROOT}/Headers/Public/ReactCommon\"",
+					"\"${PODS_ROOT}/Headers/Public/Yoga\"",
+					"\"${PODS_ROOT}/Headers/Public/fmt\"",
+					"\"${PODS_ROOT}/Headers/Public/glog\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-ble-manager\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-charts-wrapper\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-document-picker\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-get-random-values\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-idle-timer\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-loader-kit\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-restart\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-safe-area-context\"",
+					"\"$(PODS_ROOT)/DoubleConversion\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/ExpoModulesCore/Swift Compatibility Header\"",
+					"\"$(PODS_ROOT)/Headers/Private/React-bridging/react/bridging\"",
+					"\"$(PODS_CONFIGURATION_BUILD_DIR)/React-bridging/react_bridging.framework/Headers\"",
+					"\"$(PODS_ROOT)/boost\"",
+					"\"$(PODS_ROOT)/boost\"",
+					"\"$(PODS_ROOT)/boost-for-react-native\"",
+					"\"$(PODS_ROOT)/glog\"",
+					"\"$(PODS_ROOT)/RCT-Folly\"",
+					"\"${PODS_ROOT}/Headers/Public/React-hermes\"",
+					"\"${PODS_ROOT}/Headers/Public/hermes-engine\"",
+					"\"$(PODS_ROOT)/Headers/Private/React-Core\"",
+					"\"$(PODS_ROOT)/nRFMeshProvision\"/**",
+				);
 				INFOPLIST_FILE = SimplelinkConnect/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "SimpleLink™ Connect";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.3.8;
+				MARKETING_VERSION = 2.0.2;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -410,6 +597,8 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "MeshModule-Bridging-Header.h";
+				"SWIFT_OBJC_BRIDGING_HEADER[arch=*]" = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -428,6 +617,73 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = XXXXX;
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${PODS_ROOT}/Headers/Public\"",
+					"\"${PODS_ROOT}/Headers/Public/BVLinearGradient\"",
+					"\"${PODS_ROOT}/Headers/Public/DoubleConversion\"",
+					"\"${PODS_ROOT}/Headers/Public/EXApplication\"",
+					"\"${PODS_ROOT}/Headers/Public/EXConstants\"",
+					"\"${PODS_ROOT}/Headers/Public/EXErrorRecovery\"",
+					"\"${PODS_ROOT}/Headers/Public/EXFileSystem\"",
+					"\"${PODS_ROOT}/Headers/Public/EXFont\"",
+					"\"${PODS_ROOT}/Headers/Public/EXSharing\"",
+					"\"${PODS_ROOT}/Headers/Public/EXSplashScreen\"",
+					"\"${PODS_ROOT}/Headers/Public/Expo\"",
+					"\"${PODS_ROOT}/Headers/Public/ExpoModulesCore\"",
+					"\"${PODS_ROOT}/Headers/Public/FBLazyVector\"",
+					"\"${PODS_ROOT}/Headers/Public/RCT-Folly\"",
+					"\"${PODS_ROOT}/Headers/Public/RCTRequired\"",
+					"\"${PODS_ROOT}/Headers/Public/RCTTypeSafety\"",
+					"\"${PODS_ROOT}/Headers/Public/RNCAsyncStorage\"",
+					"\"${PODS_ROOT}/Headers/Public/RNDeviceInfo\"",
+					"\"${PODS_ROOT}/Headers/Public/RNFS\"",
+					"\"${PODS_ROOT}/Headers/Public/RNFlashList\"",
+					"\"${PODS_ROOT}/Headers/Public/RNGestureHandler\"",
+					"\"${PODS_ROOT}/Headers/Public/RNKeychain\"",
+					"\"${PODS_ROOT}/Headers/Public/RNReanimated\"",
+					"\"${PODS_ROOT}/Headers/Public/RNSVG\"",
+					"\"${PODS_ROOT}/Headers/Public/RNScreens\"",
+					"\"${PODS_ROOT}/Headers/Public/React-Codegen\"",
+					"\"${PODS_ROOT}/Headers/Public/React-Core\"",
+					"\"${PODS_ROOT}/Headers/Public/React-RCTAnimation\"",
+					"\"${PODS_ROOT}/Headers/Public/React-RCTBlob\"",
+					"\"${PODS_ROOT}/Headers/Public/React-RCTText\"",
+					"\"${PODS_ROOT}/Headers/Public/React-bridging\"",
+					"\"${PODS_ROOT}/Headers/Public/React-callinvoker\"",
+					"\"${PODS_ROOT}/Headers/Public/React-cxxreact\"",
+					"\"${PODS_ROOT}/Headers/Public/React-jsi\"",
+					"\"${PODS_ROOT}/Headers/Public/React-jsiexecutor\"",
+					"\"${PODS_ROOT}/Headers/Public/React-jsinspector\"",
+					"\"${PODS_ROOT}/Headers/Public/React-logger\"",
+					"\"${PODS_ROOT}/Headers/Public/React-perflogger\"",
+					"\"${PODS_ROOT}/Headers/Public/React-runtimeexecutor\"",
+					"\"${PODS_ROOT}/Headers/Public/ReactCommon\"",
+					"\"${PODS_ROOT}/Headers/Public/Yoga\"",
+					"\"${PODS_ROOT}/Headers/Public/fmt\"",
+					"\"${PODS_ROOT}/Headers/Public/glog\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-ble-manager\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-charts-wrapper\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-document-picker\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-get-random-values\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-idle-timer\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-loader-kit\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-restart\"",
+					"\"${PODS_ROOT}/Headers/Public/react-native-safe-area-context\"",
+					"\"$(PODS_ROOT)/DoubleConversion\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/ExpoModulesCore/Swift Compatibility Header\"",
+					"\"$(PODS_ROOT)/Headers/Private/React-bridging/react/bridging\"",
+					"\"$(PODS_CONFIGURATION_BUILD_DIR)/React-bridging/react_bridging.framework/Headers\"",
+					"\"$(PODS_ROOT)/boost\"",
+					"\"$(PODS_ROOT)/boost\"",
+					"\"$(PODS_ROOT)/boost-for-react-native\"",
+					"\"$(PODS_ROOT)/glog\"",
+					"\"$(PODS_ROOT)/RCT-Folly\"",
+					"\"${PODS_ROOT}/Headers/Public/React-hermes\"",
+					"\"${PODS_ROOT}/Headers/Public/hermes-engine\"",
+					"\"$(PODS_ROOT)/Headers/Private/React-Core\"",
+					"\"$(PODS_ROOT)/nRFMeshProvision\"/**",
+				);
 				INFOPLIST_FILE = SimplelinkConnect/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "SimpleLink™ Connect";
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
@@ -444,6 +700,7 @@
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_OBJC_BRIDGING_HEADER = "MeshModule-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";

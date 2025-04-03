@@ -41,9 +41,11 @@ import { ProfileListProvider } from './src/context/ProfileListContext';
 import { CharacteristicViewProvider } from './src/context/CharactristicViewContext';
 import { RepositoryDetailsProvider } from './src/context/FirmwareRepoContext';
 import { SpecificScreenConfigProvider } from './src/context/SpecificScreenOptionsContext';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { TutorialsProvider } from './src/context/TutorialContext';
 
 export default function App() {
-  const [isLoadingComplete, showTutorial] = useCachedResources();
+  const [isLoadingComplete] = useCachedResources();
   const colorScheme = useColorScheme();
 
   if (!isLoadingComplete) {
@@ -51,18 +53,22 @@ export default function App() {
   } else {
     return (
       <SafeAreaProvider>
-        <CharacteristicViewProvider>
-          <TerminalConfigProvider>
-            <SpecificScreenConfigProvider>
-              <RepositoryDetailsProvider>
-                <ProfileListProvider>
-                  <Navigation colorScheme={colorScheme} showTutorial={showTutorial} />
-                  <StatusBar />
-                </ProfileListProvider>
-              </RepositoryDetailsProvider>
-            </SpecificScreenConfigProvider>
-          </TerminalConfigProvider>
-        </CharacteristicViewProvider>
+        <PaperProvider>
+          <CharacteristicViewProvider>
+            <TerminalConfigProvider>
+              <SpecificScreenConfigProvider>
+                <RepositoryDetailsProvider>
+                  <ProfileListProvider>
+                    <TutorialsProvider>
+                      <Navigation colorScheme={colorScheme} />
+                      <StatusBar />
+                    </TutorialsProvider>
+                  </ProfileListProvider>
+                </RepositoryDetailsProvider>
+              </SpecificScreenConfigProvider>
+            </TerminalConfigProvider>
+          </CharacteristicViewProvider>
+        </PaperProvider>
       </SafeAreaProvider>
     );
   }

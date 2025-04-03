@@ -1,11 +1,15 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { TestParams, PHY_OPTIONS, data_stream, TEST_CASE } from '../components/Tests/testsUtils';
+import { TestParams, PHY_OPTIONS, data_stream, TEST_CASE, TestData } from '../components/StressTests/testsUtils';
 
 
-interface TestParamsContextProps {
+interface StressTestContextProps {
     testParametersContext: TestParams | null,
-    updateTestParams: (c: TestParams) => Promise<void>
+    updateTestParams: (c: TestParams) => Promise<void>,
+    updateTestLogs: (c: any[]) => Promise<void>,
+    updateTestResults: (c: TestData) => Promise<void>,
+    testLogs: any[],
+    testResults: TestData | undefined
 }
 
 const initialState: TestParams = {
@@ -25,11 +29,12 @@ const initialState: TestParams = {
     delay_between_main_loops: 1500
 }
 
-const TestParamsContext = createContext<TestParamsContextProps | undefined>(undefined);
+const StressTestContext = createContext<StressTestContextProps | undefined>(undefined);
 
-export const TestParamsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const StressTestProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [testParametersContext, setTestParameters] = useState<TestParams | null>(null);
-
+    const [testLogs, setTestLog] = useState<any[]>([]);
+    const [testResults, setTestResults] = useState<TestData>();
 
     useEffect(() => {
 
@@ -42,6 +47,19 @@ export const TestParamsProvider: React.FC<{ children: ReactNode }> = ({ children
                 params = JSON.stringify(initialState);
             }
             setTestParameters(JSON.parse(params));
+
+            let logs = await AsyncStorage.getItem("@testLogs");
+            if (!logs) {
+                logs = JSON.stringify([]);
+            }
+            setTestLog(JSON.parse(logs));
+
+            let results = await AsyncStorage.getItem("@testResults");
+            if (!results) {
+                results = JSON.stringify([]);
+            }
+            console.log('got results from storage:', results)
+            setTestResults(JSON.parse(results));
         };
 
         initiate();
@@ -49,27 +67,35 @@ export const TestParamsProvider: React.FC<{ children: ReactNode }> = ({ children
     }, []);
 
     const updateTestParams = async (params: TestParams) => {
-
         setTestParameters(params);
         await AsyncStorage.setItem('@testParams', JSON.stringify(params));
-        console.log("test parameters updated with", params)
-
     }
+
+    const updateTestLogs = async (newLogs: any[]) => {
+        setTestLog(newLogs);
+        await AsyncStorage.setItem('@testLogs', JSON.stringify(newLogs));
+    }
+
+    const updateTestResults = async (newResults: TestData) => {
+        setTestResults(newResults);
+        await AsyncStorage.setItem('@testResults', JSON.stringify(newResults));
+    }
+
     if (!testParametersContext) {
         return null
     }
 
     return (
-        <TestParamsContext.Provider value={{ testParametersContext, updateTestParams }}>
+        <StressTestContext.Provider value={{ testParametersContext, updateTestParams, testLogs, updateTestLogs, updateTestResults, testResults }}>
             {children}
-        </TestParamsContext.Provider>
+        </StressTestContext.Provider>
     );
 };
 
-export const useTestParamsContext = () => {
-    const context = useContext(TestParamsContext);
+export const useStressTestContext = () => {
+    const context = useContext(StressTestContext);
     if (!context) {
-        throw new Error('TestParamsContext must be used within a TestParamsProvider');
+        throw new Error('StressTestContext must be used within a StressTestProvider');
     }
     return context;
 };

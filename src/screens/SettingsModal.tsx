@@ -41,7 +41,6 @@ import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import Colors from '../constants/Colors';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Divider } from 'react-native-paper';
-
 interface Props extends DrawerContentComponentProps { }
 
 const SettingsModal: React.FC<Props> = ({ navigation }) => {
@@ -52,7 +51,7 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
   useEffect(() => {
     let checkTutorial = async () => {
       try {
-        let data = await AsyncStorage.getItem('@tutorial');
+        let data = await AsyncStorage.getItem('@scanner_tutorial');
 
         if (!data) throw Error('Tutorial shown!');
 
@@ -69,25 +68,19 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
 
     if (value) {
       setShowTutorial(value);
-      await AsyncStorage.setItem('@tutorial', JSON.stringify(true));
+      await AsyncStorage.setItem('@scanner_tutorial', JSON.stringify(true));
       return;
     } else {
       setShowTutorial(value);
-      await AsyncStorage.removeItem('@tutorial');
+      await AsyncStorage.removeItem('@scanner_tutorial');
       return;
     }
   };
-
-  function handleTesting() {
-    navigation.navigate('IopParameters', { testService: null, peripheralId: null, peripheralName: null });
-    navigation.closeDrawer();
-  }
 
   const handleNavigation = (screen: string) => {
     navigation.navigate(screen);
     navigation.closeDrawer();
   };
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -114,17 +107,12 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
             <Divider />
 
-            <TouchableOpacity style={styles.menuItem} onPress={handleTesting}>
-              <Icon name="flask" size={25} color={Colors.blue} style={styles.icon} />
-              <Text style={[styles.menuText, { fontSize: 16 / fontScale, }]}>Enter Stress Test Mode</Text>
-            </TouchableOpacity>
-            <Divider />
-
             <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('ConfigRepository')}>
               <Icon name="git-network-outline" size={25} color={Colors.blue} style={styles.icon} />
               <Text style={[styles.menuText, { fontSize: 16 / fontScale, }]}>Config OAD Repository</Text>
             </TouchableOpacity>
             <Divider />
+
             <View style={[styles.menuItem]} >
               <Text style={{ fontSize: 16 / fontScale }}>Skip tutorial at start:</Text>
               <View style={{ marginLeft: 'auto' }}>
@@ -139,9 +127,8 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
         <View style={styles.footer}>
-          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>1.3.8</Text>
+          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.0.2</Text>
           <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
-          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Credits: </Text>Tony Cave (Bluwbee LTD)</Text>
         </View>
       </KeyboardAwareScrollView>
     </SafeAreaView >

@@ -1,7 +1,7 @@
 import React, { useContext, useState, useCallback, createContext, useEffect } from 'react';
 import { uuidToServiceSpecificScreen } from '../hooks/uuidToName';
 import { RootStackParamList } from '../../types';
-import { checkIfTestingSupported } from '../components/Tests/testsUtils';
+import { checkIfTestingSupported } from '../components/StressTests/testsUtils';
 
 type CharacteristicView = 'advanced' | 'specific';
 
