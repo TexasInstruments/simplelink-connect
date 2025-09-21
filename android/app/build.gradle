@@ -146,8 +146,8 @@ android {
         applicationId 'com.ti.connectivity.simplelinkconnect'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 23
-        versionName "2.0.2"
+        versionCode 25
+        versionName "2.1.0"
         buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
 
         if (isNewArchitectureEnabled()) {
@@ -305,6 +305,9 @@ dependencies {
     implementation 'no.nordicsemi.android.support.v18:scanner:1.6.0'
     implementation 'no.nordicsemi.android:ble:2.9.0-beta02'
     implementation 'no.nordicsemi.android:log:2.5.0'
+    
+    implementation 'no.nordicsemi.android:mcumgr-ble:1.9.2'
+    implementation 'no.nordicsemi.android:mcumgr-core:1.9.2'
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";

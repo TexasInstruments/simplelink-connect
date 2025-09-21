@@ -1,7 +1,8 @@
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 class BMGenericPowerOnOffClientDelegate: ModelDelegate {
+ 
     let messageTypes: [UInt32 : MeshMessage.Type]
     let isSubscriptionSupported: Bool = true
     
@@ -32,19 +33,16 @@ class BMGenericPowerOnOffClientDelegate: ModelDelegate {
     // MARK: - Message handlers
     
     func model(_ model: Model, didReceiveAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address, sentTo destination: MeshAddress) -> MeshMessage {
+               from source: Address, sentTo destination: MeshAddress) throws -> any NordicMesh.MeshResponse {
         fatalError("Message not supported: \(request)")
     }
     
-    func model(_ model: Model, didReceiveUnacknowledgedMessage message: MeshMessage,
-               from source: Address, sentTo destination: MeshAddress) {
+  func model(_ model: NordicMesh.Model, didReceiveUnacknowledgedMessage message: any NordicMesh.UnacknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) {
         // The status message may be received here if the Generic Power OnOff Server model
         // has been configured to publish. Ignore this message.
     }
     
-    func model(_ model: Model, didReceiveResponse response: MeshMessage,
-               toAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address) {
+  func model(_ model: NordicMesh.Model, didReceiveResponse response: any NordicMesh.MeshResponse, toAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address) {
         // Ignore.
     }
 }

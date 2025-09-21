@@ -20,6 +20,7 @@ import 'react-native-get-random-values';
 import { v4 as uuid4 } from 'uuid';
 import { Buffer } from 'buffer';
 import { convertStringToByteArray } from '../../hooks/convert';
+import { useTerminalConfigContext } from '../../context/TerminalOptionsContext';
 
 
 //Terminal
@@ -37,6 +38,7 @@ const TerminalServiceModel: React.FC<{ peripheralId: string }> = ({ peripheralId
 
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+  let { terminalConfig: config, } = useTerminalConfigContext();
 
 
   const [terminalMessages, setTerminalMessages] = useState<
@@ -46,6 +48,9 @@ const TerminalServiceModel: React.FC<{ peripheralId: string }> = ({ peripheralId
   let terminalInputRef = useRef<TextInput | null>(null);
   const [terminalInput, setTerminalInput] = useState<string>('');
 
+  const continuousNotifications = useRef(config.continuousNotifications);
+  const lastReceivedMessageId = useRef<string | null>(null);
+
   let insets = useSafeAreaInsets();
 
   const flashListRef = useRef(null);
@@ -54,9 +59,16 @@ const TerminalServiceModel: React.FC<{ peripheralId: string }> = ({ peripheralId
     if (terminalInputRef.current) {
       terminalInputRef.current.focus();
     }
+
   }, []);
 
+  useEffect(() => {
+    continuousNotifications.current = config.continuousNotifications
+  }, [config.continuousNotifications])
+
   const onSubmit = () => {
+    // Reset so next notification starts a new received message
+    lastReceivedMessageId.current = null;
     let message = '> ' + terminalInput
     setTerminalMessages((prev) => [
       ...prev,
@@ -85,53 +97,93 @@ const TerminalServiceModel: React.FC<{ peripheralId: string }> = ({ peripheralId
 
   useFocusEffect(
     useCallback(() => {
-      const task = InteractionManager.runAfterInteractions(() => {
+      const task = InteractionManager.runAfterInteractions(async () => {
+        try {
+          // await BleManager.retrieveServices(peripheralId);
+          await BleManager.startNotification(
+            peripheralId,
+            DATASTREAMSERVER_SERV_UUID,
+            DATASTREAMSERVER_DATAOUT_UUID
+          );
 
-        console.log('enable noti')
-        // Termianl notifications
-        BleManager.startNotification(
-          peripheralId,
-          DATASTREAMSERVER_SERV_UUID,
-          DATASTREAMSERVER_DATAOUT_UUID
-        );
+          console.log('Notifications enabled');
 
-        console.log('addListener for BleManagerDidUpdateValueForCharacteristic');
-        bleManagerEmitter.addListener(
-          'BleManagerDidUpdateValueForCharacteristic',
-          ({ value, peripheral, characteristic, service }) => {
-            console.log('got noti')
-            let buf = Buffer.from(value);
-            let len = buf.length
-
-            let hexString = buf.toString('utf8');
-
-            hexString = '< ' + hexString;
-            setTerminalMessages((prev) => [
-              ...prev,
-              { id: uuid4(), message: hexString, date: new Date().toTimeString().split(' ')[0], length: len, received: true },
-            ]);
-          })
-
-
+          bleManagerEmitter.addListener(
+            'BleManagerDidUpdateValueForCharacteristic',
+            handleNotifications
+          );
+        } catch (error) {
+          console.error(' Notification setup failed:', error);
+        }
       });
 
       return () => {
         task.cancel();
-        console.log('remove all listeners');
         bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
 
-        //Terminal notification
-        BleManager.stopNotification(peripheralId, DATASTREAMSERVER_SERV_UUID, DATASTREAMSERVER_DATAIN_UUID);
-      }
-    }, [])
+        BleManager.stopNotification(
+          peripheralId,
+          DATASTREAMSERVER_SERV_UUID,
+          DATASTREAMSERVER_DATAOUT_UUID
+        );
+      };
+    }, [peripheralId])
   );
 
-  useEffect(() => {
-    // useEffect to scroll to the end whenever terminalMessages change
-    if (flashListRef.current) {
-      flashListRef.current.scrollToEnd();
+  const handleNotifications = ({ value }) => {
+    const buf = Buffer.from(value);
+    const len = buf.length;
+    const hexString = buf.toString('utf8');
+
+    if (
+      continuousNotifications.current &&
+      lastReceivedMessageId.current !== null
+    ) {
+      // Concat to last received message
+      setTerminalMessages((prev) => {
+        const index = prev.findIndex(msg => msg.id === lastReceivedMessageId.current);
+        if (index === -1) return prev;
+
+        const updated = [...prev];
+        const lastMsg = updated[index];
+
+        updated[index] = {
+          ...lastMsg,
+          message: lastMsg.message + hexString,
+          date: new Date().toTimeString().split(' ')[0],
+          length: lastMsg.length + len,
+        };
+
+        return updated;
+      });
+
+    } else {
+      // First received message after a write
+      const newId = uuid4();
+      lastReceivedMessageId.current = newId;
+
+      setTerminalMessages((prev) => [
+        ...prev,
+        {
+          id: newId,
+          message: '< ' + hexString,
+          date: new Date().toTimeString().split(' ')[0],
+          length: len,
+          received: true,
+        },
+      ]);
     }
-  }, [terminalMessages]);
+  }
+
+  const handleContentSizeChange = () => {
+    if (flashListRef.current) {
+      try {
+        flashListRef.current.scrollToEnd({ animated: true });
+      } catch (e) {
+        console.warn('scrollToEnd failed:', e);
+      }
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -144,10 +196,11 @@ const TerminalServiceModel: React.FC<{ peripheralId: string }> = ({ peripheralId
           showsVerticalScrollIndicator={false}
           data={terminalMessages}
           keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => <TerminalRenderItem key={index} message={item.message} length={item.length} date={item.date} received={item.received} />}
+          renderItem={({ item, index }) => <TerminalRenderItem message={item.message} length={item.length} date={item.date} received={item.received} />}
           ItemSeparatorComponent={TerminalItemSeparator}
           estimatedItemSize={100}
           ref={flashListRef}
+          onContentSizeChange={handleContentSizeChange}
         />
       </View>
       <View style={[styles.terminalInput]}>

@@ -162,7 +162,6 @@ public class QuickSetupNode implements MeshStatusCallbacks {
                                                     int appKeyIndex, int publishTtl, int publishPeriodInterval, String publishPeriodResolution,
                                                     int retransmitCount, int retransmitInterval) {
         CompletableFuture<WritableArray> future = new CompletableFuture<>();
-
         initiateParams();
 
         this.node = meshManagerApi.getMeshNetwork().getNode(nodeUnicastAddress);
@@ -197,8 +196,13 @@ public class QuickSetupNode implements MeshStatusCallbacks {
                 publicationSettings.setPublishTtl(publishTtl);
                 publicationSettings.setPublishAddress(groupAddress);
                 publicationSettings.setPublicationPeriodResolutionResource(publishPeriodInterval, publishPeriodResolution);
-                publicationSettings.setRetransmitCount(retransmitCount);
-                publicationSettings.setRetransmitIntervalSteps(retransmitInterval);
+                if (retransmitCount > 0){
+                    publicationSettings.setRetransmitCount(retransmitCount);
+                    publicationSettings.setRetransmitIntervalSteps(retransmitInterval);
+                }
+                else{
+                    publicationSettings.setRetransmitCount(0);
+                }
                 tasks.add(new MeshTask(SET_PUBLICATION, publicationSettings, model.getModelName()));
             }
         }

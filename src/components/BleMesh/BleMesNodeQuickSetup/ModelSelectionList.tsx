@@ -11,7 +11,7 @@ interface ModelSelectionListProps {
     setSelectedModels: React.Dispatch<
         React.SetStateAction<{ modelId: number; elementId: number; modelType: string }[]>
     >;
-    disabledModels: number[];
+    disabledModels: Model[];
 }
 
 const ModelSelectionList: React.FC<ModelSelectionListProps> = ({
@@ -36,7 +36,7 @@ const ModelSelectionList: React.FC<ModelSelectionListProps> = ({
     };
 
     const toggleSelectAllModels = (element: Element) => {
-        const allSelectableModels = element.models.filter((model) => !(disabledModels.includes(model.id) && model.type === "Bluetooth SIG"));
+        const allSelectableModels = element.models.filter((model) => !(disabledModels.find((m) => m.id == model.id) && model.type === "Bluetooth SIG"));
 
         const allSelected = allSelectableModels.every((model) =>
             selectedModels.some((item) => item.elementId === element.address && item.modelId === model.id && item.modelType === model.type)
@@ -45,7 +45,7 @@ const ModelSelectionList: React.FC<ModelSelectionListProps> = ({
         setSelectedModels((prev) => {
             if (allSelected) {
                 // Deselect all models of this element (excluding disabled ones)
-                return prev.filter((item) => item.elementId !== element.address || disabledModels.includes(item.modelId));
+                return prev.filter((item) => item.elementId !== element.address && disabledModels.find((m) => m.id == item.modelId));
             } else {
                 // Select only non-disabled models
                 const newModels = allSelectableModels.map((model) => ({
@@ -80,7 +80,7 @@ const ModelSelectionList: React.FC<ModelSelectionListProps> = ({
 
                     {element.models.map((model, modelIndex) => {
                         const isSelected = isModelSelected(element.address, model.id, model.type);
-                        const disabled = disabledModels.includes(model.id) && model.type == "Bluetooth SIG";
+                        const disabled = disabledModels.find((m) => m.id == model.id) && model.type == "Bluetooth SIG";
                         return (
                             <TouchableOpacity
                                 disabled={disabled}

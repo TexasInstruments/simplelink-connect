@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { StyleSheet, View, Alert, Modal } from 'react-native';
 import Colors from '../../../constants/Colors';
 import { useEffect, useState } from 'react';
@@ -22,24 +22,25 @@ const publishAddresses = [
     { label: 'All Nodes Addresses', value: 0xFFFF, type: 6 },
 ];
 
-
 export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, unicastAddress, publicationSettings }) => {
 
     const [appKeys, setAppKeys] = useState<ApplicationKey[]>();
     const [boundedKeys, setBoundedKeys] = useState<ApplicationKey[]>([]);
     const [selectedBoundKey, setSelectedBoundKey] = useState<ApplicationKey>();
-    const [selectedAddressType, setSelectedAddressType] = useState<{ label: string, value: number, type: number }>();
+    const [selectedAddressType, setSelectedAddressType] = useState<{ label: string, value: number, type: number }>(publishAddresses[0]);
     const [selectedAddress, setSelectedAddress] = useState<string>();
-    const [ttl, setTTL] = useState<number>(publicationSettings?.ttl ? publicationSettings?.ttl : 255);
-    const [publishPeriodResolution, setPublishPeriodResolution] = useState<'10 minutes' | '10 seconds' | '1 second' | '100 milliseconds'>('1 second');
+    const [ttl, setTTL] = useState<number>(publicationSettings?.ttl ? publicationSettings?.ttl : 7);
+    const [publishPeriodResolution, setPublishPeriodResolution] = useState<'10 minutes' | '10 seconds' | '1 second' | '100 milliseconds' | 'disabled'>('disabled');
     const [publishPeriodInterval, setPublishPeriodInterval] = useState<number>(0);
-    const [publishRetransmissionCount, setPublishRetransmissionCount] = useState(0);
+    const [publishRetransmissionCount, setPublishRetransmissionCount] = useState(-1);
     const [publishRetransmissionInterval, setPublishRetransmissionInterval] = useState(0);
     const [useExistingGroup, setUseExistingGroup] = useState<boolean>(true);
     const [groups, setGroups] = useState<Group[]>([]);
     const [selectedGroup, setSelectedGroup] = useState<Group>();
     const [newGroupName, setNewGroupName] = useState<string>('My Group');
     const [newGroupAddress, setNewGroupAddress] = useState<string>('');
+
+    const [isLoading, setIsLoading] = useState(false)
 
     useEffect(() => {
         getAppKeys().then(() => {
@@ -62,7 +63,12 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                 setSelectedAddress(publicationSettings?.publishAddress.toString(16));
             }
             if (publicationSettings?.publishRetransmitCount != undefined) {
-                setPublishRetransmissionCount(publicationSettings?.publishRetransmitCount);
+                if (publicationSettings?.publishRetransmitCount == 0){
+                    setPublishRetransmissionCount(-1);
+                }
+                else{
+                    setPublishRetransmissionCount(publicationSettings?.publishRetransmitCount);
+                }
             }
             if (publicationSettings?.ttl != undefined) {
                 setTTL(publicationSettings?.ttl);
@@ -71,10 +77,10 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
 
         getGroups();
         generateGroupAddress();
-
+        setIsLoading(false)
 
         return () => {
-
+            setIsLoading(false)
         };
 
     }, [visible]);
@@ -121,7 +127,24 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
         }
     };
 
+    const isFormValid = () => {
+        return selectedBoundKey != null &&
+            selectedAddressType != null &&
+            selectedAddress != null &&
+            ttl >= 0 && ttl <= 255 &&
+            (
+                // If using groups:
+                (selectedAddressType?.label === 'Groups' &&
+                    ((useExistingGroup && selectedGroup != null) || (!useExistingGroup && newGroupName && newGroupAddress)))
+                ||
+                // If not groups, any selectedAddress works
+                selectedAddressType?.label !== 'Groups'
+            );
+    }
+
+
     const handleApply = async () => {
+        setIsLoading(true)
         // Apply settings
         try {
             let address = selectedAddress;
@@ -131,9 +154,16 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
             };
             if (selectedAddressType.label === 'Groups') {
                 if (!useExistingGroup) {
-                    let newAddress = await callMeshModuleFunction('createNewGroup', newGroupName, parseInt(newGroupAddress, 16)) as number;
-                    address = newAddress.toString(16);
-                    setSelectedAddress(address);
+                    let response = await callMeshModuleFunction('createNewGroup', newGroupName, parseInt(newGroupAddress, 16)) as { success: boolean, address: number, error?: string };
+                    if (response.success) {
+                        address = response.address.toString(16);
+                        setSelectedAddress(address);
+                    }
+                    else {
+                        Alert.alert('Failed to apply publication', response.error ?? 'Unknown error');
+                        setIsLoading(false)
+                        return
+                    }
                 }
                 else {
                     if (selectedGroup) {
@@ -147,13 +177,10 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                 Alert.alert("Error", "TTL must be between 0 and 255.");
                 return;
             }
-            // Validate retransmission count (must be between 0-7)
-            if (publishRetransmissionCount < 0 || publishRetransmissionCount > 7) {
-                Alert.alert("Error", "Retransmission Count must be between 0 and 7.");
-                return;
-            }
+
             let addressType = selectedAddressType.type;
-            let message = await callMeshModuleFunction('setPublication',
+
+            await callMeshModuleFunction('setPublication',
                 unicastAddress,
                 addressType,
                 selectedBoundKey?.index,
@@ -164,9 +191,12 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                 publishRetransmissionCount,
                 publishRetransmissionInterval,
             )
+
             setModalVisible(!visible);
         } catch (e) {
-            Alert.alert('Failed to apply publication ', e);
+            console.log(e)
+            Alert.alert('Failed to apply publication', e instanceof Error ? e.message : String(e));
+            setIsLoading(false)
         }
     };
 
@@ -334,7 +364,8 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                             <Text style={styles.label}>TTL</Text>
                             <TextInput
                                 mode='outlined'
-                                keyboardType='numeric'
+                                keyboardType='number-pad'
+                                returnKeyType="done"
                                 style={styles.textInput}
                                 value={ttl.toString()}
                                 onChangeText={(v) => setTTL(Number(v))}
@@ -345,25 +376,14 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
 
                         {/* Publish Period */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                            <View style={{ marginRight: 10 }}>
-                                <Text style={styles.label}> Publish Period Interval</Text>
-                                <TextInput
-                                    mode='outlined'
-                                    keyboardType='numeric'
-                                    style={styles.textInput}
-                                    value={publishPeriodInterval.toString()}
-                                    onChangeText={(v) => setPublishPeriodInterval(Number(v))}
-                                    underlineColor="gray"
-                                    activeOutlineColor={Colors.active}
-                                />
-                            </View>
-                            <View style={{ flex: 1 }}>
+                            <View style={{ flex: 1, marginRight: 10 }}>
                                 <Text style={styles.label}>Resolution</Text>
                                 <Dropdown
                                     style={[meshStyles.dropdown]}
                                     placeholderStyle={meshStyles.placeholderStyle}
                                     selectedTextStyle={meshStyles.selectedTextStyle}
                                     data={[
+                                        { name: 'disabled' },
                                         { name: '10 minutes' },
                                         { name: '10 seconds' },
                                         { name: '1 second' },
@@ -375,43 +395,83 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                     placeholder='Resolution'
                                     value={publishPeriodResolution}
                                     onChange={(item) => setPublishPeriodResolution(item.name)}
+                                    dropdownPosition='top'
+
                                 />
                             </View>
+                            <View style={{ flex: 1 }} >
+                                <Text style={styles.label}> Publish Period Interval</Text>
+                                <TextInput
+                                    mode='outlined'
+                                    keyboardType='number-pad'
+                                    returnKeyType="done"
+                                    style={styles.textInput}
+                                    value={publishPeriodInterval.toString()}
+                                    onChangeText={(v) => setPublishPeriodInterval(Number(v))}
+                                    underlineColor="gray"
+                                    activeOutlineColor={Colors.active}
+                                    disabled={publishPeriodResolution == 'disabled'}
+
+                                />
+                            </View>
+
                         </View>
+
+
                         {/* Publish Retransmission Count and Interval */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                             <View style={{ flex: 1, marginRight: 10 }}>
                                 <Text style={styles.label}>Retransmission Count</Text>
-                                <TextInput
-                                    keyboardType='numeric'
-                                    mode='outlined'
-                                    style={styles.textInput}
-                                    value={publishRetransmissionCount?.toString()}
-                                    onChangeText={(v) => setPublishRetransmissionCount(Number(v))}
-                                    underlineColor="gray"
-                                    activeOutlineColor={Colors.active}
+                                <Dropdown
+                                    style={[meshStyles.dropdown]}
+                                    placeholderStyle={meshStyles.placeholderStyle}
+                                    selectedTextStyle={[meshStyles.selectedTextStyle]}
+                                    data={[
+                                        { name: 'disabled', value: -1 },
+                                        { name: '1', value: 1 },
+                                        { name: '2', value: 2 },
+                                        { name: '3', value: 3 },
+                                        { name: '4', value: 4 },
+                                        { name: '5', value: 5 },
+                                        { name: '6', value: 6 },
+                                        { name: '7', value: 7 },
+                                    ]}
+                                    maxHeight={200}
+                                    labelField="name"
+                                    valueField="value"
+                                    value={publishRetransmissionCount}
+                                    onChange={(item) => setPublishRetransmissionCount(item.value)}
+                                    dropdownPosition='top'
                                 />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.label}>Interval [ms]</Text>
                                 <TextInput
-                                    keyboardType='numeric'
+                                    keyboardType='number-pad'
+                                    returnKeyType="done"
                                     mode='outlined'
                                     style={styles.textInput}
                                     value={publishRetransmissionInterval?.toString()}
                                     onChangeText={(v) => setPublishRetransmissionInterval(Number(v))}
                                     underlineColor="gray"
                                     activeOutlineColor={Colors.active}
+                                    disabled={publishRetransmissionCount == -1}
                                 />
                             </View>
                         </View>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 }}>
                             <TouchableOpacity onPress={() => setModalVisible(!visible)}>
-                                <Text style={{ textAlign: 'center', color: Colors.blue }}>Close</Text>
+                                <Text style={[meshStyles.modalTextButton]}>Close</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={handleApply}>
-                                <Text style={{ textAlign: 'center', color: Colors.blue }}>Apply</Text>
-                            </TouchableOpacity>
+                            {!isLoading ? (
+                                <TouchableOpacity onPress={handleApply} disabled={!isFormValid()}>
+                                    <Text style={[meshStyles.modalTextButton, { opacity: isFormValid() ? 1 : 0.2 }]}>Apply</Text>
+                                </TouchableOpacity>
+                            ) :
+                                (
+                                    <ActivityIndicator size="small" color={Colors.blue} />
+                                )}
+
                         </View>
                     </ScrollView>
                 </View>
@@ -448,7 +508,7 @@ const styles = StyleSheet.create({
     },
     textInput: {
         borderColor: 'gray',
-        borderRadius: 8,
+        borderRadius: 15,
         backgroundColor: 'white',
         marginBottom: 15,
         fontSize: 14,

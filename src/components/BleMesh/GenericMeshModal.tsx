@@ -46,10 +46,10 @@ export const GenericMeshModal: React.FC<Props> = ({ visible, title, currentValue
                     />
                     <View style={[styles.row, { marginTop: 10 }]}>
                         <TouchableOpacity onPress={() => setModalVisible(!visible)}>
-                            <Text style={[styles.buttonText]}>Close</Text>
+                            <Text style={[meshStyles.modalTextButton]}>Close</Text>
                         </TouchableOpacity>
                         <TouchableOpacity onPress={() => { onClickSave(value); setModalVisible(false); }}>
-                            <Text style={[styles.buttonText]}>Save</Text>
+                            <Text style={[meshStyles.modalTextButton]}>Save</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

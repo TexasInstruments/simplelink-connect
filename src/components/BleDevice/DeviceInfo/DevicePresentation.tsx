@@ -78,9 +78,9 @@ const styles = StyleSheet.create({
   deviceName: {
     width: 200,
     fontWeight: 'bold',
-    textAlign: 'center',
+    textAlign: 'left',
     fontSize: 20,
-    paddingVertical: 0,
+    paddingHorizontal: 15,
   },
   deviceInfoIconContainer: {
     width: 80,

@@ -84,12 +84,12 @@ const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
           <Text style={[{ color: 'grey' }]}>
             Connectable: {isConnectable() ? 'Yes' : 'No'}
           </Text>
-          {(peripheral.serviceUUIDs !== undefined || peripheral.advertising.serviceUUIDs !== undefined) && (
+          {(peripheral.serviceUUIDs !== undefined || peripheral.advertising?.serviceUUIDs !== undefined) && (
             <Text style={[{ color: Colors.gray }]}>
-              Service UUIDs: {concatLists(peripheral.serviceUUIDs, peripheral.advertising.serviceUUIDs)}
+              Service UUIDs: {concatLists(peripheral.serviceUUIDs || [], peripheral.advertising?.serviceUUIDs || [])}
             </Text>
           )}
-          {peripheral.advertising?.manufacturerData?.bytes && (
+          {peripheral.advertising?.manufacturerData && peripheral.advertising?.manufacturerData?.bytes.length > 0 && (
             <Text style={[{ color: Colors.gray }]}>
               Manufacturer Data: {peripheral.advertising.manufacturerData?.bytes}
             </Text>
@@ -111,7 +111,6 @@ const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
 const styles = StyleSheet.create({
   container: {
     paddingLeft: 40,
-    paddingTop: 10,
   },
 });
 

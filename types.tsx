@@ -57,6 +57,7 @@ export type RootStackParamList = {
   Scanner: NavigatorScreenParams<RootTabParamList> | undefined;
   ScannerTutorial: undefined;
   MeshTutorial: undefined;
+  AboutScreen: undefined;
   TestParameters: { testService: string | null, peripheralId: string | null, peripheralName: string | null };
   StressTest: undefined;
   GattTesting: { testService: string | null, peripheralId: string | null, peripheralName: string | null };
@@ -68,13 +69,19 @@ export type RootStackParamList = {
     icon: Icon;
   };
   FwUpdateServiceModel: { peripheralId: string };
+  ZephyrDFUServiceModel: { peripheralId: string };
   EcgServiceModel: { peripheralId: string };
-  HealthTermometerServiceModel: { peripheralId: string };
+  BatteryService: { peripheralId: string };
+  ClassificationServiceModel: { peripheralId: string };
+  DataAcquisitionServiceModel: { peripheralId: string };
+  HealthThermometerServiceModel: { peripheralId: string };
   CgmServiceModel: { peripheralId: string };
   MatterLightServiceModel: { peripheralId: string };
   TerminalServiceModel: { peripheralId: string };
   SensorTagModel: { peripheralId: string, serviceName: string };
   GlucoseServiceModel: { peripheralId: string };
+  BLERangeTestConfig: { peripheralId: string };
+  BLERangeStatics: { peripheralId: string };
   WifiProvisioning: { peripheralId: string, isLinuxDevice: boolean };
   ModalScreen: { peripheralId: string };
   SettingsModal: undefined;
@@ -86,6 +93,7 @@ export type RootStackParamList = {
   BleMeshNetworkKeys: undefined;
   BleMeshProxies: undefined;
   BleMeshProvisionerScreen: undefined;
+  BleMeshGroupsScreen: undefined;
   BleMeshApplicationKeys: undefined;
   BleMeshScanner: { scanProvisionedNodes: boolean, unicastAddr?: number | undefined };
   BleMeshProvisionNode: undefined;

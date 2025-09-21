@@ -94,11 +94,11 @@ export const AddAppKeyDialog: React.FC<Props> = ({ visible, setAppKeys, appKeys,
                             activeOutlineColor={Colors.active}
                         />
                         <View style={[styles.row, { marginTop: 10 }]}>
-                            <TouchableOpacity onPress={() => setModalVisible(!visible)}>
-                                <Text style={{ textAlign: 'center', color: Colors.blue }}>Close</Text>
+                            <TouchableOpacity onPress={() => setModalVisible(!visible)} style={[meshStyles.modalButton]}>
+                                <Text style={[meshStyles.modalTextButton]}>Close</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => { addNewKey(); setModalVisible(false); }}>
-                                <Text style={{ textAlign: 'center', color: Colors.blue }}>Save</Text>
+                            <TouchableOpacity onPress={() => { addNewKey(); setModalVisible(false); }} style={[meshStyles.modalButton]}>
+                                <Text style={[meshStyles.modalTextButton]}>Save</Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>

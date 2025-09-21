@@ -119,25 +119,98 @@ const ScannedDevice: React.FC<Device> = ({
   return (
     <View style={{ backgroundColor: 'white' }}>
       <View style={[styles.container]}>
+        {/* row */}
         <View style={[styles.deviceContainer]}>
-          <PeripheralIcon icon={icon} color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
-          <TouchableOpacity style={[styles.perInfoWrapper]} onPress={expand}>
-            <Text
-              style={{ fontWeight: 'bold', color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black' }}
-              allowFontScaling={true}
-              adjustsFontSizeToFit={true}
-              numberOfLines={1}
-            >
-              {peripheral?.name || 'Unknown'}
-            </Text>
-            <Text allowFontScaling adjustsFontSizeToFit numberOfLines={1} style={{ color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black' }}>
-              ID: {peripheral.id || 'unknown'}
-            </Text>
-          </TouchableOpacity>
+          <View style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'column', flex: 1 }}>
+            <View style={{ display: 'flex', alignItems: 'center', flexDirection: 'row' }}>
+
+              <PeripheralIcon icon={icon} color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
+              <TouchableOpacity style={[styles.perInfoWrapper]} onPress={expand}>
+                <Text
+                  style={{ fontWeight: 'bold', color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black' }}
+                  allowFontScaling={true}
+                  adjustsFontSizeToFit={true}
+                  numberOfLines={1}
+                >
+                  {peripheral?.name || 'Unknown'}
+                </Text>
+                <Text allowFontScaling adjustsFontSizeToFit numberOfLines={1} style={{ color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black' }}>
+                  ID: {peripheral.id || 'unknown'}
+                </Text>
+              </TouchableOpacity>
+
+            </View>
+            <ScannedDeviceInfo peripheral={peripheral} isVisible={visibleInfo} />
+
+            {!peripheral.isConnected && (
+              <View
+                style={{
+                  alignSelf: 'flex-start',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  marginTop: 10,
+                }}
+              >
+
+                <FontAwesomeIcon
+                  icon={faLink}
+                  color={peripheral.isConnected ? Colors.blue : peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'}
+                  size={12}
+                  style={{ paddingHorizontal: 10 }}
+                />
+                {Platform.OS === 'android' && (
+                  <Icon
+                    name={'lock'}
+                    color={peripheral.isBonded ? Colors.blue : peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'}
+                    type="font-awesome"
+                    size={20}
+                    paddingLeft={5}
+                  />
+                )}
+
+                {/* Advertizing */}
+                <>
+                  <Text style={{ paddingHorizontal: 5, color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black', fontSize: 14 / fontScale }}>
+                    Advertising
+                  </Text>
+                  <Icon
+                    type='font-awesome'
+                    name={'square'}
+                    color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 0 ? Colors.blue : Colors.lightGray}
+                    size={5}
+                    style={{ paddingHorizontal: 1 }}
+                  />
+                  <Icon
+                    type='font-awesome'
+                    name={'square'}
+                    color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 1 ? Colors.blue : Colors.lightGray}
+                    size={5}
+                    style={{ paddingHorizontal: 1 }}
+                  />
+                  <Icon
+                    type='font-awesome'
+                    name={'square'}
+                    color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 2 ? Colors.blue : Colors.lightGray}
+                    size={5}
+                    style={{ paddingHorizontal: 1 }}
+                  />
+                  <Icon
+                    type='font-awesome'
+                    name={'square'}
+                    color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 3 ? Colors.blue : Colors.lightGray}
+                    size={5}
+                    style={{ paddingHorizontal: 1 }}
+                  />
+                </>
+              </View>
+            )}
+          </View>
+
+          {/* connect button */}
           {!peripheral.isConnected && (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Icon name="signal" type="font-awesome" color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
-              <Text style={{ width: 35, textAlign: 'center', color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black', fontSize: 14 / fontScale }}> {peripheral.rssi} </Text>
+            <View style={{ flexDirection: 'row', height: '100%' }}>
+              <Icon name="signal" type="font-awesome" style={{ marginTop: 3, }} color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
+              <Text style={{ width: 35, textAlign: 'center', marginTop: 6, color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black', fontSize: 14 / fontScale }}> {peripheral.rssi} </Text>
               <TouchableOpacity
                 onPress={peripheral.advertismentInActive ? () => { } : peripheral.filter ? () => { } : requestConnect}
                 testID='requestConnectButton'
@@ -148,77 +221,23 @@ const ScannedDevice: React.FC<Device> = ({
             </View>
           )}
           {peripheral.isConnected && (
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <TouchableOpacity onPress={disconnect}>
-                <FontAwesomeIcon icon={faLinkSlash} size={23} />
+            <View style={{ flexDirection: 'row', height: '100%' }}>
+              <TouchableOpacity onPress={disconnect}
+                accessibilityLabel="disconnectButton"
+                testID="disconnectButton">
+                <FontAwesomeIcon icon={faLinkSlash} size={20} style={{ marginTop: 5 }} />
               </TouchableOpacity>
               <TouchableOpacity onPress={reconnectLocal}>
                 <Icon name="chevron-right" type="evilicon" size={40} color={peripheral.advertismentInActive ? 'white' : 'black'} />
               </TouchableOpacity>
             </View>
           )}
-        </View>
-        {!peripheral.isConnected && (
-          <View
-            style={{
-              alignSelf: 'flex-start',
-              flexDirection: 'row',
-              alignItems: 'center',
-              marginTop: 10,
-            }}
-          >
-            <FontAwesomeIcon
-              icon={faLink}
-              color={peripheral.isConnected ? Colors.blue : peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'}
-              size={12}
-              style={{ paddingHorizontal: 10 }}
-            />
-            {Platform.OS === 'android' && (
-              <Icon
-                name={'lock'}
-                color={peripheral.isBonded ? Colors.blue : peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'}
-                type="font-awesome"
-                size={20}
-                paddingLeft={5}
-              />
-            )}
-            <Text style={{ paddingHorizontal: 5, color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black', fontSize: 14 / fontScale }}>
-              Advertising
-            </Text>
-            <Icon
-              type='font-awesome'
-              name={'square'}
-              color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 0 ? Colors.blue : Colors.lightGray}
-              size={5}
-              style={{ paddingHorizontal: 1 }}
-            />
-            <Icon
-              type='font-awesome'
-              name={'square'}
-              color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 1 ? Colors.blue : Colors.lightGray}
-              size={5}
-              style={{ paddingHorizontal: 1 }}
-            />
-            <Icon
-              type='font-awesome'
-              name={'square'}
-              color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 2 ? Colors.blue : Colors.lightGray}
-              size={5}
-              style={{ paddingHorizontal: 1 }}
-            />
-            <Icon
-              type='font-awesome'
-              name={'square'}
-              color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 3 ? Colors.blue : Colors.lightGray}
-              size={5}
-              style={{ paddingHorizontal: 1 }}
-            />
-          </View>
-        )}
 
-        <ScannedDeviceInfo peripheral={peripheral} isVisible={visibleInfo} />
+        </View>
       </View>
-    </View >
+
+    </View>
+
   );
 };
 

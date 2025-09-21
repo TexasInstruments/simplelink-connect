@@ -128,9 +128,15 @@ const TestResults: React.FC<{ isGattTestingOnly: boolean }> = ({ isGattTestingOn
         // each test connect loop contains connect + bond? + disconnect, gatt loop contains write + receive notification 
         // passed tests should include each step success.
         let totalTests = 0;
+        // if only gatt testing, the test is on one device and each gatt loop contains 2 gatt operations 
         if (isGattTestingOnly) {
             totalTests = currentResults!.test_parameters.num_of_gatt_loops * 2;
         }
+        // if not gatt testing selected, the tests in only connect + disconnect number of main loops for each device.
+        else if (!testResults?.test_parameters.gatt_testing_selected) {
+            totalTests = currentResults!.test_parameters.num_of_devices * (currentResults!.test_parameters.num_of_main_loops! * 2)
+        }
+        // else, the test includes gatt and connect, disconnect.
         else {
             totalTests = currentResults!.test_parameters.num_of_devices * (currentResults!.test_parameters.num_of_main_loops! * (2 + (currentResults!.test_parameters.pair_and_bond ? 1 : 0)) + currentResults!.test_parameters.num_of_main_loops! * currentResults!.test_parameters.num_of_gatt_loops * 2);
         }
@@ -156,7 +162,6 @@ const TestResults: React.FC<{ isGattTestingOnly: boolean }> = ({ isGattTestingOn
 
             let numOfBondsFailures = results.results.filter(test => test.bonded === false).length;
             totalTests = totalTests - numOfBondsFailures * (1 + (results.test_parameters.pair_and_bond ? 1 : 0) + results.test_parameters.num_of_gatt_loops * 2)
-
             passedTests = totalPassedBonds + totalPassedConnections + totalPassedWrites + totalPassedReads + totalPassedNotifications + totalPassedDisconnect
         }
 

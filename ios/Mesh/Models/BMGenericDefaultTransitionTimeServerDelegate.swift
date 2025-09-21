@@ -29,7 +29,7 @@
 */
 
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 class BMGenericDefaultTransitionTimeServerDelegate: ModelDelegate {
     let messageTypes: [UInt32 : MeshMessage.Type]
@@ -62,31 +62,29 @@ class BMGenericDefaultTransitionTimeServerDelegate: ModelDelegate {
     
     // MARK: - Message handlers
     
-    func model(_ model: Model, didReceiveAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address, sentTo destination: MeshAddress) throws -> MeshMessage {
-        switch request {
-            
-        case let request as GenericDefaultTransitionTimeSet:
-            // The state cannot be set to Unknown (0x3F) value.
-            guard request.transitionTime.isKnown else {
-                throw ModelError.invalidMessage
-            }
-            defaultTransitionTime = request.transitionTime
-            defaults.set(defaultTransitionTime.interval, forKey: "defaultTransitionTime")
-            
-        case is GenericDefaultTransitionTimeGet:
-            break
-            
-        default:
-            fatalError("Not possible")
-        }
-        
-        // Reply with GenericDefaultTransitionTimeStatus.
-        return GenericDefaultTransitionTimeStatus(transitionTime: defaultTransitionTime)
-    }
+    func model(_ model: NordicMesh.Model, didReceiveAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) throws -> any NordicMesh.MeshResponse{
+          switch request {
+              
+          case let request as GenericDefaultTransitionTimeSet:
+              // The state cannot be set to Unknown (0x3F) value.
+              guard request.transitionTime.isKnown else {
+                  throw ModelError.invalidMessage
+              }
+              defaultTransitionTime = request.transitionTime
+              defaults.set(defaultTransitionTime.interval, forKey: "defaultTransitionTime")
+              
+          case is GenericDefaultTransitionTimeGet:
+              break
+              
+          default:
+              fatalError("Not possible")
+          }
+          
+          // Reply with GenericDefaultTransitionTimeStatus.
+          return GenericDefaultTransitionTimeStatus(transitionTime: defaultTransitionTime)
+      }
     
-    func model(_ model: Model, didReceiveUnacknowledgedMessage message: MeshMessage,
-               from source: Address, sentTo destination: MeshAddress) {
+    func model(_ model: NordicMesh.Model, didReceiveUnacknowledgedMessage message: any NordicMesh.UnacknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) {
         switch message {
             
         case let request as GenericDefaultTransitionTimeSetUnacknowledged:
@@ -103,9 +101,7 @@ class BMGenericDefaultTransitionTimeServerDelegate: ModelDelegate {
         }
     }
     
-    func model(_ model: Model, didReceiveResponse response: MeshMessage,
-               toAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address) {
+    func model(_ model: NordicMesh.Model, didReceiveResponse response: any NordicMesh.MeshResponse, toAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address){
         // Not possible.
     }
     

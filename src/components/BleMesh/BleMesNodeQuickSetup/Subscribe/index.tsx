@@ -11,7 +11,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import { callMeshModuleFunction, Group, meshStyles } from '../../meshUtils';
+import { callMeshModuleFunction, Group, meshStyles, Model, Element } from '../../meshUtils';
 import Colors from '../../../../constants/Colors';
 import { MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -137,11 +137,17 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
         }
     }
 
-    const disabledModels = [
-        0x0000, 0x0001, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009,
-        0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F, 0x0010, 0x0011,
-        0x0012, 0x0013, 0x0014, 0x0015
-    ]
+    const disabledModels = () => {
+        let disabledModels: Model[] = []
+        elements.map((element: Element) => {
+            element.models.map((model) => {
+                if (!model.isSubscribeSupported) {
+                    disabledModels.push(model)
+                }
+            })
+        })
+        return disabledModels
+    }
 
     return (
         <SafeAreaView
@@ -241,7 +247,7 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
 
                 <View style={{ flexDirection: 'column' }}>
                     <Text style={styles.label}>Select Models</Text>
-                    <ModelSelectionList elements={elements} disabledModels={disabledModels} selectedModels={selectedModels} setSelectedModels={setSelectedModels} />
+                    <ModelSelectionList elements={elements} disabledModels={disabledModels()} selectedModels={selectedModels} setSelectedModels={setSelectedModels} />
 
                 </View>
             </ScrollView>
@@ -258,8 +264,9 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
 
             ) : (
                 <TouchableOpacity
-                    style={meshStyles.fab}
+                    style={[meshStyles.fab, { opacity: selectedModels.length == 0 ? 0.3 : 1 }]}
                     onPress={handleSubscribeModels}
+                    disabled={selectedModels.length == 0}
                 >
                     <MaterialCommunityIcons
                         name="check-all"
@@ -270,7 +277,7 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
                     <Text style={[meshStyles.fabText]}>Subscribe</Text>
                 </TouchableOpacity>
             )}
-            <StatusesPopup results={results} isVisible={isVisible} setIsVisible={setIsVisible} title={'Subscription Completed'} />
+            <StatusesPopup results={results} isVisible={isVisible} setIsVisible={setIsVisible} title={'Subscription Completed'} unicastAddr={unicastAddr} />
         </SafeAreaView>
     );
 };

@@ -129,7 +129,8 @@ export const SpecificOpsControlPointDialog: React.FC<Props> = ({ visible, hideDi
                             }}>Value:</Text>
                             <TextInput
                                 // editable
-                                keyboardType='numeric'
+                                keyboardType='number-pad'
+                                returnKeyType="done"
                                 style={[styles.textInput]}
                                 value={selectedOperand}
                                 onChangeText={text => setSelectedOperand(text)}

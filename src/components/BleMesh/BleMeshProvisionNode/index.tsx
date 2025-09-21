@@ -12,6 +12,7 @@ import { GenericMeshModal, GenericModalData } from '../GenericMeshModal';
 import { callMeshModuleFunction, meshStyles, NetworkKey } from '../meshUtils';
 import { Skeleton } from '@rneui/themed';
 import LinearGradient from 'react-native-linear-gradient';
+import { ActivityIndicator } from 'react-native';
 
 interface IdentifiedNode {
     unicastAddress: number,
@@ -55,8 +56,14 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
         };
     }, [navigation]);
 
-    const handleProgressUpdate = (progress: string) => {
-        setProgress(Number(progress));
+    const handleProgressUpdate = (progress: string | null) => {
+        if (!progress) {
+            Alert.alert("Provisioning Failed")
+            setInProvisioningProgress(false)
+        }
+        else {
+            setProgress(Number(progress));
+        }
     }
 
     const handleNodeUpdated = async (nodeData: IdentifiedNode) => {
@@ -235,9 +242,12 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
                     <View>
                         <Text style={{ textAlign: 'center' }}>Progress</Text>
                         <LinearProgress value={progress} color={Colors.blue} style={[styles.linearProgress]} />
-                        <Text style={{ marginBottom: 10, textAlign: 'center' }}>
-                            {Math.floor(progress * 100).toFixed(0)}%
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                            <Text style={{ marginRight: 8 }}>
+                                {Math.floor(progress * 100).toFixed(0)}%
+                            </Text>
+                            <ActivityIndicator size="small" color={Colors.darkGray} />
+                        </View>
                     </View>
                 )}
             </View>

@@ -141,7 +141,7 @@ const BleMeshApplicationKeys: React.FC = () => {
                                 </View>
                             </View>
                             <TouchableOpacity style={[styles.row, { justifyContent: 'center', alignContent: 'center' }]} onPress={() => removeAppKey(appKey.index)}>
-                                <Text style={[meshStyles.textButton, { marginRight: 5, color: Colors.primary }]}> Remove key</Text>
+                                <Text style={[meshStyles.textButton, { marginRight: 5, color: Colors.primary }]}>Remove key</Text>
                                 <FontAwesome5 name="trash-alt" size={15} color={Colors.primary} />
                             </TouchableOpacity>
                         </View>

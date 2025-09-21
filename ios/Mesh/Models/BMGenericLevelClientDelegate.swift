@@ -6,9 +6,10 @@
 //
 
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 class BMGenericLevelClientDelegate: ModelDelegate {
+ 
     let messageTypes: [UInt32 : MeshMessage.Type]
     let isSubscriptionSupported: Bool = true
     
@@ -38,20 +39,16 @@ class BMGenericLevelClientDelegate: ModelDelegate {
     
     // MARK: - Message handlers
     
-    func model(_ model: Model, didReceiveAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address, sentTo destination: MeshAddress) -> MeshMessage {
+  func model(_ model: NordicMesh.Model, didReceiveAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) throws -> any NordicMesh.MeshResponse {
         fatalError("Not possible")
     }
     
-    func model(_ model: Model, didReceiveUnacknowledgedMessage message: MeshMessage,
-               from source: Address, sentTo destination: MeshAddress) {
+  func model(_ model: NordicMesh.Model, didReceiveUnacknowledgedMessage message: any NordicMesh.UnacknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) {
         // The status message may be received here if the Generic Level Server model
         // has been configured to publish. Ignore this message.
     }
     
-    func model(_ model: Model, didReceiveResponse response: MeshMessage,
-               toAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address){
+  func model(_ model: NordicMesh.Model, didReceiveResponse response: any NordicMesh.MeshResponse, toAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address){
         // Ignore.
     }
     

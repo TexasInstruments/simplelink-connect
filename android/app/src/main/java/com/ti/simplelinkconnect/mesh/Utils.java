@@ -22,6 +22,12 @@
 
 package com.ti.simplelinkconnect.mesh;
 
+import static no.nordicsemi.android.mesh.models.SigModelParser.CONFIGURATION_CLIENT;
+import static no.nordicsemi.android.mesh.models.SigModelParser.CONFIGURATION_SERVER;
+import static no.nordicsemi.android.mesh.models.SigModelParser.GENERIC_LEVEL_SERVER;
+import static no.nordicsemi.android.mesh.models.SigModelParser.GENERIC_ON_OFF_SERVER;
+import static no.nordicsemi.android.mesh.models.SigModelParser.SCENE_SERVER;
+
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -45,6 +51,8 @@ import java.util.UUID;
 import no.nordicsemi.android.mesh.ApplicationKey;
 import no.nordicsemi.android.mesh.NetworkKey;
 import no.nordicsemi.android.mesh.Scene;
+import no.nordicsemi.android.mesh.models.SigModel;
+import no.nordicsemi.android.mesh.transport.MeshModel;
 import no.nordicsemi.android.support.v18.scanner.ScanRecord;
 import no.nordicsemi.android.support.v18.scanner.ScanResult;
 
@@ -290,4 +298,110 @@ public class Utils {
         }
         return null;
     }
+
+
+    public static Boolean supportsModelSubscriptions(MeshModel model) {
+        if (!(model instanceof SigModel)) return true;
+
+        switch (model.getModelId()) {
+            case CONFIGURATION_SERVER:
+            case CONFIGURATION_CLIENT:
+            case 0x0004: //REMOTE_PROVISIONING_SERVER:
+            case 0x0005: //REMOTE_PROVISIONING_CLIENT:
+            case 0x0006: //DIRECTED_FORWARDING_CONFIGURATION_SERVER:
+            case 0x0007: //DIRECTED_FORWARDING_CONFIGURATION_CLIENT:
+            case 0x0008: //BRIDGE_CONFIGURATION_SERVER:
+            case 0x0009: //BRIDGE_CONFIGURATION_CLIENT:
+            case 0x000A: //PRIVATE_BEACON_SERVER:
+            case 0x000B: //PRIVATE_BEACON_CLIENT:
+            case 0x000C: // ON_DEMAND_PRIVATE_PROXY_SERVER:
+            case 0x000D: //ON_DEMAND_PRIVATE_PROXY_CLIENT:
+            case 0x000E: //SAR_CONFIGURATION_SERVER:
+            case 0x000F: //SAR_CONFIGURATION_CLIENT:
+            case 0x0010: //OPCODES_AGGREGATOR_SERVER:
+            case 0x0011: //OPCODES_AGGREGATOR_CLIENT:
+            case 0x0012: //LARGE_COMPOSITION_DATA_SERVER:
+            case 0x0013: //LARGE_COMPOSITION_DATA_CLIENT:
+            case 0x0014: //SOLICITATION_PDU_RPL_CONFIGURATION_SERVER:
+            case 0x0015: //SOLICITATION_PDU_RPL_CONFIGURATION_CLIENT:
+            case 0x1201: //TIME_SERVER
+                return false;
+
+            default:
+                return true;
+        }
+    }
+    public static Boolean supportsModelPublication(MeshModel model) {
+        if (!(model instanceof SigModel)) return true;
+
+        switch (model.getModelId()) {
+            case CONFIGURATION_SERVER:
+            case CONFIGURATION_CLIENT:
+            case 0x0004: //REMOTE_PROVISIONING_SERVER:
+            case 0x0005: //REMOTE_PROVISIONING_CLIENT:
+            case 0x0006: //DIRECTED_FORWARDING_CONFIGURATION_SERVER:
+            case 0x0007: //DIRECTED_FORWARDING_CONFIGURATION_CLIENT:
+            case 0x0008: //BRIDGE_CONFIGURATION_SERVER:
+            case 0x0009 ://BRIDGE_CONFIGURATION_CLIENT:
+            case 0x000A: //PRIVATE_BEACON_SERVER:
+            case 0x000B: //PRIVATE_BEACON_CLIENT:
+            case 0x000C: //ON_DEMAND_PRIVATE_PROXY_SERVER:
+            case 0x000D: //ON_DEMAND_PRIVATE_PROXY_CLIENT:
+            case 0x000E: //SAR_CONFIGURATION_SERVER:
+            case 0x000F: //SAR_CONFIGURATION_CLIENT:
+            case 0x0010: //OPCODES_AGGREGATOR_SERVER:
+            case 0x0011: //OPCODES_AGGREGATOR_CLIENT:
+            case 0x0012: //LARGE_COMPOSITION_DATA_SERVER:
+            case 0x0013: //LARGE_COMPOSITION_DATA_CLIENT:
+            case 0x0014: //SOLICITATION_PDU_RPL_CONFIGURATION_SERVER:
+            case 0x0015: //SOLICITATION_PDU_RPL_CONFIGURATION_CLIENT:
+            case GENERIC_ON_OFF_SERVER:
+            case GENERIC_LEVEL_SERVER:
+            case 0x100F: //GENERIC_LOCATION_SETUP_SERVER
+            case 0x1201: //TIME_SERVER
+            case SCENE_SERVER:
+            case 0x1207: //SCHEDULER_SETUP_SERVER
+            case 0x1301: //LIGHT_LIGHTNESS_SETUP_SERVER
+            case 0x1304: //LIGHT_CTL_SETUP_SERVER
+            case 0x1308: //LIGHT_HSL_SETUP_SERVER
+            case 0x130D: //LIGHT_XYL_SETUP_SERVER
+                return false;
+
+            default:
+                return true;
+        }
+    }
+    public static Boolean supportsModelBinding(MeshModel model) {
+        if (!(model instanceof SigModel)) return true;
+
+        switch (model.getModelId()) {
+            // Foundation
+            case CONFIGURATION_SERVER:
+            case CONFIGURATION_CLIENT:
+            case 0x0004://REMOTE_PROVISIONING_SERVER:
+            case 0x0005://REMOTE_PROVISIONING_CLIENT:
+            case 0x0006://DIRECTED_FORWARDING_CONFIGURATION_SERVER:
+            case 0x0007://DIRECTED_FORWARDING_CONFIGURATION_CLIENT:
+            case 0x0008://BRIDGE_CONFIGURATION_SERVER:
+            case 0x0009://BRIDGE_CONFIGURATION_CLIENT:
+            case 0x000A://PRIVATE_BEACON_SERVER:
+            case 0x000B: //PRIVATE_BEACON_CLIENT:
+            case 0x000C:// ON_DEMAND_PRIVATE_PROXY_SERVER:
+            case 0x000D://ON_DEMAND_PRIVATE_PROXY_CLIENT:
+            case 0x000E: //SAR_CONFIGURATION_SERVER:
+            case 0x000F://SAR_CONFIGURATION_CLIENT:
+            case 0x0010://OPCODES_AGGREGATOR_SERVER:
+            case 0x0011://OPCODES_AGGREGATOR_CLIENT:
+            case 0x0012://LARGE_COMPOSITION_DATA_SERVER:
+            case 0x0013://LARGE_COMPOSITION_DATA_CLIENT:
+            case 0x0014://SOLICITATION_PDU_RPL_CONFIGURATION_SERVER:
+            case 0x0015://SOLICITATION_PDU_RPL_CONFIGURATION_CLIENT:
+                return false;
+
+            // Generic, Time, Lighting, Scene, Sensor...
+            default:
+                return true;
+        }
+    }
+
 }

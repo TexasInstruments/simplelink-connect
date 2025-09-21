@@ -3,7 +3,7 @@ PODS:
   - boost (1.76.0)
   - BVLinearGradient (2.8.3):
     - React-Core
-  - CryptoSwift (1.5.1)
+  - CryptoSwift (1.8.4)
   - DGCharts (5.0.0):
     - DGCharts/Core (= 5.0.0)
   - DGCharts/Core (5.0.0)
@@ -44,8 +44,11 @@ PODS:
     - ReactCommon/turbomodule/core (= 0.69.9)
   - fmt (6.2.1)
   - glog (0.3.5)
-  - nRFMeshProvision (3.2.0):
-    - CryptoSwift (= 1.5.1)
+  - iOSMcuManagerLibrary (1.9.4):
+    - SwiftCBOR (= 0.4.7)
+    - ZIPFoundation (= 0.9.19)
+  - nRFMeshProvision (4.3.0):
+    - CryptoSwift (= 1.8.4)
   - NVActivityIndicatorView (5.1.1):
     - NVActivityIndicatorView/Base (= 5.1.1)
   - NVActivityIndicatorView/Base (5.1.1)
@@ -243,6 +246,11 @@ PODS:
     - glog
     - RCT-Folly (= 2021.06.28.00-v2)
     - React-jsi/Default (= 0.69.9)
+  - React-jsi/Default (0.69.9):
+    - boost (= 1.76.0)
+    - DoubleConversion
+    - glog
+    - RCT-Folly (= 2021.06.28.00-v2)
   - React-jsiexecutor (0.69.9):
     - DoubleConversion
     - glog
@@ -261,6 +269,8 @@ PODS:
     - SwiftyJSON (= 5.0)
   - react-native-document-picker (9.3.1):
     - React-Core
+  - react-native-geolocation-service (5.3.1):
+    - React
   - react-native-get-random-values (1.8.0):
     - React-Core
   - react-native-idle-timer (2.2.3):
@@ -344,7 +354,7 @@ PODS:
     - React-perflogger (= 0.69.9)
   - RNCAsyncStorage (1.17.12):
     - React-Core
-  - RNCCheckbox (0.5.17):
+  - RNCCheckbox (0.5.20):
     - BEMCheckBox (~> 1.4)
     - React-Core
   - RNDeviceInfo (10.14.0):
@@ -387,16 +397,18 @@ PODS:
   - RNScreens (3.15.0):
     - React-Core
     - React-RCTImage
-  - RNSVG (12.5.1):
+  - RNSVG (12.3.0):
     - React-Core
-  - RxCocoa (6.8.0):
-    - RxRelay (= 6.8.0)
-    - RxSwift (= 6.8.0)
-  - RxRelay (6.8.0):
-    - RxSwift (= 6.8.0)
-  - RxSwift (6.8.0)
+  - RxCocoa (6.9.0):
+    - RxRelay (= 6.9.0)
+    - RxSwift (= 6.9.0)
+  - RxRelay (6.9.0):
+    - RxSwift (= 6.9.0)
+  - RxSwift (6.9.0)
+  - SwiftCBOR (0.4.7)
   - SwiftyJSON (5.0.0)
   - Yoga (1.14.0)
+  - ZIPFoundation (0.9.19)
 
 DEPENDENCIES:
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
@@ -417,7 +429,8 @@ DEPENDENCIES:
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - FBReactNativeSpec (from `../node_modules/react-native/React/FBReactNativeSpec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
-  - nRFMeshProvision
+  - iOSMcuManagerLibrary (= 1.9.4)
+  - nRFMeshProvision (= 4.3.0)
   - RCT-Folly (from `../node_modules/react-native/third-party-podspecs/RCT-Folly.podspec`)
   - RCTRequired (from `../node_modules/react-native/Libraries/RCTRequired`)
   - RCTTypeSafety (from `../node_modules/react-native/Libraries/TypeSafety`)
@@ -436,6 +449,7 @@ DEPENDENCIES:
   - react-native-ble-manager (from `../node_modules/react-native-ble-manager`)
   - react-native-charts-wrapper (from `../node_modules/react-native-charts-wrapper`)
   - react-native-document-picker (from `../node_modules/react-native-document-picker`)
+  - react-native-geolocation-service (from `../node_modules/react-native-geolocation-service`)
   - react-native-get-random-values (from `../node_modules/react-native-get-random-values`)
   - react-native-idle-timer (from `../node_modules/react-native-idle-timer`)
   - react-native-loader-kit (from `../node_modules/react-native-loader-kit`)
@@ -473,12 +487,15 @@ SPEC REPOS:
     - CryptoSwift
     - DGCharts
     - fmt
+    - iOSMcuManagerLibrary
     - nRFMeshProvision
     - NVActivityIndicatorView
     - RxCocoa
     - RxRelay
     - RxSwift
+    - SwiftCBOR
     - SwiftyJSON
+    - ZIPFoundation
 
 EXTERNAL SOURCES:
   boost:
@@ -551,6 +568,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-charts-wrapper"
   react-native-document-picker:
     :path: "../node_modules/react-native-document-picker"
+  react-native-geolocation-service:
+    :path: "../node_modules/react-native-geolocation-service"
   react-native-get-random-values:
     :path: "../node_modules/react-native-get-random-values"
   react-native-idle-timer:
@@ -610,9 +629,9 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   BEMCheckBox: 5ba6e37ade3d3657b36caecc35c8b75c6c2b1a4e
-  boost: a7c83b31436843459a1961bfd74b96033dc77234
+  boost: 9fa78656d705f55b1220151d997e57e2a3f2cde0
   BVLinearGradient: 880f91a7854faff2df62518f0281afb1c60d49a3
-  CryptoSwift: c4f2debceb38bf44c80659afe009f71e23e4a082
+  CryptoSwift: e64e11850ede528a02a0f3e768cec8e9d92ecb90
   DGCharts: 6e0cf2644e8f81ad13f04caa8bc18502870a1c54
   DoubleConversion: 5189b271737e1565bdce30deb4a08d647e3f5f54
   EXApplication: e418d737a036e788510f2c4ad6c10a7d54d18586
@@ -631,7 +650,8 @@ SPEC CHECKSUMS:
   FBReactNativeSpec: d460df7d796ed4979c6cd4e092145b63eb28b5bb
   fmt: ff9d55029c625d3757ed641535fd4a75fedc7ce9
   glog: 3d02b25ca00c2d456734d0bcff864cbc62f6ae1a
-  nRFMeshProvision: 297bbda9dc44138c1b63b1ac5e4c860f0398e176
+  iOSMcuManagerLibrary: 3759b6fa68b6279190a1c6c974e51cf6b9babe55
+  nRFMeshProvision: 2c1c48fccfda9d151007dc219dd1c73bd693d7f7
   NVActivityIndicatorView: 1f6c5687f1171810aa27a3296814dc2d7dec3667
   RCT-Folly: b9d9fe1fc70114b751c076104e52f3b1b5e5a95a
   RCTRequired: fe80e9f71dd15939e5399dd94d0aa0e5e069d592
@@ -650,6 +670,7 @@ SPEC CHECKSUMS:
   react-native-ble-manager: f8add48474ad08a0bd3e46b2d1ebff5e00a628b7
   react-native-charts-wrapper: cd83d9b1acb8e06ebd18bf297de597906e1cc87d
   react-native-document-picker: 940269e45632f48eb5e81543381ffd15a970d849
+  react-native-geolocation-service: 608e1da71a1ac31b4de64d9ef2815f697978c55b
   react-native-get-random-values: a6ea6a8a65dc93e96e24a11105b1a9c8cfe1d72a
   react-native-idle-timer: b4e9ff189950bcd3ba03257d9f033f3432341db8
   react-native-loader-kit: ed18c8ce83b69083211912326897d8286f37d797
@@ -668,7 +689,7 @@ SPEC CHECKSUMS:
   React-runtimeexecutor: df1518d092e8c74cafddc56690d1ac386ec24d7a
   ReactCommon: fac40473e2c4117522384027ab33ad0cb6717dc5
   RNCAsyncStorage: 09fc8595e6d6f6d5abf16b23a56b257d9c6b7c5b
-  RNCCheckbox: a3ca9978cb0846b981d28da4e9914bd437403d77
+  RNCCheckbox: 471ebdc33884c084f362615c1ef3507496cc07f1
   RNDeviceInfo: 59344c19152c4b2b32283005f9737c5c64b42fba
   RNFlashList: 031c182b95ead44fd0715f6029a744cd5e10d51f
   RNFS: 4ac0f0ea233904cb798630b3c077808c06931688
@@ -676,13 +697,15 @@ SPEC CHECKSUMS:
   RNKeychain: bfe3d12bf4620fe488771c414530bf16e88f3678
   RNReanimated: 2cf7451318bb9cc430abeec8d67693f9cf4e039c
   RNScreens: 4a1af06327774490d97342c00aee0c2bafb497b7
-  RNSVG: d7d7bc8229af3842c9cfc3a723c815a52cdd1105
-  RxCocoa: 2d33c1e1e5d66492052ad46b11024ae287572880
-  RxRelay: 335c78b926a2aea8d863a6d25f1ed3b5ad8e8705
-  RxSwift: 4e28be97cbcfeee614af26d83415febbf2bf6f45
+  RNSVG: 302bfc9905bd8122f08966dc2ce2d07b7b52b9f8
+  RxCocoa: ac16414696ae706516be3e1ab00fcce5bdc9be8a
+  RxRelay: 6b0c930e5cef57d5fe2032571e5e65b78e3cbdb1
+  RxSwift: 31649ace6aceeb422e16ff71c60804f9c3281ed9
+  SwiftCBOR: 465775bed0e8bac7bfb8160bcf7b95d7f75971e4
   SwiftyJSON: 36413e04c44ee145039d332b4f4e2d3e8d6c4db7
   Yoga: 7a4d48cfb35dfa542151e615fa73c1a0d88caf21
+  ZIPFoundation: b8c29ea7ae353b309bc810586181fd073cb3312c
 
-PODFILE CHECKSUM: 0dcafc7c16e3b3f0c121dc1213593fcef3c489d6
+PODFILE CHECKSUM: d3425c664180f62a1b5a8c6f1cb1e906766339f6
 
 COCOAPODS: 1.15.2

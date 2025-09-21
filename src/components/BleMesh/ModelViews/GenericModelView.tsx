@@ -47,12 +47,11 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
     const scrollViewRef = useRef<ScrollView>(null);
 
     useEffect(() => {
-        const appKeyListener = bleMeshEmitter.addListener('onModelKeyUpdated', handleModelKeyUpdated);
-        const publicListener = bleMeshEmitter.addListener('onPublicationUpdated', handlePublicationUpdated);
-        const subscriptionListener = bleMeshEmitter.addListener('onSubscriptionReceived', handleSubscriptionReceived);
-        const subscriptionAddedListener = bleMeshEmitter.addListener('onSubscriptionAdded', handleSubscriptionAdded);
-        const subscriptionFailedListener = bleMeshEmitter.addListener('onSubscriptionFailed', handleSubscriptionFailed);
-
+        bleMeshEmitter.addListener('onModelKeyUpdated', handleModelKeyUpdated);
+        bleMeshEmitter.addListener('onPublicationUpdated', handlePublicationUpdated);
+        bleMeshEmitter.addListener('onSubscriptionReceived', handleSubscriptionReceived);
+        bleMeshEmitter.addListener('onSubscriptionAdded', handleSubscriptionAdded);
+        bleMeshEmitter.addListener('onSubscriptionFailed', handleSubscriptionFailed);
         getAppKeys();
         getBoundApplicationKey();
         getPublicSettings();
@@ -77,8 +76,10 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
 
     const getBoundApplicationKey = async () => {
         try {
-            const boundKeys = await callMeshModuleFunction('getModelBoundKeys') as number[];
-            setBoundApplications(boundKeys);
+            if (model.isBindingSupported) {
+                const boundKeys = await callMeshModuleFunction('getModelBoundKeys') as number[];
+                setBoundApplications(boundKeys);
+            }
         }
         catch (e) { console.error(e) }
     }
@@ -116,14 +117,18 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
 
     const getPublicSettings = async () => {
         try {
-            await callMeshModuleFunction('getPublicationSettings', unicastAddr);
+            if (model.isPublishSupported) {
+                await callMeshModuleFunction('getPublicationSettings', unicastAddr);
+            }
         }
         catch (e) { console.error(e) }
     }
 
     const getSubscriptions = async () => {
         try {
-            await callMeshModuleFunction('getSubscriptions', unicastAddr);
+            if (model.isSubscribeSupported) {
+                await callMeshModuleFunction('getSubscriptions', unicastAddr);
+            }
 
         }
         catch (e) { console.error(e) }
@@ -212,8 +217,10 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                         {/* Bind Application Key */}
                         <View style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'row', backgroundColor: Colors.lightGray }}>
                             <Text style={[styles.title]}>Bound Application Keys</Text>
-                            <TouchableOpacity onPress={() => setIsBindAppKeyModalVisible(true)}>
-                                <Text style={[meshStyles.textButton]}>Bind key</Text>
+                            <TouchableOpacity onPress={() => setIsBindAppKeyModalVisible(true)} disabled={!model.isBindingSupported}>
+                                <Text style={[meshStyles.textButton,
+                                { opacity: !model.isBindingSupported ? 0.4 : 1 }
+                                ]}>Bind key</Text>
                             </TouchableOpacity>
                         </View>
                         {boundApplicationsKeys.map((appIndex, index) => (
@@ -231,19 +238,19 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                                 <Text style={[styles.title]}>Publish</Text>
                                 <TouchableOpacity
                                     onPress={() => setIsPublicationModalVisible(true)}
-                                    disabled={boundApplicationsKeys.length === 0}
+                                    disabled={boundApplicationsKeys.length === 0 || !model.isPublishSupported}
                                 >
                                     <Text
                                         style={[
                                             meshStyles.textButton,
-                                            { opacity: boundApplicationsKeys.length === 0 ? 0.4 : 1 },
+                                            { opacity: boundApplicationsKeys.length === 0 || !model.isPublishSupported ? 0.4 : 1 },
                                         ]}
                                     >
                                         Set publication
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-                            {publicSettings && publicSettings.publishAddress !== 0 ? (
+                            {publicSettings ? (
                                 <View style={[styles.publishContainer]}>
                                     <View style={[styles.publishContainer]}>
                                         <View style={[meshStyles.item, { height: 50 }]}>
@@ -263,12 +270,31 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                                         <Divider />
                                         <View style={[meshStyles.item, { height: 50 }]}>
                                             <Text style={[meshStyles.subject]}>Retransmit Count</Text>
-                                            <Text>{publicSettings?.publishRetransmitCount ?? "N/A"}</Text>
+                                            {
+                                                publicSettings.publishRetransmitCount ? (
+                                                    <Text>{publicSettings.publishRetransmitCount}</Text>
+                                                ) : (
+                                                    <Text>Disabled</Text>
+                                                )
+                                            }
                                         </View>
                                         <Divider />
                                         <View style={[meshStyles.item, { height: 50 }]}>
                                             <Text style={[meshStyles.subject]}>Retransmit Interval</Text>
-                                            <Text>{publicSettings?.publishRetransmitInterval ?? "N/A"}</Text>
+                                            {
+                                                <Text>{publicSettings?.publishRetransmitInterval ?? "N/A"}</Text>
+                                            }
+                                        </View>
+                                        <Divider />
+                                        <View style={[meshStyles.item, { height: 50 }]}>
+                                            <Text style={[meshStyles.subject]}>Publication Steps</Text>
+                                            {
+                                                publicSettings.publicationSteps ? (
+                                                    <Text>{publicSettings?.publicationSteps ?? "N/A"}</Text>
+                                                ) : (
+                                                    <Text>Disabled</Text>
+                                                )
+                                            }
                                         </View>
                                         <TouchableOpacity style={[styles.removeButton]} onPress={removePublication}>
                                             <Text style={[styles.removeText]}>Remove Publication</Text>
@@ -291,12 +317,12 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                                 <Text style={[styles.title]}>Subscriptions</Text>
                                 <TouchableOpacity
                                     onPress={() => setIsSubscriptionModalVisible(true)}
-                                    disabled={boundApplicationsKeys.length === 0}
+                                    disabled={boundApplicationsKeys.length === 0 || !model.isSubscribeSupported}
                                 >
                                     <Text
                                         style={[
                                             meshStyles.textButton,
-                                            { opacity: boundApplicationsKeys.length === 0 ? 0.4 : 1 },
+                                            { opacity: boundApplicationsKeys.length === 0 || !model.isSubscribeSupported ? 0.4 : 1 },
                                         ]}
                                     >
                                         Subscribe
@@ -400,6 +426,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         display: 'flex',
         flexDirection: 'row',
+        marginVertical: 10
     },
     removeText: {
         color: Colors.primary,

@@ -45,6 +45,25 @@ const TI_CHAR = [
     { name: 'Refresh Data', uuid: 'f00011b6-0451-4000-b000-000000000000' },  // Start BLE Throughput Test
     { name: 'Refresh Period', uuid: '11B7' },  // Start BLE Throughput Test
     { name: 'Refresh Period', uuid: 'f00011b7-0451-4000-b000-000000000000' },  // Start BLE Throughput Test
+
+    // BLE Range CC14xx
+    { name: 'Data Refresh', uuid: 'f401' },
+    { name: 'Packet Received', uuid: 'f402' },
+    { name: 'CRC Ok', uuid: 'f403' },
+    { name: 'Sync Ok', uuid: 'f404' },
+    { name: 'Timestamp', uuid: 'f405' },
+    { name: 'Average RSSI', uuid: 'f406' },
+    { name: 'Min RSSI', uuid: 'f407' },
+    { name: 'Max RSSI', uuid: 'f408' },
+    { name: 'Current RSSI', uuid: 'f40A' },
+    { name: 'Sight Survey', uuid: 'f40B' },
+    { name: 'Start Test', uuid: 'f409' },
+    { name: 'Phy ID', uuid: 'f202' },
+    { name: 'Frequency', uuid: 'f203' },
+    { name: 'Packet Number', uuid: 'f204' },
+    { name: 'Packet Length', uuid: 'f205' },
+    { name: 'Output Power', uuid: 'f206' },
+    { name: 'Test Mode', uuid: 'f207' },
 ]
 
 
@@ -122,7 +141,7 @@ export const fetchProfileList = async () => {
         return sortByName(yamlDataAsHex);
 
     } catch (error) {
-        console.error('Error fetching YAML file:', error);
+        console.log('Error fetching YAML file:', error);
         let data = [
             { name: 'Continuous Glucose', uuid: '181F' },
             { name: 'Data Stream', uuid: 'F000C0C0-0451-4000-B000-000000000000' },

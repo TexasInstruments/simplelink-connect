@@ -9,21 +9,26 @@ import {
 } from 'react-native';
 import { meshStyles } from '../meshUtils';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
 
 interface ModelSelectionListProps {
     results: { task: string, success: boolean }[],
     isVisible: boolean,
     setIsVisible: any,
-    title: string
+    title: string,
+    unicastAddr: number
 }
 
 const StatusesPopup: React.FC<ModelSelectionListProps> = ({
     results,
     isVisible,
     setIsVisible,
-    title
+    title,
+    unicastAddr
 
 }) => {
+
+    const navigation = useNavigation()
 
     return (
         <Modal visible={isVisible} transparent animationType="slide">
@@ -50,10 +55,15 @@ const StatusesPopup: React.FC<ModelSelectionListProps> = ({
                         style={{ width: "100%" }}
                         horizontal={false}
                     />
+                    <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+                        <TouchableOpacity onPress={() => setIsVisible(false)} style={[meshStyles.button, { alignSelf: 'flex-end', marginTop: 30 }]}>
+                            <Text style={meshStyles.textButton}>Close</Text>
+                        </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => setIsVisible(false)} style={[meshStyles.button, { alignSelf: 'flex-end', marginTop: 30 }]}>
-                        <Text style={meshStyles.textButton}>Close</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity onPress={() => { setIsVisible(false); navigation.navigate('BleMeshConfigureNode', { unicastAddr: unicastAddr, isConnecting: false }) }} style={[meshStyles.button, { alignSelf: 'flex-end', marginTop: 30 }]}>
+                            <Text style={meshStyles.textButton}>Done</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </View>
         </Modal>

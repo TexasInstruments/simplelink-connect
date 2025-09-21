@@ -25,7 +25,8 @@ public enum MeshModuleEvents {
     MODEL_APP_KEY_UPDATED("onModelKeyUpdated"),
     MODELS_SUBSCRIBE_DONE("onSubscriptionDone"),
     MODELS_SET_PUBLICATION_DONE("onPublicationDone"),
-    MODEL_BIND_DONE("onBindAppKeysDone");
+    MODEL_BIND_DONE("onBindAppKeysDone"),
+    PROXY_STATE_STATUS("onReadProxyStatus");
 
     private final String event;
 

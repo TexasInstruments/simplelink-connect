@@ -19,7 +19,7 @@ export const ProfileListProvider: React.FC<{ children: ReactNode }> = ({ childre
                 setProfilesList(data);
                 setLoading(false);
             } catch (error) {
-                console.error('Error fetching YAML file:', error);
+                console.log('Error fetching YAML file:', error);
                 setLoading(false);
             }
         };

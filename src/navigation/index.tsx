@@ -37,11 +37,11 @@
  */
 import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { NavigationContainer, DefaultTheme, DarkTheme, Theme, DrawerActions } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme, Theme, DrawerActions, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import * as React from 'react';
-import { ColorSchemeName, NativeEventEmitter, NativeModules, Platform, View, useWindowDimensions } from 'react-native';
+import { Alert, ColorSchemeName, Linking, NativeEventEmitter, NativeModules, Platform, View, Text, useWindowDimensions, BackHandler } from 'react-native';
 import Colors from '../constants/Colors';
 import useColorScheme from '../hooks/useColorScheme';
 import NotFoundScreen from '../screens/NotFoundScreen';
@@ -78,7 +78,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import BleMeshApplicationKeys from '../components/BleMesh/BleMeshApplicationKeys';
 import { GenericModelView } from '../components/BleMesh/ModelViews/GenericModelView';
 import { downloadDataToLocalStorage } from '../services/DownloadFileUtils';
-import { Menu } from 'react-native-paper';
+import { Dialog, Menu, Portal, TextInput } from 'react-native-paper';
 import BleMeshConfigureNode from '../components/BleMesh/BleMeshConfigureNode';
 import { callMeshModuleFunction } from '../components/BleMesh/meshUtils';
 import BleMeshProxies from '../components/BleMesh/BleMeshProxies';
@@ -86,8 +86,12 @@ import BleMeshBindAppKeysScreen from '../components/BleMesh/BleMesNodeQuickSetup
 import BleMeshSubscribeModelsScreen from '../components/BleMesh/BleMesNodeQuickSetup/Subscribe';
 import BleMeshSetPublicationModelsScreen from '../components/BleMesh/BleMesNodeQuickSetup/Publication';
 import TestResultsScreen from '../screens/StressTestViews/TestResultsScreen';
-import BleMeshProvisionerScreen from '../components/BleMesh/BleMeshProvisioners';
 import MeshTutorialScreen from '../screens/MeshTutorialScreen';
+import { useServiceViewContext } from '../context/ServiceViewContext';
+import BleMeshProvisioners from '../components/BleMesh/BleMeshProvisioners';
+import BleMeshGroups from '../components/BleMesh/BleMeshGroups';
+import AboutScreen from '../screens/AboutScreen';
+import ZephyrDFUServiceModel from '../screens/ServiceSpecificViews/ZephyrDFUServiceModel';
 
 let DefaultThemeExtended: Theme = {
   dark: false,
@@ -239,6 +243,17 @@ function RootNavigator() {
             },
           }}
         />
+        <Stack.Screen
+          name="ZephyrDFUServiceModel"
+          component={ZephyrDFUServiceModel}
+          options={{
+            title: 'Firmware Update',
+            headerTintColor: 'white',
+            headerTitleStyle: {
+              fontSize: 17 / fontScale
+            },
+          }}
+        />
       </Stack.Group>
       <Stack.Screen name="ScannerTutorial" component={ScannerTutorialScreen} options={{ headerShown: false }} />
       <Stack.Screen name="MeshTutorial" component={MeshTutorialScreen} options={{ headerShown: false }} />
@@ -247,6 +262,28 @@ function RootNavigator() {
         component={TestParametersScreen}
         options={({ navigation }) => ({
           title: 'Stress Test',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => navigation.navigate('HomeScreen')} testID='backButton' accessibilityLabel='backButton'>
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity>)
+          },
+        })}
+      />
+      <Stack.Screen
+        name="AboutScreen"
+        component={AboutScreen}
+        options={({ navigation }) => ({
+          title: 'About',
           headerTitleAlign: 'center',
           headerStyle: {
             backgroundColor: '#cc0000',
@@ -407,13 +444,69 @@ function RootNavigator() {
                 }
               >
                 {/* https://pictogrammers.com/library/mdi/ */}
-                <Menu.Item onPress={() => { navigation.navigate('BleMeshProvisionerScreen'); closeMenu() }} title="Provisioners" leadingIcon="transit-connection-horizontal" />
-                <Menu.Item onPress={() => { navigation.navigate('BleMeshProxies'); closeMenu() }} title="Proxies" leadingIcon="arrow-decision" />
-                <Menu.Item onPress={() => { navigation.navigate('BleMeshNetworkKeys'); closeMenu() }} title="Configure network keys" leadingIcon="key" />
-                <Menu.Item onPress={() => { navigation.navigate('BleMeshApplicationKeys'); closeMenu() }} title="Configure app keys" leadingIcon="key" />
-                <Menu.Item onPress={exportMeshNetwork} title="Export network" leadingIcon="download" />
-                <Menu.Item onPress={resetMeshNetwork} title="Reset network" leadingIcon="trash-can-outline" />
-                <Menu.Item onPress={() => { navigation.navigate('MeshTutorial'); closeMenu(); }} title="Show Tutorial" leadingIcon="information" />
+                <Menu.Item
+                  onPress={() => { navigation.navigate('BleMeshGroupsScreen'); closeMenu() }}
+                  title="Groups"
+                  leadingIcon={(({ size }) => (
+                    <MaterialCommunityIcons name="account-group" size={size} color={"black"}></MaterialCommunityIcons>
+                  ))}
+                  titleStyle={{ color: "black" }}
+                />
+                <Menu.Item
+                  onPress={() => { navigation.navigate('BleMeshProvisionerScreen'); closeMenu() }}
+                  title="Provisioners"
+                  leadingIcon={(({ size }) => (
+                    <MaterialCommunityIcons name="transit-connection-horizontal" size={size} color={"black"}></MaterialCommunityIcons>
+                  ))}
+                  titleStyle={{ color: "black" }}
+                />
+                <Menu.Item
+                  onPress={() => { navigation.navigate('BleMeshProxies'); closeMenu() }}
+                  title="Proxies"
+                  leadingIcon={(({ size }) => (
+                    <MaterialCommunityIcons name="arrow-decision" size={size} color={"black"}></MaterialCommunityIcons>
+                  ))}
+                  titleStyle={{ color: "black" }}
+                />
+                <Menu.Item
+                  onPress={() => { navigation.navigate('BleMeshNetworkKeys'); closeMenu() }}
+                  title="Configure network keys"
+                  leadingIcon={(({ size }) => (
+                    <MaterialCommunityIcons name="key" size={size} color={"black"}></MaterialCommunityIcons>
+                  ))}
+                  titleStyle={{ color: "black" }}
+                />
+                <Menu.Item
+                  onPress={() => { navigation.navigate('BleMeshApplicationKeys'); closeMenu() }}
+                  title="Configure app keys"
+                  leadingIcon={(({ size }) => (
+                    <MaterialCommunityIcons name="key" size={size} color={"black"}></MaterialCommunityIcons>
+                  ))}
+                  titleStyle={{ color: "black" }} />
+                <Menu.Item
+                  onPress={exportMeshNetwork}
+                  title="Export network"
+                  leadingIcon={(({ size }) => (
+                    <MaterialCommunityIcons name="download" size={size} color={"black"}></MaterialCommunityIcons>
+                  ))}
+                  titleStyle={{ color: "black" }}
+                />
+                <Menu.Item
+                  onPress={resetMeshNetwork}
+                  title="Reset network"
+                  leadingIcon={(({ size }) => (
+                    <MaterialCommunityIcons name="trash-can-outline" size={size} color={"black"}></MaterialCommunityIcons>
+                  ))}
+                  titleStyle={{ color: "black" }}
+                />
+                <Menu.Item
+                  onPress={() => { navigation.navigate('MeshTutorial'); closeMenu(); }}
+                  title="Show Tutorial"
+                  leadingIcon={(({ size }) => (
+                    <MaterialCommunityIcons name="information" size={size} color={"black"}></MaterialCommunityIcons>
+                  ))}
+                  titleStyle={{ color: "black" }} rippleColor={"black"}
+                />
 
               </Menu >
             );
@@ -466,9 +559,31 @@ function RootNavigator() {
       />
       < Stack.Screen
         name="BleMeshProvisionerScreen"
-        component={BleMeshProvisionerScreen}
+        component={BleMeshProvisioners}
         options={({ navigation }) => ({
-          title: 'BLE Mesh Provisioners',
+          title: 'Provisioners',
+          headerTitleAlign: 'center',
+          headerStyle: {
+            backgroundColor: '#cc0000',
+          },
+          headerTitleStyle: {
+            fontSize: 17 / fontScale
+          },
+          headerTintColor: 'white',
+          headerLeft: (props) => {
+            return (
+              //We could use some svg icon
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+                <AntDesign name="left" size={24} color="white" />
+              </TouchableOpacity >)
+          }
+        })}
+      />
+      < Stack.Screen
+        name="BleMeshGroupsScreen"
+        component={BleMeshGroups}
+        options={({ navigation }) => ({
+          title: 'Groups',
           headerTitleAlign: 'center',
           headerStyle: {
             backgroundColor: '#cc0000',
@@ -731,7 +846,89 @@ function CharacteristicsDrawer({ route, navigation }) {
 
 function BottomTabNavigator() {
   const colorScheme = useColorScheme();
+  const { hasOadOption, hasDfuOption, peripheralInfo, handleRequestMTU, handleCreateBond, handleRemoveBond, isBonded } = useServiceViewContext();
 
+  const [deviceMenuVisible, setDeviceMenuVisible] = React.useState(false);
+  const [requestMtuDialogVisible, setRequestMtuDialogVisible] = React.useState(false);
+  const [requestedMtu, setRequestedMtu] = React.useState('');
+  const [isPeripheralBonded, setIsPeripheralBonded] = React.useState(isBonded);
+
+  const closeMenu = () => setDeviceMenuVisible(false);
+  const openMenu = () => setDeviceMenuVisible(true);
+  const openRequestMtuDialog = () => setRequestMtuDialogVisible(true);
+  const closeRequestMtuDialog = () => setRequestMtuDialogVisible(false)
+
+  React.useEffect(() => {
+    setIsPeripheralBonded(isBonded);
+  }, [isBonded])
+
+  const openFWUpdateModal = (navigation: any) => {
+    if (Platform.OS === 'ios') {
+      Alert.alert(
+        'OAD Service',
+        'For OAD process please connect and pair to the device using the iOS\'s Bluetooth interface.',
+        [
+          {
+            text: 'Continue',
+            onPress: () => navigation.navigate('Characteristics', {
+              peripheralInfo: peripheralInfo!,
+              serviceUuid: 'f000ffc0-0451-4000-b000-000000000000'.toLocaleUpperCase(),
+              icon: {
+                type: 'font-awesome-5',
+                iconName: 'download',
+              },
+              serviceName: 'TI OAD',
+            }),
+            style: 'cancel',
+          },
+          {
+            text: 'Go to Bluetooth',
+            onPress: () => Linking.openURL('App-Prefs:Bluetooth'),
+            style: 'destructive',
+          },
+
+        ],
+      );
+    }
+    else {
+      navigation.navigate('Characteristics', {
+        peripheralInfo: peripheralInfo!,
+        serviceUuid: 'f000ffc0-0451-4000-b000-000000000000',
+        icon: {
+          type: 'font-awesome-5',
+          iconName: 'download',
+        },
+        serviceName: 'TI OAD',
+      })
+    }
+  }
+
+  const openDfuModal = (navigation: any) => {
+    navigation.navigate('Characteristics', {
+      peripheralInfo: peripheralInfo!,
+      serviceUuid: '8d53dc1d-1db7-4cd3-868b-8a527460aa84',
+      icon: {
+        type: 'font-awesome-5',
+        iconName: 'download',
+      },
+      serviceName: 'Zephyr MCU Manager Service',
+    })
+
+  }
+
+  const requestMtu = () => {
+    const mtuValue = parseInt(requestedMtu, 10);
+    if (isNaN(mtuValue) || mtuValue <= 0) {
+      Alert.alert('Invalid MTU', 'Please enter a valid MTU value.');
+      return;
+    }
+
+    // Call your BLE method to request MTU here
+    console.log('Requesting MTU:', mtuValue);
+    handleRequestMTU(mtuValue)
+
+    closeRequestMtuDialog();
+  };
   return (
     <BottomTab.Navigator
       id="bottom"
@@ -762,6 +959,7 @@ function BottomTabNavigator() {
           headerTitleStyle: { color: 'white' },
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={'color'} />,
           headerLeft: (props) => {
+
             const goBack = () => {
               const BleManagerModule = NativeModules.BleManager;
               const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
@@ -774,6 +972,84 @@ function BottomTabNavigator() {
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>
             );
+          },
+          headerRight: () => {
+            if (Platform.OS === 'ios' && !hasOadOption && !hasDfuOption) {
+              return null;
+            }
+            else {
+              return (
+                <>
+                  <Menu
+                    contentStyle={{ backgroundColor: 'white' }}
+                    visible={deviceMenuVisible}
+                    onDismiss={closeMenu}
+                    anchor={
+                      <TouchableOpacity style={{ paddingRight: 15 }} onPress={openMenu}>
+                        <MaterialCommunityIcons name="dots-vertical" size={24} color="white" />
+                      </TouchableOpacity>
+                    }
+                  >
+                    {/* https://pictogrammers.com/library/mdi/ */}
+                    {Platform.OS == 'android' && (
+                      <Menu.Item onPress={() => { openRequestMtuDialog(); closeMenu() }} title="Request MTU" leadingIcon="swap-horizontal" />
+                    )}
+
+                    {Platform.OS == 'android' && !isPeripheralBonded && (
+                      <Menu.Item onPress={() => { handleCreateBond(); closeMenu() }} title="Create Bond" leadingIcon="key-plus" />
+                    )}
+                    {Platform.OS == 'android' && isPeripheralBonded && (
+                      <Menu.Item onPress={() => { handleRemoveBond(); closeMenu() }} title="Remove Bond" leadingIcon="key-minus" />
+                    )}
+                    {hasOadOption && (
+                      <Menu.Item onPress={() => { openFWUpdateModal(navigation); closeMenu() }} title="Firmware Update (TI OAD)" leadingIcon="update" />
+                    )}
+                    {hasDfuOption && (
+                      <Menu.Item onPress={() => { openDfuModal(navigation); closeMenu() }} title="Firmware Update (SMP)" leadingIcon={(({ size }) => (
+                        <FontAwesome name="download" size={size} color={"black"}></FontAwesome>
+                      ))} />
+                    )}
+
+                  </Menu >
+                  <Portal>
+                    <Dialog
+                      visible={requestMtuDialogVisible}
+                      onDismiss={closeRequestMtuDialog}
+                      style={{ backgroundColor: 'white' }}
+                    >
+                      <Dialog.Title
+                        style={{
+                          fontSize: 20,
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        Request MTU
+                      </Dialog.Title>
+                      <Dialog.Content>
+                        <TextInput
+                          placeholder="Enter MTU value"
+                          keyboardType="numeric"
+                          value={requestedMtu}
+                          onChangeText={setRequestedMtu}
+                          activeUnderlineColor={Colors.active}
+                          style={{ backgroundColor: Colors.lightGray, fontSize: 16 / useWindowDimensions().fontScale }}
+                        />
+                      </Dialog.Content>
+                      <Dialog.Actions
+                        style={{ justifyContent: 'space-between' }}
+                      >
+                        <TouchableOpacity onPress={closeRequestMtuDialog}>
+                          <Text style={{ color: Colors.blue }}>Cancel</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={requestMtu}>
+                          <Text style={{ color: Colors.blue }}>Request</Text>
+                        </TouchableOpacity>
+                      </Dialog.Actions>
+                    </Dialog>
+                  </Portal>
+                </>
+              );
+            }
           },
         })}
       />

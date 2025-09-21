@@ -112,7 +112,43 @@ export default [
       iconName: 'chart-line',
     },
     serviceSpecificScreen: 'EcgServiceModel',
+  },
+  {
+    serviceName: 'Classification Mode',
+    serviceUuid: 'EE00',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'tag',
+    },
+    serviceSpecificScreen: 'ClassificationServiceModel',
 
+  },
+  {
+    serviceName: 'Classification Mode',
+    serviceUuid: 'f000ee00-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'tag',
+    },
+    serviceSpecificScreen: 'ClassificationServiceModel',
+  },
+  {
+    serviceName: 'Data Acquisition Mode',
+    serviceUuid: 'DD00',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'chart-line',
+    },
+    serviceSpecificScreen: 'DataAcquisitionServiceModel',
+  },
+  {
+    serviceName: 'Data Acquisition Mode',
+    serviceUuid: 'f000dd00-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'chart-line',
+    },
+    serviceSpecificScreen: 'DataAcquisitionServiceModel',
   },
   {
     serviceName: 'TI Simple Peripheral Service',
@@ -121,6 +157,24 @@ export default [
       type: 'font-awesome-5',
       iconName: 'tablet',
     },
+  },
+  {
+    serviceName: 'SUB-1 Range Test Config',
+    serviceUuid: 'F200',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'cogs',
+    },
+    serviceSpecificScreen: 'BLERangeTestConfig'
+  },
+  {
+    serviceName: 'SUB-1 Range statistics',
+    serviceUuid: 'F400',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'poll',
+    },
+    serviceSpecificScreen: 'BLERangeStatics'
   },
   {
     serviceName: 'TI OAD',
@@ -173,6 +227,7 @@ export default [
       type: 'font-awesome-5',
       iconName: 'battery-three-quarters',
     },
+    serviceSpecificScreen: 'BatteryService',
   },
   {
     serviceName: 'Blood Pressure',
@@ -288,7 +343,7 @@ export default [
       type: 'font-awesome-5',
       iconName: 'thermometer-half',
     },
-    serviceSpecificScreen: 'HealthTermometerServiceModel'
+    serviceSpecificScreen: 'HealthThermometerServiceModel'
   },
   {
     serviceName: 'Heart Rate',
@@ -582,5 +637,14 @@ export default [
       type: 'font-awesome-5',
       iconName: 'lightbulb',
     },
+  },
+  {
+    serviceName: 'Zephyr MCU Manager Service',
+    serviceUuid: '8d53dc1d-1db7-4cd3-868b-8a527460aa84',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'download',
+    },
+    serviceSpecificScreen: 'ZephyrDFUServiceModel',
   },
 ] as MappedService[];

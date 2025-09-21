@@ -13,6 +13,7 @@ import {
     NativeEventEmitter,
     NativeModules,
     EmitterSubscription,
+    Switch,
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { callMeshModuleFunction, Group, meshStyles } from '../meshUtils';
@@ -21,6 +22,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import CheckBox from '@react-native-community/checkbox';
 import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
 import { Snackbar } from 'react-native-paper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const FilterTypes = [
     { label: 'Inclusion List', value: 0x00 },
@@ -52,14 +54,34 @@ const BleMeshProxies: React.FC = () => {
     const [status, setStatus] = useState<string>('');
     const [statusVisible, setStatusVisible] = useState(false);
 
+    const [automaticConnection, setAutomaticConnection] = useState(true);
+
     const typeListener = useRef<EmitterSubscription>();
     const addressesListener = useRef<EmitterSubscription>();
 
     useEffect(() => {
+
+        bleMeshEmitter.addListener('onNodeConnected', handleProxyConnected);
+
+        const checkAutoConnection = async () => {
+            let autoConnect = await AsyncStorage.getItem('@proxyAutoConnect')
+            setAutomaticConnection(autoConnect === 'true')
+        }
+
+        checkAutoConnection();
+
         getProxyStatus();
         getGroups();
 
+        return () => {
+            bleMeshEmitter.removeAllListeners("onNodeConnected")
+        }
+
     }, []);
+
+    const handleProxyConnected = () => {
+        getProxyStatus();
+    }
 
     const handleAddressFilterUpdated = (data: any) => {
         setStatus(`Filter addresses updated, list size: ${data.listSize}`)
@@ -87,7 +109,6 @@ const BleMeshProxies: React.FC = () => {
             setProxy(data.proxyName)
         }
     };
-
 
     const addFilterAddresses = async (addresses: number[]) => {
         addressesListener.current = bleMeshEmitter.addListener('onProxyFilterUpdated', handleAddressFilterUpdated);
@@ -147,7 +168,6 @@ const BleMeshProxies: React.FC = () => {
         setCustomAddress('');
 
     };
-
 
     const onModalDone = () => {
         setAddresses(prev => [...new Set([...modalSelectedAddresses, ...prev])]);
@@ -248,6 +268,13 @@ const BleMeshProxies: React.FC = () => {
         setIsModalVisible(true);
     };
 
+    const onAutoConnectionChanged = () => {
+        let autoConnect = !automaticConnection
+        callMeshModuleFunction('updateAutomaticConnection', autoConnect);
+        AsyncStorage.setItem('@proxyAutoConnect', autoConnect ? 'true' : 'false')
+        setAutomaticConnection(autoConnect);
+    }
+
     return (
         <KeyboardAvoidingView
             style={meshStyles.container}
@@ -255,89 +282,105 @@ const BleMeshProxies: React.FC = () => {
             keyboardVerticalOffset={100}
         >
 
-            <Text style={[meshStyles.title, { marginBottom: 5 }]}>Proxy Filter Configuration</Text>
-            {!isProxyConnected && (
-                <View style={styles.warningContainer}>
-                    <Text style={styles.warningTitle}>Error !</Text>
-                    <Text style={styles.warningText}>
-                        There is no connected proxy. Go back to the main view, select a proxy node,
-                        connect it, and then come back!
-                    </Text>
-                </View>
-            )}
-
-            {isProxyConnected && (
-                <View style={{ flex: 1 }}>
+            <Text style={[meshStyles.title, { marginBottom: 5 }]}>Proxy Configuration</Text>
+            <View style={{ flex: 1 }}>
+                {proxy && (
                     <Text style={{ marginBottom: 20, fontWeight: '600', color: Colors.gray, fontSize: 16 }}>Connected Proxy: {proxy} </Text>
+                )}
 
-                    {/* Filter Type */}
-                    <View style={{ flexDirection: 'column' }}>
-                        <Text style={[styles.label, { marginBottom: 5 }]}>Filter Type</Text>
-                        <Dropdown
-                            style={[meshStyles.dropdown, { flex: undefined, backgroundColor: 'white', borderWidth: 0 }]}
-                            placeholderStyle={meshStyles.placeholderStyle}
-                            selectedTextStyle={meshStyles.selectedTextStyle}
-                            data={FilterTypes}
-                            maxHeight={200}
-                            labelField="label"
-                            valueField="value"
-                            placeholder="Select Type"
-                            value={selectedFilterType}
-                            onChange={(item) => {
-                                setSelectedFilterType(item.value);
-                                updateFilterType(item.value);
-                            }}
+                {/* Automatic Connection */}
+                {/* {Platform.OS == 'ios' && (
+                    <View style={[styles.autoContainer]}>
+                        <Text style={[styles.autoText]}>Automatic Proxy Connection</Text>
+                        <Switch
+                            value={automaticConnection}
+                            onChange={onAutoConnectionChanged}
                         />
                     </View>
+                )} */}
 
-                    <View style={{ flexDirection: 'column', marginTop: 20 }}>
-                        <View style={[styles.row, { marginBottom: 5 }]}>
-                            <Text style={styles.label}>Filter Addresses</Text>
-                            <TouchableOpacity onPress={openModal} disabled={selectedFilterType == null} style={{ opacity: selectedFilterType == null ? 0.5 : 1 }}>
-                                <Text style={meshStyles.textButton}>Add address</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <View style={{ height: 300 }}>
-
-                            <ScrollView>
-                                {addresses.map((address, index) => {
-                                    return (
-                                        <View style={styles.dataContainer} key={index}>
-                                            <Text>
-                                                0x{address.toString(16).toUpperCase()} ({address})
-                                            </Text>
-                                            <TouchableOpacity onPress={() => removeAddress(address)}>
-                                                <FontAwesome5 name="trash-alt" size={18} color={Colors.primary} />
-                                            </TouchableOpacity>
-                                        </View>
-                                    );
-                                })}
-                                {addresses.length == 0 && (
-                                    <View style={styles.dataContainer}>
-                                        <Text>
-                                            No addresses
-                                        </Text>
-                                    </View>
-                                )}
-                            </ScrollView>
-                        </View>
+                {!isProxyConnected && (
+                    <View style={styles.warningContainer}>
+                        <Text style={styles.warningTitle}>Error !</Text>
+                        <Text style={styles.warningText}>
+                            There is no connected proxy. Go back to the main view, select a proxy node,
+                            connect it, and then come back!
+                        </Text>
                     </View>
-                    <Snackbar
-                        visible={statusVisible}
-                        onDismiss={() => setStatusVisible(false)}
-                        duration={5000}
-                    >
-                        <View style={{ flexDirection: 'row' }}>
-                            <Icon name="info" size={20} color={'white'} />
-                            <Text style={{ alignSelf: 'center', textAlignVertical: 'center', marginLeft: 5, fontWeight: '600', color: 'white' }}>
-                                {status}
-                            </Text>
-                        </View>
-                    </Snackbar>
-                </View>
-            )}
+                )}
 
-            {AddFilterAddressModal()}
+                {isProxyConnected && (
+                    <>
+                        {/* Filter Type */}
+                        <View style={{ flexDirection: 'column' }}>
+                            <Text style={[styles.label, { marginBottom: 5 }]}>Filter Type</Text>
+                            <Dropdown
+                                style={[meshStyles.dropdown, { flex: undefined, backgroundColor: 'white', borderWidth: 0, marginBottom: 30 }]}
+                                placeholderStyle={meshStyles.placeholderStyle}
+                                selectedTextStyle={meshStyles.selectedTextStyle}
+                                data={FilterTypes}
+                                maxHeight={200}
+                                labelField="label"
+                                valueField="value"
+                                placeholder="Select Type"
+                                value={selectedFilterType}
+                                onChange={(item) => {
+                                    setSelectedFilterType(item.value);
+                                    updateFilterType(item.value);
+                                }}
+                            />
+                        </View>
+
+                        <View style={{ flexDirection: 'column' }}>
+                            <View style={[styles.row, { marginBottom: 5 }]}>
+                                <Text style={styles.label}>Filter Addresses</Text>
+                                <TouchableOpacity onPress={openModal} disabled={selectedFilterType == null} style={{ opacity: selectedFilterType == null ? 0.5 : 1 }}>
+                                    <Text style={meshStyles.textButton}>Add address</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <View style={{ height: 300 }}>
+
+                                <ScrollView>
+                                    {addresses.map((address, index) => {
+                                        return (
+                                            <View style={styles.dataContainer} key={index}>
+                                                <Text>
+                                                    0x{address.toString(16).toUpperCase()} ({address})
+                                                </Text>
+                                                <TouchableOpacity onPress={() => removeAddress(address)}>
+                                                    <FontAwesome5 name="trash-alt" size={18} color={Colors.primary} />
+                                                </TouchableOpacity>
+                                            </View>
+                                        );
+                                    })}
+                                    {addresses.length == 0 && (
+                                        <View style={styles.dataContainer}>
+                                            <Text>
+                                                No addresses
+                                            </Text>
+                                        </View>
+                                    )}
+                                </ScrollView>
+                            </View>
+                        </View>
+                        <Snackbar
+                            visible={statusVisible}
+                            onDismiss={() => setStatusVisible(false)}
+                            duration={5000}
+                        >
+                            <View style={{ flexDirection: 'row' }}>
+                                <Icon name="info" size={20} color={'white'} />
+                                <Text style={{ alignSelf: 'center', textAlignVertical: 'center', marginLeft: 5, fontWeight: '600', color: 'white' }}>
+                                    {status}
+                                </Text>
+                            </View>
+                        </Snackbar>
+                    </>
+                )}
+
+                {AddFilterAddressModal()}
+            </View>
+
         </KeyboardAvoidingView>
     );
 };
@@ -439,6 +482,20 @@ const styles = StyleSheet.create({
     textOption: {
         marginLeft: 7,
         fontSize: 16
+    },
+    autoContainer: {
+        backgroundColor: 'white',
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 10,
+        borderRadius: 10,
+        marginBottom: 30
+    },
+    autoText: {
+        fontSize: 16,
+        fontWeight: '500'
     }
 
 });

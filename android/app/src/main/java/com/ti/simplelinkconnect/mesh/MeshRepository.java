@@ -118,6 +118,7 @@ import static com.ti.simplelinkconnect.mesh.MeshModuleEvents.MODEL_BIND_DONE;
 import static com.ti.simplelinkconnect.mesh.MeshModuleEvents.NETWORK_KEYS_UPDATED;
 import static com.ti.simplelinkconnect.mesh.MeshModuleEvents.PROV_SCAN_RESULT;
 import static com.ti.simplelinkconnect.mesh.MeshModuleEvents.PROXY_FILTER_UPDATED;
+import static com.ti.simplelinkconnect.mesh.MeshModuleEvents.PROXY_STATE_STATUS;
 import static com.ti.simplelinkconnect.mesh.MeshModuleEvents.PUBLICATION_UPDATED;
 import static com.ti.simplelinkconnect.mesh.MeshModuleEvents.SENSOR_GET;
 import static com.ti.simplelinkconnect.mesh.MeshModuleEvents.STATE_CHANGES;
@@ -1259,10 +1260,12 @@ public class MeshRepository implements MeshProvisioningStatusCallbacks, MeshStat
                 }
             }
             else if (meshMessage.getOpCode() == CONFIG_GATT_PROXY_STATUS) {
+                final ConfigGattProxyStatus status = (ConfigGattProxyStatus) meshMessage;
                 if (updateNode(node)) {
-                    final ConfigGattProxyStatus status = (ConfigGattProxyStatus) meshMessage;
                     mMeshMessageLiveData.postValue(status);
                 }
+                int state = status.getProxyState();
+                meshModule.sendEvent(PROXY_STATE_STATUS, state);
             }
             else if (meshMessage.getOpCode() == GENERIC_ON_OFF_STATUS) {
                 if (updateNode(node)) {

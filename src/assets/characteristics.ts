@@ -56,6 +56,7 @@ export default [
     /* TI SImple Peripheral CHAR5 */ name: 'Characteristic 5',
     uuid: 'FFF5',
   },
+
   {
     name: 'Data',
     uuid: 'f000aa65-0451-4000-b000-000000000000',
@@ -1911,5 +1912,73 @@ export default [
   {
     name: 'Connection',
     uuid: 'CC03',
+  },
+  {
+    name: 'Data Refresh',
+    uuid: 'f401',
+  },
+  {
+    name: 'Packet Received',
+    uuid: 'f402',
+  },
+  {
+    name: 'CRC Ok',
+    uuid: 'f403',
+  },
+  {
+    name: 'Sync Ok',
+    uuid: 'f404',
+  },
+  {
+    name: 'Timestamp',
+    uuid: 'f405',
+  },
+  {
+    name: 'Average RSSI',
+    uuid: 'f406',
+  },
+  {
+    name: 'Min RSSI',
+    uuid: 'f407',
+  },
+  {
+    name: 'Max RSSI',
+    uuid: 'f408',
+  },
+  {
+    name: 'Current RSSI',
+    uuid: 'f40A',
+  },
+  {
+    name: 'Sight Survey',
+    uuid: 'f40B',
+  },
+  {
+    name: 'Start Test',
+    uuid: 'f409',
+  },
+  {
+    name: 'Phy ID',
+    uuid: 'f202',
+  },
+  {
+    name: 'Frequency',
+    uuid: 'f203',
+  },
+  {
+    name: 'Packet Number',
+    uuid: 'f204',
+  },
+  {
+    name: 'Packet Length',
+    uuid: 'f205',
+  },
+  {
+    name: 'Output Power',
+    uuid: 'f206',
+  },
+  {
+    name: 'Test Mode',
+    uuid: 'f207',
   },
 ] as MappedCharacteristic[];

@@ -1,5 +1,5 @@
 import { Text, TouchableOpacity } from '../../Themed';
-import { StyleSheet, NativeModules, View, NativeEventEmitter, InteractionManager, Alert } from 'react-native';
+import { StyleSheet, NativeModules, View, NativeEventEmitter, InteractionManager, Alert, SafeAreaView } from 'react-native';
 import Colors from '../../../constants/Colors';
 import { useCallback, useEffect, useRef, useState, } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -7,7 +7,7 @@ import PeripheralIcon from '../../PeripheralIcon';
 import Spacing from '../../Spacing';
 import { Divider, Menu } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-import { Feature, meshStyles, Model, ProvisionedNode, Element, callMeshModuleFunction } from '../meshUtils';
+import { Feature, meshStyles, Model, ProvisionedNode, Element, callMeshModuleFunction, FeatureState } from '../meshUtils';
 import { BleMeshNodeConfigScreenProps, companyNameToBrandIcon } from '../../../../types';
 import { ScrollView } from 'react-native-gesture-handler';
 import { GenericMeshModal, GenericModalData } from '../GenericMeshModal';
@@ -27,6 +27,7 @@ interface ExpandItem {
 const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
     const { unicastAddr, isConnecting } = route.params
     const { MeshModule } = NativeModules;
+
     const bleMeshEmitter = new NativeEventEmitter(MeshModule);
 
     const [provisionedNode, setProvisionedNode] = useState<ProvisionedNode | null>(null);
@@ -37,8 +38,10 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
     const [modalData, setModalData] = useState<GenericModalData>({ title: 'Edit', currentValue: '', onClickSave: (val: string) => console.log(val), label: '' })
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [isConnectingState, setIsConnectingState] = useState<boolean>(false);
-    const isConnectingRef = useRef<boolean>(false)
     const [setupMenuVisible, setSetupMenuVisible] = useState(false);
+    const [proxyState, setProxyState] = useState<0 | 1>();
+
+    const isConnectingRef = useRef<boolean>(false)
 
     let navigation = useNavigation();
 
@@ -46,23 +49,24 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
         getProvisionedNode();
     }, [isNetKeyModalVisible, isAddAppKeyModalVisible]);
 
-    useEffect(() => {
-        const nodeConnectedListener = bleMeshEmitter.addListener('onNodeConnected', checkConnectionStatus);
-        setIsConnectingState(isConnecting);
-        isConnectingRef.current = isConnecting;
+    // useEffect(() => {
+    //     const nodeConnectedListener = bleMeshEmitter.addListener('onNodeConnected', checkConnectionStatus);
+    //     setIsConnectingState(isConnecting);
+    //     isConnectingRef.current = isConnecting;
 
-        // getProvisionedNode();
-        checkConnectionStatus();
+    //     checkConnectionStatus();
 
-        return () => {
-            nodeConnectedListener.remove()
-        }
+    //     return () => {
+    //         nodeConnectedListener.remove()
+    //     }
 
-    }, [route.params]);
+    // }, [route.params]);
 
     useFocusEffect(
         useCallback(() => {
-            const nodeConnectedListener = bleMeshEmitter.addListener('onNodeConnected', checkConnectionStatus);
+            bleMeshEmitter.addListener('onNodeConnected', checkConnectionStatus);
+            bleMeshEmitter.addListener('onReadProxyStatus', onProxyStatusChanges);
+
             const task = InteractionManager.runAfterInteractions(() => {
                 try {
                     setIsConnectingState(isConnecting);
@@ -76,7 +80,8 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
             });
 
             return () => {
-                nodeConnectedListener.remove()
+                bleMeshEmitter.removeAllListeners('onNodeConnected')
+                bleMeshEmitter.removeAllListeners("onReadProxyStatus")
                 task.cancel();
             };
         }, [isConnecting])
@@ -98,16 +103,26 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
 
     };
 
+    const onProxyStatusChanges = (state: 1 | 0) => {
+        setProxyState(state)
+    }
+
     const getProvisionedNode = async () => {
         try {
             let node = await callMeshModuleFunction('getProvisionedNode', unicastAddr) as ProvisionedNode;
             if (node) {
+                // let ttl = await callMeshModuleFunction('getNodeTtl', unicastAddr).then(()) as number
+                // node.ttl = ttl
                 setProvisionedNode(node);
                 let expandedArray: ExpandItem[] = [];
                 node.elements.forEach((element) => {
-                    expandedArray.push({ elementName: element.name, expanded: false })
+                    expandedArray.push({ elementName: element.name, expanded: true })
                 });
                 setExpandedArray(expandedArray);
+                setProxyState(isProxyEnabled());
+                if (isConnected) {
+                    readProxyState(node.unicastAddress)
+                }
             }
         }
         catch (e) {
@@ -214,6 +229,13 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
 
     };
 
+    const resetNode = async () => {
+        bleMeshEmitter.removeAllListeners('onNodeConnected')
+        let res = await callMeshModuleFunction('resetNode', unicastAddr)
+        navigation.navigate('BleMesh')
+        console.log(res)
+    }
+
     const openMenu = () => setSetupMenuVisible(true);
     const closeMenu = () => setSetupMenuVisible(false);
 
@@ -241,21 +263,25 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
                 <Menu.Item onPress={() => { navigation.navigate('BleMeshSetPublicationModelsScreen', { unicastAddr: unicastAddr, elements: provisionedNode?.elements }); closeMenu(); }} title="Set Publication" leadingIcon={() => (
                     <MaterialCommunityIcons name="send-circle-outline" size={25} />
                 )} titleStyle={{}} />
+                <Menu.Item onPress={() => { resetNode(); closeMenu(); }} title="Reset Node" leadingIcon={() => (
+                    <MaterialCommunityIcons name="refresh" size={25} color={Colors.primary} />
+                )} titleStyle={{ color: Colors.primary }} />
             </Menu >
         );
-    }
+    };
+
     const DisplayModal = ({ model, element }: { model: Model, element: Element }) => {
         return (
-            <TouchableOpacity style={{ paddingHorizontal: 10 }} onPress={() => navigateToModalView(element.address, model)}>
+            <TouchableOpacity style={{ paddingHorizontal: 10 }} disabled={!isConnected} onPress={() => navigateToModalView(element.address, model)}>
                 <Divider />
                 <View style={[meshStyles.item]}>
                     <View style={{ display: 'flex', flexDirection: 'column' }}>
-                        <Text style={[styles.modelName]}>{model.name}</Text>
+                        <Text style={[styles.modelName]}>{model.name ?? "Unknown Name"}</Text>
                         <Text style={[styles.modelDesc]}>{model.type}  0x{model.id.toString(16)}</Text>
                     </View>
                     <Icon name={"chevron-right"} size={20} style={{ marginLeft: 10 }} />
                 </View>
-            </TouchableOpacity>
+            </TouchableOpacity >
         );
     };
 
@@ -281,15 +307,78 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
         )
     };
 
+    const readProxyState = (nodeUnicastAddress: number | undefined) => {
+        if (nodeUnicastAddress == undefined) {
+            return
+        }
+        try {
+            callMeshModuleFunction("readProxyState", nodeUnicastAddress)
+        }
+        catch (e) {
+            console.error(e)
+        }
+    }
+
+    const toggleProxyState = (state: number) => {
+        try {
+            let newState = state == 1 ? 0 : 1
+            callMeshModuleFunction("toggleProxyState", provisionedNode?.unicastAddress, newState)
+        } catch (e) {
+            console.error(e)
+        }
+    }
+
+    const ProxyStateCard = () => {
+        return (
+            <View style={[styles.row, { marginBottom: 15 }]}>
+                <View style={[meshStyles.optionsBox, { flex: 1, marginBottom: 0, marginRight: 5 }]}>
+                    <View style={[meshStyles.item]}>
+                        <Text style={[meshStyles.subject]}>Proxy State</Text>
+                        {isConnected && (
+                            <Text numberOfLines={1} >{proxyState == 0 ? "Disabled" : "Enabled"}</Text>
+                        )}
+                        {!isConnected && (
+                            <Text>N/A</Text>
+                        )}
+                    </View>
+                </View>
+                <TouchableOpacity style={[styles.proxyButton, meshStyles.shadow, { opacity: !isConnected ? 0.4 : 1 }]} onPress={() => readProxyState(provisionedNode?.unicastAddress)} disabled={!isConnected}>
+                    <MaterialCommunityIcons name="refresh" size={20} color={Colors.blue} />
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.proxyButton, meshStyles.shadow, { opacity: !isConnected ? 0.4 : 1 }]} disabled={!isConnected} onPress={() => toggleProxyState(proxyState ?? 0)}>
+                    <Text style={[meshStyles.textButton]}>
+                        <MaterialCommunityIcons name={proxyState == 0 ? "power" : "power"} size={20} color={proxyState == 0 ? 'green' : 'red'} />
+                    </Text>
+                </TouchableOpacity>
+            </View>
+        )
+    }
+
+    const showProxySettingCard = () => {
+        const f = provisionedNode?.features.find((fe) => fe.name == "P");
+        if (f && f.state != FeatureState.Unsupported) {
+            return true
+        }
+        return false
+    }
+
+    const isProxyEnabled = () => {
+        const f = provisionedNode?.features.find((fe) => fe.name == "P");
+        if (f && f.state == FeatureState.Enabled) {
+            return FeatureState.Enabled
+        }
+        return FeatureState.Disabled
+    }
+
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={[meshStyles.infoContainer, { backgroundColor: Colors.lightGray }]}>
                 <View style={[meshStyles.deviceInfoIconContainer]}>
                     <PeripheralIcon icon={companyNameToBrandIcon(provisionedNode?.company)} size={32} />
                 </View>
                 <Spacing spaceT={10} />
-                <Text style={[meshStyles.deviceName]}>{provisionedNode?.name}</Text>
+                <Text style={[meshStyles.deviceName]}>{provisionedNode?.name ?? "Unknown"}</Text>
             </View>
 
             {/* Data */}
@@ -308,100 +397,111 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
                 </View>
 
                 {provisionedNode && !isConnectingState && (
-                    <ScrollView style={{ maxHeight: '100%' }} contentContainerStyle={{ paddingBottom: 50, }}>
-                        <View style={[meshStyles.optionsBox]}>
-                            <View style={[meshStyles.item]}>
-                                <Text style={[meshStyles.subject]}>Name</Text>
-                                <View style={[styles.textIconContainer]}>
-                                    <Text numberOfLines={1}>{provisionedNode?.name}</Text>
-                                    <TouchableOpacity style={{ marginLeft: 10 }} onPress={onPressEditNodeName} disabled={!isConnected}>
-                                        <Icon name="edit" size={20} style={{ opacity: isConnected ? 1 : 0.2 }} />
-                                    </TouchableOpacity>
-                                </View>
+                    <>
+                        <ScrollView style={{ maxHeight: '100%' }} contentContainerStyle={{ paddingBottom: 10, }}>
+                            <View style={[meshStyles.optionsBox]}>
+                                <View style={[meshStyles.item]}>
+                                    <Text style={[meshStyles.subject]}>Name</Text>
+                                    <View style={[styles.textIconContainer]}>
+                                        <Text numberOfLines={1}>{provisionedNode?.name ?? "Unknown"}</Text>
+                                        <TouchableOpacity style={{ marginLeft: 10 }} onPress={onPressEditNodeName} disabled={!isConnected}>
+                                            <Icon name="edit" size={20} style={{ opacity: isConnected ? 1 : 0.2 }} />
+                                        </TouchableOpacity>
+                                    </View>
 
-                            </View>
-                            <Divider />
-                            <View style={[meshStyles.item]}>
-                                <Text style={[meshStyles.subject]}>Unicast address</Text>
-                                <Text >0x{provisionedNode?.unicastAddress.toString(16).toLocaleUpperCase()}</Text>
-                            </View>
-                            <Divider />
-                            <View style={[meshStyles.item]}>
-                                <Text style={[meshStyles.subject]}>Default TTL</Text>
-                                <View style={{ display: 'flex', flexDirection: 'row' }}>
-                                    <Text numberOfLines={1} allowFontScaling style={{ paddingLeft: 10 }}>{provisionedNode?.ttl}</Text>
-                                    <TouchableOpacity style={{ marginLeft: 10 }} onPress={onPressEditTtl} disabled={!isConnected}>
-                                        <Icon name="edit" size={20} style={{ opacity: isConnected ? 1 : 0.2 }} />
-                                    </TouchableOpacity>
                                 </View>
-                            </View>
-                        </View>
-                        <View style={[meshStyles.optionsBox]}>
-                            <View style={[meshStyles.item]}>
-                                <Text style={[meshStyles.subject]}>Features</Text>
-
-                                <View style={[styles.featureList]}>
-                                    {provisionedNode && (
-                                        provisionedNode.features.map((feature, index) => <Feature feature={feature} key={index} />)
-                                    )}
+                                <Divider />
+                                <View style={[meshStyles.item]}>
+                                    <Text style={[meshStyles.subject]}>Unicast address</Text>
+                                    <Text >0x{provisionedNode?.unicastAddress.toString(16).toLocaleUpperCase()}</Text>
+                                </View>
+                                <Divider />
+                                <View style={[meshStyles.item]}>
+                                    <Text style={[meshStyles.subject]}>UUID</Text>
+                                    <Text style={{ flex: 1, textAlign: 'right' }} numberOfLines={1}>{provisionedNode?.uuid.toLocaleUpperCase()}</Text>
+                                </View>
+                                <Divider />
+                                <View style={[meshStyles.item]}>
+                                    <Text style={[meshStyles.subject]}>Default TTL</Text>
+                                    <View style={{ display: 'flex', flexDirection: 'row' }}>
+                                        <Text numberOfLines={1} allowFontScaling style={{ paddingLeft: 10 }}>{provisionedNode?.ttl}</Text>
+                                        <TouchableOpacity style={{ marginLeft: 10 }} onPress={onPressEditTtl} disabled={!isConnected}>
+                                            <Icon name="edit" size={20} style={{ opacity: isConnected ? 1 : 0.2 }} />
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             </View>
-                        </View>
+                            <View style={[meshStyles.optionsBox]}>
+                                <View style={[meshStyles.item]}>
+                                    <Text style={[meshStyles.subject]}>Features</Text>
 
-                        {/* Keys */}
-                        <View style={[meshStyles.optionsBox]}>
-                            {/* Device Key */}
-                            <View style={[meshStyles.item]}>
-                                <Text style={[meshStyles.subject]}>Device key</Text>
-                                <Text style={{ flex: 1 }} numberOfLines={1} >{provisionedNode?.deviceKey}</Text>
-                            </View>
-                            <Divider />
-
-                            {/* Network Keys */}
-                            <View style={[meshStyles.item]}>
-                                <Text style={[meshStyles.subject]}>Network keys</Text>
-                                <View style={{ display: 'flex', flexDirection: 'row' }}>
-                                    <Text>{provisionedNode?.addedNetworkKeysNum}</Text>
-                                    <TouchableOpacity onPress={onPressEditNetworkKeys} disabled={!isConnected}>
-                                        <Icon name="edit" size={20} style={{ opacity: isConnected ? 1 : 0.2, marginLeft: 10 }} />
-                                    </TouchableOpacity>
+                                    <View style={[styles.featureList]}>
+                                        {provisionedNode && (
+                                            provisionedNode.features.map((feature, index) => <Feature feature={feature} key={index} />)
+                                        )}
+                                    </View>
                                 </View>
-
                             </View>
-                            <Divider />
 
-                            {/* Application Keys */}
-                            <View style={[meshStyles.item]}>
-                                <Text style={[meshStyles.subject]}>Application keys</Text>
-                                <View style={{ display: 'flex', flexDirection: 'row' }}>
-                                    <Text>{provisionedNode?.addedApplicationKeysNum}</Text>
-                                    <TouchableOpacity onPress={onPressEditAppKeys} disabled={!isConnected}>
-                                        <Icon name="edit" size={20} style={{ opacity: isConnected ? 1 : 0.2, marginLeft: 10 }} />
-                                    </TouchableOpacity>
+                            {/* Proxy State */}
+                            {showProxySettingCard() && (
+                                <ProxyStateCard />
+                            )}
+                            {/* Keys */}
+                            <View style={[meshStyles.optionsBox]}>
+                                {/* Device Key */}
+                                <View style={[meshStyles.item]}>
+                                    <Text style={[meshStyles.subject]}>Device key</Text>
+                                    <Text style={{ flex: 1 }} numberOfLines={1} >{provisionedNode?.deviceKey}</Text>
                                 </View>
+                                <Divider />
 
+                                {/* Network Keys */}
+                                <View style={[meshStyles.item]}>
+                                    <Text style={[meshStyles.subject]}>Network keys</Text>
+                                    <View style={{ display: 'flex', flexDirection: 'row' }}>
+                                        <Text>{provisionedNode?.addedNetworkKeysNum}</Text>
+                                        <TouchableOpacity onPress={onPressEditNetworkKeys} disabled={!isConnected}>
+                                            <Icon name="edit" size={20} style={{ opacity: isConnected ? 1 : 0.2, marginLeft: 10 }} />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                </View>
+                                <Divider />
+
+                                {/* Application Keys */}
+                                <View style={[meshStyles.item]}>
+                                    <Text style={[meshStyles.subject]}>Application keys</Text>
+                                    <View style={{ display: 'flex', flexDirection: 'row' }}>
+                                        <Text>{provisionedNode?.addedApplicationKeysNum}</Text>
+                                        <TouchableOpacity onPress={onPressEditAppKeys} disabled={!isConnected}>
+                                            <Icon name="edit" size={20} style={{ opacity: isConnected ? 1 : 0.2, marginLeft: 10 }} />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                </View>
                             </View>
-                        </View>
 
-                        {/* Elements */}
-                        {provisionedNode.elements.map((element, index) => {
-                            let expandedItem = expandedArray.find(e => e.elementName === element.name);
-                            let expand = false;
-                            if (expandedItem === undefined) { return; }
-                            else { expand = expandedItem.expanded }
-                            return (
-                                <DisplayElement key={index} element={element} expand={expand} />
-                            )
-                        })}
+                            {/* Elements */}
+                            {provisionedNode.elements.map((element, index) => {
+                                let expandedItem = expandedArray.find(e => e.elementName === element.name);
+                                let expand = false;
+                                if (expandedItem === undefined) { return; }
+                                else { expand = expandedItem.expanded }
+                                return (
+                                    <DisplayElement key={index} element={element} expand={expand} />
+                                )
+                            })}
+                        </ScrollView>
 
-                        <View style={[styles.row]}>
+                        <View style={[styles.row, styles.actionButtons]}>
                             {QuickNodeSetupMenu()}
                             <TouchableOpacity style={[meshStyles.button, meshStyles.shadow, { marginTop: 0, flexDirection: 'row' }]} onPress={removeNodeFromNetwork}>
                                 <MaterialCommunityIcons name="delete-outline" size={20} color={Colors.primary} />
                                 <Text style={[meshStyles.textButton, { color: Colors.primary, marginLeft: 5, fontWeight: '600' }]}>Remove Node</Text>
                             </TouchableOpacity>
                         </View>
-                    </ScrollView>
+                    </>
                 )}
 
                 {(!provisionedNode || isConnectingState) &&
@@ -434,7 +534,7 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
                 onClickSave={modalData.onClickSave}
                 label={modalData.label}
             />
-        </View >
+        </SafeAreaView >
     );
 };
 
@@ -465,6 +565,22 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flex: 1,
         justifyContent: 'flex-end',
+    },
+    actionButtons: {
+        marginTop: 10,
+        marginBottom: 10
+    },
+    proxyButton: {
+        backgroundColor: 'white',
+        display: 'flex',
+        justifyContent: 'center',
+        alignContent: 'center',
+        borderRadius: 50,
+        width: 30,
+        height: 30,
+        alignSelf: "center",
+        padding: 5,
+        margin: 5
     }
 
 });

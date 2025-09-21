@@ -29,7 +29,7 @@
 */
 
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 class BMGenericOnOffServerDelegate: StoredWithSceneModelDelegate {
     
@@ -140,76 +140,72 @@ class BMGenericOnOffServerDelegate: StoredWithSceneModelDelegate {
     
     // MARK: - Message handlers
     
-    func model(_ model: Model, didReceiveAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address, sentTo destination: MeshAddress) -> MeshMessage {
-        switch request {
-        case let request as GenericOnOffSet:
-            // Ignore a repeated request (with the same TID) from the same source
-            // and sent to the same destination when it was received within 6 seconds.
-            guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
-                break
-            }
-            
-            /// Message execution delay in 5 millisecond steps. By default 0.
-            let delay = TimeInterval(request.delay ?? 0) * 0.005
-            /// The time that an element will take to transition to the target
-            /// state from the present state. If not set, the default transition
-            /// time from Generic Default Transition Time Server model is used.
-            let transitionTime = request.transitionTime
-                .or(defaultTransitionTimeServer.defaultTransitionTime)
-            // Start a new transition.
-            state = BMGenericState<Bool>(transitionFrom: state, to: request.isOn,
-                                       delay: delay,
-                                       duration: transitionTime.interval)
-            
-        case is GenericOnOffGet:
-            break
-            
-        default:
-            fatalError("Not possible")
-        }
-        
-        // Reply with GenericOnOffStatus.
-        if let transition = state.transition, transition.remainingTime > 0 {
-            return GenericOnOffStatus(state.value,
-                                      targetState: transition.targetValue,
-                                      remainingTime: TransitionTime(transition.remainingTime))
-        } else {
-            return GenericOnOffStatus(state.value)
-        }
-    }
+    func model(_ model: NordicMesh.Model, didReceiveAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) throws -> any NordicMesh.MeshResponse {
+          switch request {
+          case let request as GenericOnOffSet:
+              // Ignore a repeated request (with the same TID) from the same source
+              // and sent to the same destination when it was received within 6 seconds.
+              guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
+                  break
+              }
+              
+              /// Message execution delay in 5 millisecond steps. By default 0.
+              let delay = TimeInterval(request.delay ?? 0) * 0.005
+              /// The time that an element will take to transition to the target
+              /// state from the present state. If not set, the default transition
+              /// time from Generic Default Transition Time Server model is used.
+              let transitionTime = request.transitionTime
+                  .or(defaultTransitionTimeServer.defaultTransitionTime)
+              // Start a new transition.
+              state = BMGenericState<Bool>(transitionFrom: state, to: request.isOn,
+                                        delay: delay,
+                                        duration: transitionTime.interval)
+              
+          case is GenericOnOffGet:
+              break
+              
+          default:
+              fatalError("Not possible")
+          }
+          
+          // Reply with GenericOnOffStatus.
+          if let transition = state.transition, transition.remainingTime > 0 {
+              return GenericOnOffStatus(state.value,
+                                        targetState: transition.targetValue,
+                                        remainingTime: TransitionTime(transition.remainingTime))
+          } else {
+              return GenericOnOffStatus(state.value)
+          }
+      }
     
-    func model(_ model: Model, didReceiveUnacknowledgedMessage message: MeshMessage,
-               from source: Address, sentTo destination: MeshAddress) {
-        switch message {
-        case let request as GenericOnOffSetUnacknowledged:
-            // Ignore a repeated request (with the same TID) from the same source
-            // and sent to the same destination when it was received within 6 seconds.
-            guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
-                break
-            }
-            
-            /// Message execution delay in 5 millisecond steps. By default 0.
-            let delay = TimeInterval(request.delay ?? 0) * 0.005
-            /// The time that an element will take to transition to the target
-            /// state from the present state. If not set, the default transition
-            /// time from Generic Default Transition Time Server model is used.
-            let transitionTime = request.transitionTime
-                .or(defaultTransitionTimeServer.defaultTransitionTime)
-            // Start a new transition.
-            state = BMGenericState<Bool>(transitionFrom: state, to: request.isOn,
-                                       delay: delay,
-                                       duration: transitionTime.interval)
-            
-        default:
-            // Not possible.
-            break
-        }
-    }
+    func model(_ model: NordicMesh.Model, didReceiveUnacknowledgedMessage message: any NordicMesh.UnacknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) {
+          switch message {
+          case let request as GenericOnOffSetUnacknowledged:
+              // Ignore a repeated request (with the same TID) from the same source
+              // and sent to the same destination when it was received within 6 seconds.
+              guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
+                  break
+              }
+              
+              /// Message execution delay in 5 millisecond steps. By default 0.
+              let delay = TimeInterval(request.delay ?? 0) * 0.005
+              /// The time that an element will take to transition to the target
+              /// state from the present state. If not set, the default transition
+              /// time from Generic Default Transition Time Server model is used.
+              let transitionTime = request.transitionTime
+                  .or(defaultTransitionTimeServer.defaultTransitionTime)
+              // Start a new transition.
+              state = BMGenericState<Bool>(transitionFrom: state, to: request.isOn,
+                                        delay: delay,
+                                        duration: transitionTime.interval)
+              
+          default:
+              // Not possible.
+              break
+          }
+      }
     
-    func model(_ model: Model, didReceiveResponse response: MeshMessage,
-               toAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address) {
+    func model(_ model: NordicMesh.Model, didReceiveResponse response: any NordicMesh.MeshResponse, toAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address) {
         // Not possible.
     }
     

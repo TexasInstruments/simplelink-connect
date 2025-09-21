@@ -43,6 +43,9 @@ import { RepositoryDetailsProvider } from './src/context/FirmwareRepoContext';
 import { SpecificScreenConfigProvider } from './src/context/SpecificScreenOptionsContext';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { TutorialsProvider } from './src/context/TutorialContext';
+import { ServiceViewProvider } from './src/context/ServiceViewContext';
+import Colors from './src/constants/Colors';
+import { BleRangeProvider } from './src/context/RangeTestContext';
 
 export default function App() {
   const [isLoadingComplete] = useCachedResources();
@@ -53,20 +56,24 @@ export default function App() {
   } else {
     return (
       <SafeAreaProvider>
-        <PaperProvider>
+        <PaperProvider theme={Colors.lightTheme} >
           <CharacteristicViewProvider>
-            <TerminalConfigProvider>
-              <SpecificScreenConfigProvider>
-                <RepositoryDetailsProvider>
-                  <ProfileListProvider>
-                    <TutorialsProvider>
-                      <Navigation colorScheme={colorScheme} />
-                      <StatusBar />
-                    </TutorialsProvider>
-                  </ProfileListProvider>
-                </RepositoryDetailsProvider>
-              </SpecificScreenConfigProvider>
-            </TerminalConfigProvider>
+            <ServiceViewProvider>
+              <TerminalConfigProvider>
+                <SpecificScreenConfigProvider>
+                  <RepositoryDetailsProvider>
+                    <ProfileListProvider>
+                      <TutorialsProvider>
+                        <BleRangeProvider>
+                          <Navigation colorScheme={colorScheme} />
+                          <StatusBar />
+                        </BleRangeProvider>
+                      </TutorialsProvider>
+                    </ProfileListProvider>
+                  </RepositoryDetailsProvider>
+                </SpecificScreenConfigProvider>
+              </TerminalConfigProvider>
+            </ServiceViewProvider>
           </CharacteristicViewProvider>
         </PaperProvider>
       </SafeAreaProvider>

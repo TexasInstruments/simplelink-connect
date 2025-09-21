@@ -58,7 +58,10 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
   const [icon, setIcon] = useState<{
     type: 'svg' | 'font-awesome' | 'font-awesome-5';
     iconName: string;
-  }>();
+  }>({
+    type: 'font-awesome-5',
+    iconName: 'question',
+  });
 
   let characteristicsCount = useMemo(
     () => peripheralInfo?.characteristics?.filter((char) => char.service === service.uuid).length,

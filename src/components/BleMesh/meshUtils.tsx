@@ -93,18 +93,21 @@ export const FIRMWARE_UPDATE_CLIENT = 0x1403;
 export const FIRMWARE_DISTRIBUTION_SERVER = 0x1404;
 export const FIRMWARE_DISTRIBUTION_CLIENT = 0x1405;
 
-export const Feature = ({ feature }: { feature: string }) => {
+export const Feature = ({ feature }: { feature: Feature }) => {
+    if (feature.state == FeatureState.Unsupported) {
+        return
+    }
     return (
-        <View style={[styles.featureAvatar, { backgroundColor: getBackgroundFeature(feature) }]}>
+        <View style={[styles.featureAvatar, { backgroundColor: getBackgroundFeature(feature.name) }]}>
             <Text style={styles.featureText}>
-                {feature}
+                {feature.name}
             </Text>
         </View>
     );
 }
 
-export const getBackgroundFeature = (feature: string) => {
-    switch (feature) {
+export const getBackgroundFeature = (featureName: string) => {
+    switch (featureName) {
         case 'F':
             return '#A500FA'
         case 'N':
@@ -141,7 +144,7 @@ const styles = StyleSheet.create({
 export interface Group {
     name: string,
     address: number,
-    meshUuid: string,
+    expand?: boolean,
 }
 
 export interface ProvisionedNode {
@@ -150,11 +153,24 @@ export interface ProvisionedNode {
     addedNetworkKeysNum: number,
     addedApplicationKeysNum: number,
     numberOfElement: number,
-    features: string[],
+    features: Feature[],
     ttl: number,
     elements: Element[];
     company: string;
     deviceKey: string;
+    uuid: string;
+}
+
+export interface Feature {
+    name: "R" | "F" | "LP" | "P",
+    state: FeatureState
+}
+
+export enum FeatureState {
+    Disabled = 0,
+    Enabled = 1,
+    Unsupported = 2,
+    Unknown = 3
 }
 
 export interface Element {
@@ -167,6 +183,9 @@ export interface Model {
     name: string;
     id: number;
     type: string;
+    isBindingSupported: boolean;
+    isSubscribeSupported: boolean;
+    isPublishSupported: boolean
 }
 
 export interface MeshNode {
@@ -175,7 +194,7 @@ export interface MeshNode {
     unicastAddress: number,
     numberOfElements: number,
     numberOfModels: number,
-    features: string[]
+    features: Feature[]
 }
 
 export interface NetworkKey {
@@ -256,7 +275,17 @@ export const meshStyles = StyleSheet.create({
     button: {
         marginTop: 50,
         alignSelf: 'center',
-        backgroundColor: 'white', // Ensure this contrasts with your shadow
+        backgroundColor: 'white',
+        borderRadius: 50,
+        paddingHorizontal: 15,
+        paddingVertical: 5,
+        display: 'flex',
+        justifyContent: 'center',
+        alignContent: 'center',
+    },
+    modalButton: {
+        alignSelf: 'center',
+        backgroundColor: 'white',
         borderRadius: 50,
         paddingHorizontal: 15,
         paddingVertical: 5,
@@ -268,6 +297,12 @@ export const meshStyles = StyleSheet.create({
         textAlign: 'center',
         color: Colors.blue,
         alignSelf: 'center',
+    },
+    modalTextButton: {
+        textAlign: 'center',
+        color: Colors.blue,
+        alignSelf: 'center',
+        fontSize: 18
     },
     optionsBox: {
         backgroundColor: 'white',

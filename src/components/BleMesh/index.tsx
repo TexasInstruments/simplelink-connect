@@ -8,6 +8,7 @@ import { FAB } from 'react-native-paper';
 import { ApplicationKey, callMeshModuleFunction, Feature, MeshNode, meshStyles } from './meshUtils';
 import { GenericMeshModal } from './GenericMeshModal';
 import { ScrollView } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BleMesh: React.FC = () => {
 
@@ -25,8 +26,12 @@ const BleMesh: React.FC = () => {
     useFocusEffect(
         useCallback(() => {
             let networkListener: EmitterSubscription;
-            const task = InteractionManager.runAfterInteractions(() => {
+            const task = InteractionManager.runAfterInteractions(async () => {
                 networkListener = bleMeshEmitter.addListener('onNetworkLoaded', handleNetworkLoaded);
+
+                // connect to proxy if needed
+                let autoConnect = await AsyncStorage.getItem('@proxyAutoConnect');
+                callMeshModuleFunction('updateAutomaticConnection', autoConnect === 'true');
 
                 if (initialFocus.current) {
                     console.log('focused');
@@ -113,7 +118,7 @@ const BleMesh: React.FC = () => {
                 <View style={[styles.row, { justifyContent: 'space-between' }]}>
                     <View style={{ flex: 1, marginRight: 10 }}>
                         <Text style={styles.nodeName} numberOfLines={2} ellipsizeMode="tail">
-                            {node.name}
+                            {node.name ?? "Unknown"}
                         </Text>
                         <Text style={styles.nodeCompany}>{node.company}</Text>
                     </View>
@@ -147,6 +152,7 @@ const BleMesh: React.FC = () => {
                         style={[styles.button, { width: 40, alignSelf: 'flex-end' }]}
                         onPress={() => navigation.navigate('BleMeshConfigureNode', { unicastAddr: node.unicastAddress, isConnecting: false })}
                         size={'small'}
+                        color='black'
                     />
                 </View>
             </View>

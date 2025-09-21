@@ -22,6 +22,7 @@ import expo.modules.ApplicationLifecycleDispatcher;
 import expo.modules.ReactNativeHostWrapper;
 import com.rnfs.RNFSPackage;
 import com.ti.connectivity.simplelinkconnect.MeshPackage;
+import com.ti.connectivity.simplelinkconnect.DFUPackage;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -43,6 +44,7 @@ public class MainApplication extends Application implements ReactApplication {
           // example:
           // packages.add(new MyReactNativePackage());
           packages.add(new MeshPackage());
+          packages.add(new DFUPackage());
           return packages;
         }
 

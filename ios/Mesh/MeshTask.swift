@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 enum MeshTask {
   case getCompositionData(page: UInt8)
@@ -23,22 +23,24 @@ enum MeshTask {
   case setFriend(enabled: Bool)
   case readNodeIdentityStatus(_ networkKey: NetworkKey)
   case readHeartbeatPublication
-  case setHeartbeatPublication(countLog: UInt8,
-                               periodLog: UInt8,
-                               destination: Address,
-                               ttl: UInt8, networkKey: NetworkKey,
-                               triggerFeatures: NodeFeatures)
+  case setHeartbeatPublication(
+    countLog: UInt8,
+    periodLog: UInt8,
+    destination: Address,
+    ttl: UInt8, networkKey: NetworkKey,
+    triggerFeatures: NodeFeatures)
   case readHeartbeatSubscription
-  case setHeartbeatSubscription(source: Address, destination: Address, periodLog: UInt8)
+  case setHeartbeatSubscription(
+    source: Address, destination: Address, periodLog: UInt8)
   case sendNetworkKey(_ networkKey: NetworkKey)
   case sendApplicationKey(_ applicationKey: ApplicationKey)
   case bind(_ applicationKey: ApplicationKey, to: Model)
   case subscribe(_ model: Model, to: Group)
   case setPublication(_ publish: Publish, to: Model)
-  
+
   var title: String {
     switch self {
-    case .getCompositionData(page: let page):
+    case .getCompositionData(let page):
       return "Get Composition Page \(page)"
     case .getDefaultTtl:
       return "Read default TTL"
@@ -77,17 +79,20 @@ enum MeshTask {
     case .sendApplicationKey(let key):
       return "Add \(key.name)"
     case .bind(let key, to: let model):
-      return "Bind \(key.name) to \((model.name ?? "")!) modal 0x\( String(format: "%04X",model.modelIdentifier))"
+      return
+        "Bind \(key.name) to \((model.name ?? "")!) modal 0x\( String(format: "%04X",model.modelIdentifier))"
     case .subscribe(let model, to: let group):
-      return "Subscribe \((model.name ?? "" )!) modal 0x\( String(format: "%04X",model.modelIdentifier)) to \(group.name)"
+      return
+        "Subscribe \((model.name ?? "" )!) modal 0x\( String(format: "%04X",model.modelIdentifier)) to \(group.name)"
     case .setPublication(_, let model):
-      return "Set Publication to \((model.name ?? "" )!) modal 0x\( String(format: "%04X",model.modelIdentifier))"
+      return
+        "Set Publication to \((model.name ?? "" )!) modal 0x\( String(format: "%04X",model.modelIdentifier))"
     }
   }
-  
+
   var message: AcknowledgedConfigMessage {
     switch self {
-    case .getCompositionData(page: let page):
+    case .getCompositionData(let page):
       return ConfigCompositionDataGet(page: page)
     case .getDefaultTtl:
       return ConfigDefaultTtlGet()
@@ -115,23 +120,22 @@ enum MeshTask {
       return ConfigNodeIdentityGet(networkKey: key)
     case .readHeartbeatPublication:
       return ConfigHeartbeatPublicationGet()
-    case .setHeartbeatPublication(countLog: let countLog,
-                                  periodLog: let periodLog,
-                                  destination: let destination,
-                                  ttl: let ttl,
-                                  networkKey: let networkKey,
-                                  triggerFeatures: let features):
-      return ConfigHeartbeatPublicationSet(startSending: countLog, heartbeatMessagesEvery: periodLog,
-                                           secondsTo: destination,
-                                           usingTtl: ttl, andNetworkKey: networkKey,
-                                           andEnableHeartbeatMessagesTriggeredByChangeOf: features)
-      ?? ConfigHeartbeatPublicationSet()
+    case .setHeartbeatPublication(
+      let countLog, let periodLog, let destination, let ttl, let networkKey,
+      triggerFeatures: let features):
+      return ConfigHeartbeatPublicationSet(
+        startSending: countLog, heartbeatMessagesEvery: periodLog,
+        secondsTo: destination,
+        usingTtl: ttl, andNetworkKey: networkKey,
+        andEnableHeartbeatMessagesTriggeredByChangeOf: features)
+        ?? ConfigHeartbeatPublicationSet()
     case .readHeartbeatSubscription:
       return ConfigHeartbeatSubscriptionGet()
-    case .setHeartbeatSubscription(source: let source, destination: let destination, periodLog: let periodLog):
-      return ConfigHeartbeatSubscriptionSet(startProcessingHeartbeatMessagesFor: periodLog,
-                                            secondsSentFrom: source, to: destination)
-      ?? ConfigHeartbeatSubscriptionSet()
+    case .setHeartbeatSubscription(let source, let destination, let periodLog):
+      return ConfigHeartbeatSubscriptionSet(
+        startProcessingHeartbeatMessagesFor: periodLog,
+        secondsSentFrom: source, to: destination)
+        ?? ConfigHeartbeatSubscriptionSet()
     case .sendNetworkKey(let key):
       return ConfigNetKeyAdd(networkKey: key)
     case .sendApplicationKey(let key):
@@ -142,7 +146,8 @@ enum MeshTask {
       if let message = ConfigModelSubscriptionAdd(group: group, to: model) {
         return message
       } else {
-        return ConfigModelSubscriptionVirtualAddressAdd(group: group, to: model)!
+        return ConfigModelSubscriptionVirtualAddressAdd(
+          group: group, to: model)!
       }
     case .setPublication(let publish, let model):
       if let message = ConfigModelPublicationSet(publish, to: model) {

@@ -17,7 +17,6 @@ export const TI_SIMPLE_PERIPHERAL_SERVICE = {
 
 }
 
-
 export const TI_DATA_STREAM_SERVICE = {
     uuid: 'F000C0C0-0451-4000-B000-000000000000',
 
@@ -25,8 +24,6 @@ export const TI_DATA_STREAM_SERVICE = {
 
     data_out_char: 'F000C0C2-0451-4000-B000-000000000000'
 }
-
-export const SUPPORTED_SPAECIFIC_SCREEN = ["matter light profile", "light sensor service", "wi-fi provisioning over ble", "ti ecg service", "ecg service", "glucose", "continuous glucose monitoring", "health thermometer", "ti terminal", "ti oad", "temp", "humidity", "barometer", "optical", "movement", "simple keys", "battery", "i/o", "control", "battery service", "ti accelerometer service"] as const;
 
 export const CGM_PROFILE = {
     uuid: '181F',

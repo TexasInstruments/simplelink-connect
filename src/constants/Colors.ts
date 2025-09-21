@@ -30,6 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import { DefaultTheme } from "react-native-paper";
+
 const red = '#dd0000';
 const blue = '#007aff'; //Small touches
 const lightBlue = '#b3d1ff'; //Small touches
@@ -69,4 +71,17 @@ export default {
     tabIconSelected: gray,
     borderColor: '#000',
   },
+
+  lightTheme: {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      primary: teal,
+      text: 'black',
+      placeholder: 'black',
+      background: 'white',
+    },
+  }
+
 };
+

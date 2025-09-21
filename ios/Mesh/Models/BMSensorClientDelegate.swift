@@ -1,7 +1,8 @@
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 class BMSensorClientDelegate: ModelDelegate {
+
     let messageTypes: [UInt32 : MeshMessage.Type]
     let isSubscriptionSupported: Bool = true
     
@@ -21,8 +22,7 @@ class BMSensorClientDelegate: ModelDelegate {
         messageTypes = types.toMap()
     }
     
-    func model(_ model: Model, didReceiveAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address, sentTo destination: MeshAddress) throws -> MeshMessage {
+  func model(_ model: NordicMesh.Model, didReceiveAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) throws -> any NordicMesh.MeshResponse {
         switch request {
             // No acknowledged message supported by this Model.
         default:
@@ -30,23 +30,21 @@ class BMSensorClientDelegate: ModelDelegate {
         }
     }
     
-    func model(_ model: Model, didReceiveUnacknowledgedMessage message: MeshMessage,
-               from source: Address, sentTo destination: MeshAddress) {
+  func model(_ model: NordicMesh.Model, didReceiveUnacknowledgedMessage message: any NordicMesh.UnacknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) {
         handle(message, sentFrom: source)
     }
     
-    func model(_ model: Model, didReceiveResponse response: MeshMessage,
-               toAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address) {
+  func model(_ model: NordicMesh.Model, didReceiveResponse response: any NordicMesh.MeshResponse, toAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address) {
         handle(response, sentFrom: source)
     }
+  
     
 }
 
-private extension BMSensorClientDelegate {
-    
-    func handle(_ message: MeshMessage, sentFrom source: Address) {
-        // Ignore.
-    }
-    
+extension BMSensorClientDelegate {
+
+  fileprivate func handle(_ message: MeshMessage, sentFrom source: Address) {
+    // Ignore.
+  }
+
 }

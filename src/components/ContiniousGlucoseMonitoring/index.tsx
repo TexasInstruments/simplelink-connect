@@ -12,7 +12,7 @@ import { OP_CODES_ACCESS_CONTROL, RecordAccessControlDialog } from './RecordAcce
 import { CONTROL_POINT_RESP, OP_CODES_CONTROL_POINT, SpecificOpsControlPointDialog } from './SpecificOpsControlPointDialog';
 import { Buffer } from 'buffer';
 import { Icon } from '@rneui/base';
-import { CustomSnackBar } from './CustomSnackBar';
+import { CustomSnackBar } from '../CustomSnackBar';
 import { LineChart } from 'react-native-charts-wrapper';
 import { AntDesign } from '@expo/vector-icons';
 import { FontAwesome5 } from '@expo/vector-icons';

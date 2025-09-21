@@ -242,19 +242,27 @@ public class PublicationSettingsHelper {
         switch (publicPeriodResolution) {
             case "10 minutes":
                 publicationResolution = RESOLUTION_10_M;
+                publicationSteps = publishPeriodInterval;
                 break;
             case "10 seconds":
                 publicationResolution = RESOLUTION_10_S;
+                publicationSteps = publishPeriodInterval;
                 break;
             case "1 second":
                 publicationResolution = RESOLUTION_1_S;
+                publicationSteps = publishPeriodInterval;
                 break;
             case "100 milliseconds":
                 publicationResolution = RESOLUTION_100_MS;
+                publicationSteps = publishPeriodInterval;
+                break;
+            case "disabled":
+                publicationSteps = 0;
+                break;
             default:
                 publicationResolution = RESOLUTION_100_MS;
+                publicationSteps = publishPeriodInterval;
         }
-        publicationSteps = publishPeriodInterval;
     }
 
     /**

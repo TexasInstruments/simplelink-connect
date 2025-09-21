@@ -1,0 +1,23 @@
+Release 2.1.0 of TI Simplelink Connect (#31)
+This commit consolidates work done for Release 2.1.0 of the TI
+Simplelink Connect iOS and Android application
+
+Changes:
+    1. Scanner:
+        - Firmware over-the-air (OTA) for Zephyr-based Bluetooth device.
+        - Create/remove bonding manually (Android only).
+        - Dedicated view for "Classification Mode" service.
+        - Dedicated view for "Data Acquisition Mode" service.
+        - Dedicated view for "Battery" Service.
+
+    2. BLE Mesh:
+        - Remote provisioning capability (iOS only).
+        - Proxy support.
+        - Node reset functionality directly from the app.
+		- Create, remove, and modify network groups.
+
+    3. Stress tests:
+        - Fixed calculation logic for accurate test results reporting.
+        
+
+Signed-off-by: Texas Instruments

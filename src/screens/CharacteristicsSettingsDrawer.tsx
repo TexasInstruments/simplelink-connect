@@ -30,11 +30,10 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { useCallback, useEffect, useState } from 'react';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { useCallback, useState } from 'react';
 import { Switch, View } from '../components/Themed';
 import { Text } from '../components/Themed';
-import { TextInput as Input, Platform, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { TextInput as Input, KeyboardAvoidingView, Platform, StyleSheet, TextInput, TouchableOpacity, useWindowDimensions } from 'react-native';
 import Separator from '../components/Separator';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { TerminalConfig, useTerminalConfigContext } from '../context/TerminalOptionsContext';
@@ -45,6 +44,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { SpecificScreenConfig, useSpecificScreenConfigContext } from '../context/SpecificScreenOptionsContext';
 import { Dropdown } from 'react-native-element-dropdown';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ScrollView } from 'react-native-gesture-handler';
 
 export const NUMBER_OF_POINTS_OPTIONS = [
   { value: 1000, label: '1000 points' },
@@ -76,6 +76,7 @@ export const MEDIAN_ON_OPTIONS = [
   { value: 80, label: '80 points' },
   { value: 100, label: '100 points' },
 ]
+
 export const MEDIAN_EVERY_OPTIONS = [
   { value: 1, label: '1 point' },
   { value: 2, label: '2 points' },
@@ -100,6 +101,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
   const [showTimestamp, setShowTimestamp] = useState<boolean>(terminalConfig.timestamp);
   const [showMessageLength, setShowMessageLength] = useState<boolean>(terminalConfig.messageLength);
   const [disableLocalEcho, setdisableLocalEcho] = useState<boolean>(terminalConfig.disabledLocalEcho);
+  const [continuousNotifications, setContinuousNotifications] = useState<boolean>(terminalConfig.continuousNotifications);
 
   // Ecg Configuration
   const [pointsNumberToDisplay, setPointsNumberToDisplay] = useState<number>(specificScreenConfig.pointsNumberToDisplay);
@@ -151,9 +153,10 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
       setMedianOn(specificScreenConfig.medianOn);
       setMedianEvery(specificScreenConfig.medianEvery);
       setApplyRespFilter(specificScreenConfig.applyRespFilter);
-    }, [specificScreenConfig])
-  );
 
+    }, [specificScreenConfig])
+
+  );
   // Terminal configuration
   const changeTimestampState = async (value: boolean) => {
 
@@ -162,7 +165,8 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
     let newConfig: TerminalConfig = {
       timestamp: value,
       messageLength: showMessageLength,
-      disabledLocalEcho: disableLocalEcho
+      disabledLocalEcho: disableLocalEcho,
+      continuousNotifications: continuousNotifications
     }
 
     updateTermninalConfigurations(newConfig);
@@ -175,7 +179,20 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
     let newConfig: TerminalConfig = {
       timestamp: showTimestamp,
       messageLength: showMessageLength,
+      continuousNotifications: continuousNotifications,
       disabledLocalEcho: value
+    }
+    updateTermninalConfigurations(newConfig);
+  };
+
+  const changeContinuousNotificationsState = async (value: boolean) => {
+    setContinuousNotifications(value);
+
+    let newConfig: TerminalConfig = {
+      timestamp: showTimestamp,
+      messageLength: showMessageLength,
+      continuousNotifications: value,
+      disabledLocalEcho: disableLocalEcho
     }
     updateTermninalConfigurations(newConfig);
   };
@@ -277,6 +294,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
     navigation.navigate('ConfigRepository');
   }
 
+
   const renderLabel = (type: 'tempUnits' | 'graphPoints' | 'recordDuration' | 'connectionTimeout' | 'scaleLsb' | 'medianEvery' | 'medianOn') => {
 
     switch (type) {
@@ -338,8 +356,11 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <View style={{ paddingTop: 10 }}>
-      <KeyboardAwareScrollView style={{ marginHorizontal: 15 }} >
+    <KeyboardAvoidingView
+      style={{ height: '100%', paddingTop: 10 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={{ flexGrow: 1, marginHorizontal: 15 }}>
         {serviceUUID?.toLocaleLowerCase() === TI_Terminal_uuid && characteristicView === 'specific' && (
           <>
             <Separator text="Terminal Settings" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
@@ -368,6 +389,16 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
                 value={disableLocalEcho}
                 onValueChange={(value) => {
                   changeDisableLocalEchoState(value);
+                }}
+              />
+            </View>
+            <View
+              style={[styles.configContainer,]}>
+              <Text allowFontScaling adjustsFontSizeToFit style={{ fontSize: 16 / fontScale }}>Continuous Notifications</Text>
+              <Switch
+                value={continuousNotifications}
+                onValueChange={(value) => {
+                  changeContinuousNotificationsState(value);
                 }}
               />
             </View>
@@ -525,7 +556,8 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
             <View style={styles.dropdownContainer}>
               {renderLabel('scaleLsb')}
               <TextInput
-                keyboardType='numeric'
+                keyboardType='number-pad'
+                returnKeyType="done"
                 value={scaleLSB}
                 style={[styles.textInput]}
                 onChangeText={(v: any) => {
@@ -589,8 +621,8 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
             <Text style={{ alignSelf: 'center' }}> No settings are available</Text>
           </View>
         )}
-      </KeyboardAwareScrollView >
-    </View >
+      </ScrollView >
+    </KeyboardAvoidingView>
   );
 };
 

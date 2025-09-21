@@ -11,8 +11,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import { ApplicationKey, callMeshModuleFunction, meshStyles } from '../../meshUtils';
-import Colors from '../../../../constants/Colors';
+import { ApplicationKey, callMeshModuleFunction, meshStyles, Model, Element } from '../../meshUtils';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -31,7 +30,7 @@ export interface NetworkKey {
 const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
     const { MeshModule } = NativeModules;
     const bleMeshEmitter = new NativeEventEmitter(MeshModule);
-    const { unicastAddr, elements } = route.params;
+    const { unicastAddr, elements }: { unicastAddr: number, elements: Element[] } = route.params;
 
     const [applicationKeys, setApplicationKeys] = useState<ApplicationKey[]>([]);
     const [selectedApplicationKeyIdx, setSelectedApplicationKeyIdx] = useState<number | null>(null);
@@ -44,7 +43,6 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
 
     useEffect(() => {
         const listener = bleMeshEmitter.addListener('onBindAppKeysDone', handleBindDone);
-
         getApplicationKeys();
         checkConnectionStatus();
 
@@ -84,6 +82,18 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
         await callMeshModuleFunction('bindAppKeyToModels', unicastAddr, selectedApplicationKeyIdx, selectedModels);
     }
 
+    const disabledModels = () => {
+        let disabledModels: Model[] = []
+        elements.map((element) => {
+            element.models.map((model) => {
+                if (!model.isBindingSupported) {
+                    disabledModels.push(model)
+                }
+            })
+        })
+        return disabledModels
+    }
+
     return (
         <SafeAreaView
             style={meshStyles.container} edges={['left', 'right', 'bottom']}
@@ -109,7 +119,7 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
 
                 <View style={{ flexDirection: 'column' }}>
                     <Text style={styles.label}>Select Models To Bind</Text>
-                    <ModelSelectionList elements={elements} disabledModels={[]} selectedModels={selectedModels} setSelectedModels={setSelectedModels} />
+                    <ModelSelectionList elements={elements} disabledModels={disabledModels()} selectedModels={selectedModels} setSelectedModels={setSelectedModels} />
 
                 </View>
             </ScrollView>
@@ -126,8 +136,9 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
 
             ) : (
                 <TouchableOpacity
-                    style={meshStyles.fab}
                     onPress={handleBindModels}
+                    style={[meshStyles.fab, { opacity: selectedModels.length == 0 ? 0.3 : 1 }]}
+                    disabled={selectedModels.length == 0}
                 >
                     <MaterialCommunityIcons
                         name="check-all"
@@ -137,7 +148,7 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
                     />
                     <Text style={[meshStyles.fabText]}>Bind</Text>
                 </TouchableOpacity>)}
-            <StatusesPopup results={results} isVisible={isVisible} setIsVisible={setIsVisible} title={'Binding Completed'} />
+            <StatusesPopup unicastAddr={unicastAddr} results={results} isVisible={isVisible} setIsVisible={setIsVisible} title={'Binding Completed'} />
         </SafeAreaView>
     );
 };

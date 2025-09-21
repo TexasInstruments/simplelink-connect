@@ -19,7 +19,7 @@ export const CharacteristicProvider: React.FC<{ children: ReactNode }> = ({ chil
                 setCharacteristicData(data);
                 setLoading(false);
             } catch (error) {
-                console.error('Error fetching YAML file:', error);
+                console.log('Error fetching YAML file:', error);
                 setLoading(false);
             }
         };

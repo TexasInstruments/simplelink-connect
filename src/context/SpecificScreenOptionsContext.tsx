@@ -9,7 +9,7 @@ export interface SpecificScreenConfig {
   recordDuration: number | 'no limit',
   medianOn: number,
   medianEvery: number,
-  applyRespFilter: boolean
+  applyRespFilter: boolean,
 }
 
 interface SpecificScreenConfigContextProps {
@@ -25,7 +25,7 @@ const initialState: SpecificScreenConfig = {
   recordDuration: 'no limit',
   medianOn: 20,
   medianEvery: 20,
-  applyRespFilter: true
+  applyRespFilter: true,
 }
 
 const SpecificScreensConfigContext = createContext<SpecificScreenConfigContextProps | undefined>(undefined);
@@ -72,7 +72,10 @@ export const SpecificScreenConfigProvider: React.FC<{ children: ReactNode }> = (
         applyRespFilter = 'true';
       }
 
-      let updatedConf: SpecificScreenConfig = { wifiProvisioningConnectionTimeout: Number(connectionTimeout), temperatureSensorScaleLSB: temperatureSensorScaleLSB, tempUnits: tempUnits, pointsNumberToDisplay: Number(pointsNumberToDisplay), recordDuration: (recordDuration === 'no limit' ? recordDuration : Number(recordDuration)), medianEvery: Number(medianEvery), medianOn: Number(medianOn), applyRespFilter: applyRespFilter === 'true' }
+      let updatedConf: SpecificScreenConfig = {
+        wifiProvisioningConnectionTimeout: Number(connectionTimeout), temperatureSensorScaleLSB: temperatureSensorScaleLSB, tempUnits: tempUnits, pointsNumberToDisplay: Number(pointsNumberToDisplay), recordDuration: (recordDuration === 'no limit' ? recordDuration : Number(recordDuration)), medianEvery: Number(medianEvery), medianOn: Number(medianOn), applyRespFilter: applyRespFilter === 'true',
+      }
+      console.log('updatedConf', updatedConf)
       setSpecificScreenConfig(updatedConf)
     };
 

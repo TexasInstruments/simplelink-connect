@@ -28,7 +28,11 @@
 		226FCC0A2981A8F400671080 /* ti.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 226FCC092981A8F300671080 /* ti.ttf */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		505B299C2CA14A8900359C16 /* MeshModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 505B299B2CA14A8900359C16 /* MeshModule.swift */; };
-		505B299E2CA14B3B00359C16 /* MeshModuleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 505B299D2CA14B3B00359C16 /* MeshModuleBridge.m */; };
+		505B299E2CA14B3B00359C16 /* NativeModulesBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 505B299D2CA14B3B00359C16 /* NativeModulesBridge.m */; };
+		506231F02E546FF200AB6483 /* DFUModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 506231EF2E546FF200AB6483 /* DFUModule.swift */; };
+		509F66452E70658A0038D76C /* main.jsbundle in Resources */ = {isa = PBXBuildFile; fileRef = 509F66442E70658A0038D76C /* main.jsbundle */; };
+		50AC56B42E3673500080B3BA /* ModelExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50AC56B32E3673500080B3BA /* ModelExtension.swift */; };
+		50AC56B92E3677B60080B3BA /* UInt16Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50AC56B82E3677B60080B3BA /* UInt16Extension.swift */; };
 		50C8E9DA2CE0B4EE004E00A7 /* CompanyIdentifiers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C8E9D92CE0B4EE004E00A7 /* CompanyIdentifiers.swift */; };
 		50C8E9DF2CE49560004E00A7 /* MeshRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C8E9DE2CE4955F004E00A7 /* MeshRepository.swift */; };
 		50CB78202D2E75B6009EEEF8 /* VendorMessageSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50CB781F2D2E75B6009EEEF8 /* VendorMessageSet.swift */; };
@@ -50,9 +54,9 @@
 		50F3175A2CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50F317592CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift */; };
 		50F3175C2CEF83AC00DDCD4D /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		50FD53DE2CE5FC0200FF61F3 /* BleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50FD53DD2CE5FC0200FF61F3 /* BleManager.swift */; };
-		AA3F935FBD7C0AC991C3D6F3 /* libPods-SimplelinkConnect.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 35D5F6C6CD0C1744D0865003 /* libPods-SimplelinkConnect.a */; };
 		B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		D184B82B9B74DC3FE0F0D795 /* libPods-SimplelinkConnect.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 85C25F24F08E9C15C34207F5 /* libPods-SimplelinkConnect.a */; };
 		F24099C8AD2B49A8B3678E06 /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CF535B777054E49891D465B /* noop-file.swift */; };
 /* End PBXBuildFile section */
 
@@ -81,10 +85,15 @@
 		226FCBF82981995200671080 /* EvilIcons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = EvilIcons.ttf; sourceTree = "<group>"; };
 		226FCBF92981995200671080 /* MaterialIcons.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = MaterialIcons.ttf; sourceTree = "<group>"; };
 		226FCC092981A8F300671080 /* ti.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = ti.ttf; path = ../../../src/assets/fonts/ti.ttf; sourceTree = "<group>"; };
-		35D5F6C6CD0C1744D0865003 /* libPods-SimplelinkConnect.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SimplelinkConnect.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4DF362E59CE5B993E23C5444 /* Pods-SimplelinkConnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimplelinkConnect.release.xcconfig"; path = "Target Support Files/Pods-SimplelinkConnect/Pods-SimplelinkConnect.release.xcconfig"; sourceTree = "<group>"; };
 		505B299B2CA14A8900359C16 /* MeshModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshModule.swift; sourceTree = "<group>"; };
-		505B299D2CA14B3B00359C16 /* MeshModuleBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MeshModuleBridge.m; sourceTree = "<group>"; };
+		505B299D2CA14B3B00359C16 /* NativeModulesBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = NativeModulesBridge.m; sourceTree = "<group>"; };
 		505B299F2CA14D6700359C16 /* MeshModule-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "MeshModule-Bridging-Header.h"; sourceTree = "<group>"; };
+		506231EF2E546FF200AB6483 /* DFUModule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DFUModule.swift; sourceTree = "<group>"; };
+		509F66442E70658A0038D76C /* main.jsbundle */ = {isa = PBXFileReference; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
+		509F66472E71A0C60038D76C /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = SimplelinkConnect/Images.xcassets; sourceTree = "<group>"; };
+		50AC56B32E3673500080B3BA /* ModelExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelExtension.swift; sourceTree = "<group>"; };
+		50AC56B82E3677B60080B3BA /* UInt16Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UInt16Extension.swift; sourceTree = "<group>"; };
 		50C8E9D92CE0B4EE004E00A7 /* CompanyIdentifiers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompanyIdentifiers.swift; sourceTree = "<group>"; };
 		50C8E9DE2CE4955F004E00A7 /* MeshRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshRepository.swift; sourceTree = "<group>"; };
 		50CB781F2D2E75B6009EEEF8 /* VendorMessageSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VendorMessageSet.swift; sourceTree = "<group>"; };
@@ -105,11 +114,11 @@
 		50F317572CEF7E1000DDCD4D /* BMGenericLevelClientDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMGenericLevelClientDelegate.swift; sourceTree = "<group>"; };
 		50F317592CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BMLightLCClientDelegate.swift; sourceTree = "<group>"; };
 		50FD53DD2CE5FC0200FF61F3 /* BleManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BleManager.swift; sourceTree = "<group>"; };
-		654E1F797BEB3A97B3E3934D /* Pods-SimplelinkConnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimplelinkConnect.debug.xcconfig"; path = "Target Support Files/Pods-SimplelinkConnect/Pods-SimplelinkConnect.debug.xcconfig"; sourceTree = "<group>"; };
 		6CF535B777054E49891D465B /* noop-file.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = "noop-file.swift"; path = "SimplelinkConnect/noop-file.swift"; sourceTree = "<group>"; };
+		85C25F24F08E9C15C34207F5 /* libPods-SimplelinkConnect.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-SimplelinkConnect.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = SimplelinkConnect/SplashScreen.storyboard; sourceTree = "<group>"; };
-		AF7E5E3697FC23E8E2B116FA /* Pods-SimplelinkConnect.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimplelinkConnect.release.xcconfig"; path = "Target Support Files/Pods-SimplelinkConnect/Pods-SimplelinkConnect.release.xcconfig"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		D6F4D6FD52CB60C22F94F056 /* Pods-SimplelinkConnect.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SimplelinkConnect.debug.xcconfig"; path = "Target Support Files/Pods-SimplelinkConnect/Pods-SimplelinkConnect.debug.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		FAC715A2D49A985799AEE119 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-SimplelinkConnect/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -119,7 +128,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA3F935FBD7C0AC991C3D6F3 /* libPods-SimplelinkConnect.a in Frameworks */,
+				D184B82B9B74DC3FE0F0D795 /* libPods-SimplelinkConnect.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -172,7 +181,7 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				35D5F6C6CD0C1744D0865003 /* libPods-SimplelinkConnect.a */,
+				85C25F24F08E9C15C34207F5 /* libPods-SimplelinkConnect.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -216,6 +225,8 @@
 				50F317552CEF7C9D00DDCD4D /* BMGenericOnOffClientDelegate.swift */,
 				50F317572CEF7E1000DDCD4D /* BMGenericLevelClientDelegate.swift */,
 				50F317592CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift */,
+				50AC56B32E3673500080B3BA /* ModelExtension.swift */,
+				50AC56B82E3677B60080B3BA /* UInt16Extension.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -230,10 +241,13 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				509F66472E71A0C60038D76C /* Images.xcassets */,
+				509F66442E70658A0038D76C /* main.jsbundle */,
 				50C8E9DB2CE37ADA004E00A7 /* Mesh */,
 				505B299F2CA14D6700359C16 /* MeshModule-Bridging-Header.h */,
-				505B299D2CA14B3B00359C16 /* MeshModuleBridge.m */,
+				505B299D2CA14B3B00359C16 /* NativeModulesBridge.m */,
 				505B299B2CA14A8900359C16 /* MeshModule.swift */,
+				506231EF2E546FF200AB6483 /* DFUModule.swift */,
 				13B07FAE1A68108700A75B9A /* SimplelinkConnect */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -274,8 +288,8 @@
 		D65327D7A22EEC0BE12398D9 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				654E1F797BEB3A97B3E3934D /* Pods-SimplelinkConnect.debug.xcconfig */,
-				AF7E5E3697FC23E8E2B116FA /* Pods-SimplelinkConnect.release.xcconfig */,
+				D6F4D6FD52CB60C22F94F056 /* Pods-SimplelinkConnect.debug.xcconfig */,
+				4DF362E59CE5B993E23C5444 /* Pods-SimplelinkConnect.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -295,13 +309,13 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "SimplelinkConnect" */;
 			buildPhases = (
-				4FAF22ABC29929D97C9F166E /* [CP] Check Pods Manifest.lock */,
+				BCD082D38E263F008EA66477 /* [CP] Check Pods Manifest.lock */,
 				FD10A7F022414F080027D42C /* Start Packager */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
-				AEB072A339CEE707ECCF82B2 /* [CP] Copy Pods Resources */,
+				2640C9B7E4391FCF4BB6F7F5 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -350,6 +364,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				509F66452E70658A0038D76C /* main.jsbundle in Resources */,
 				226FCC042981995200671080 /* FontAwesome5_Regular.ttf in Resources */,
 				226FCBFB2981995200671080 /* Octicons.ttf in Resources */,
 				226FCBFE2981995200671080 /* FontAwesome5_Brands.ttf in Resources */,
@@ -362,7 +378,6 @@
 				226FCC012981995200671080 /* Foundation.ttf in Resources */,
 				226FCBFC2981995200671080 /* Feather.ttf in Resources */,
 				226FCC072981995200671080 /* EvilIcons.ttf in Resources */,
-				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				226FCC052981995200671080 /* FontAwesome.ttf in Resources */,
 				226FCC082981995200671080 /* MaterialIcons.ttf in Resources */,
 				226FCC0A2981A8F400671080 /* ti.ttf in Resources */,
@@ -390,7 +405,41 @@
 			shellPath = /bin/sh;
 			shellScript = "if [[ -f \"$PODS_ROOT/../.xcode.env\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env\"\nfi\nif [[ -f \"$PODS_ROOT/../.xcode.env.local\" ]]; then\n  source \"$PODS_ROOT/../.xcode.env.local\"\nfi\n\n# The project root by default is one level up from the ios directory\nexport PROJECT_ROOT=\"$PROJECT_DIR\"/..\n\nif [[ \"$CONFIGURATION\" = *Debug* ]]; then\n  export SKIP_BUNDLING=1\nfi\n`\"$NODE_BINARY\" --print \"require('path').dirname(require.resolve('react-native/package.json')) + '/scripts/react-native-xcode.sh'\"`\n\n";
 		};
-		4FAF22ABC29929D97C9F166E /* [CP] Check Pods Manifest.lock */ = {
+		2640C9B7E4391FCF4BB6F7F5 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-SimplelinkConnect/Pods-SimplelinkConnect-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/CryptoSwift/CryptoSwift.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RNDeviceInfo/RNDeviceInfoPrivacyInfo.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/AccessibilityResources.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RxCocoa/RxCocoa_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RxRelay/RxRelay_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/RxSwift/RxSwift_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/ZIPFoundation/ZIPFoundation_Privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/nRFMeshProvision/PrivacyInfo.bundle",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/CryptoSwift.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNDeviceInfoPrivacyInfo.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AccessibilityResources.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RxCocoa_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RxRelay_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RxSwift_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ZIPFoundation_Privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/PrivacyInfo.bundle",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SimplelinkConnect/Pods-SimplelinkConnect-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		BCD082D38E263F008EA66477 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -410,34 +459,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		AEB072A339CEE707ECCF82B2 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-SimplelinkConnect/Pods-SimplelinkConnect-resources.sh",
-				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/RNDeviceInfo/RNDeviceInfoPrivacyInfo.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/React-Core/AccessibilityResources.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/RxCocoa/RxCocoa_Privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/RxRelay/RxRelay_Privacy.bundle",
-				"${PODS_CONFIGURATION_BUILD_DIR}/RxSwift/RxSwift_Privacy.bundle",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RNDeviceInfoPrivacyInfo.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AccessibilityResources.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RxCocoa_Privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RxRelay_Privacy.bundle",
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/RxSwift_Privacy.bundle",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-SimplelinkConnect/Pods-SimplelinkConnect-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		FD10A7F022414F080027D42C /* Start Packager */ = {
@@ -477,7 +498,9 @@
 				50F317482CEF74A100DDCD4D /* BMSceneServerDelegate.swift in Sources */,
 				50F317462CEF742100DDCD4D /* BMGenericOnOffServerDelegate.swift in Sources */,
 				B18059E884C0ABDD17F3DC3D /* ExpoModulesProvider.swift in Sources */,
+				506231F02E546FF200AB6483 /* DFUModule.swift in Sources */,
 				50F3175A2CEF7E3B00DDCD4D /* BMLightLCClientDelegate.swift in Sources */,
+				50AC56B42E3673500080B3BA /* ModelExtension.swift in Sources */,
 				50C8E9DF2CE49560004E00A7 /* MeshRepository.swift in Sources */,
 				50F317442CEF739A00DDCD4D /* BMGenericDefaultTransitionTimeServerDelegate.swift in Sources */,
 				50FD53DE2CE5FC0200FF61F3 /* BleManager.swift in Sources */,
@@ -485,13 +508,14 @@
 				50F317522CEF7BBA00DDCD4D /* BMGenericLevelServerDelegate.swift in Sources */,
 				50F317562CEF7C9D00DDCD4D /* BMGenericOnOffClientDelegate.swift in Sources */,
 				50F317502CEF7B8C00DDCD4D /* BMGenericDefaultTransitionTimeClientDelegate.swift in Sources */,
+				50AC56B92E3677B60080B3BA /* UInt16Extension.swift in Sources */,
 				50E2BD352D67573000DE5856 /* MeshTask.swift in Sources */,
 				50F317542CEF7BE300DDCD4D /* BMGenericState.swift in Sources */,
 				50F3173E2CEF6AEF00DDCD4D /* AppDelegate.swift in Sources */,
 				50F3173C2CEF692900DDCD4D /* NetworkConnection.swift in Sources */,
 				505B299C2CA14A8900359C16 /* MeshModule.swift in Sources */,
 				F24099C8AD2B49A8B3678E06 /* noop-file.swift in Sources */,
-				505B299E2CA14B3B00359C16 /* MeshModuleBridge.m in Sources */,
+				505B299E2CA14B3B00359C16 /* NativeModulesBridge.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -500,7 +524,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 654E1F797BEB3A97B3E3934D /* Pods-SimplelinkConnect.debug.xcconfig */;
+			baseConfigurationReference = D6F4D6FD52CB60C22F94F056 /* Pods-SimplelinkConnect.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -583,9 +607,9 @@
 				);
 				INFOPLIST_FILE = SimplelinkConnect/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "SimpleLink™ Connect";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.1.0;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -608,7 +632,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = AF7E5E3697FC23E8E2B116FA /* Pods-SimplelinkConnect.release.xcconfig */;
+			baseConfigurationReference = 4DF362E59CE5B993E23C5444 /* Pods-SimplelinkConnect.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -686,7 +710,7 @@
 				);
 				INFOPLIST_FILE = SimplelinkConnect/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "SimpleLink™ Connect";
-				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MARKETING_VERSION = 6;
 				OTHER_LDFLAGS = (

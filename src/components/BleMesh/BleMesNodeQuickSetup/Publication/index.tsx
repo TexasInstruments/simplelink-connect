@@ -11,7 +11,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
-import { ApplicationKey, callMeshModuleFunction, Group, meshStyles } from '../../meshUtils';
+import { ApplicationKey, callMeshModuleFunction, Element, Group, meshStyles, Model } from '../../meshUtils';
 import Colors from '../../../../constants/Colors';
 import { MaterialCommunityIcons, MaterialIcons, Octicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -46,10 +46,10 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
     const [useExistingGroup, setUseExistingGroup] = useState<boolean>(true);
     const [newGroupName, setNewGroupName] = useState<string>('My Group');
     const [newGroupAddress, setNewGroupAddress] = useState<string>('');
-    const [ttl, setTTL] = useState<number>(0);
-    const [publishPeriodResolution, setPublishPeriodResolution] = useState<'10 minutes' | '10 seconds' | '1 second' | '100 milliseconds'>('1 second');
+    const [ttl, setTTL] = useState<number>(7);
+    const [publishPeriodResolution, setPublishPeriodResolution] = useState<'10 minutes' | '10 seconds' | '1 second' | '100 milliseconds' | 'disabled'>('disabled');
     const [publishPeriodInterval, setPublishPeriodInterval] = useState<number>(0);
-    const [publishRetransmissionCount, setPublishRetransmissionCount] = useState(0);
+    const [publishRetransmissionCount, setPublishRetransmissionCount] = useState<number>(-1);
     const [publishRetransmissionInterval, setPublishRetransmissionInterval] = useState(0);
 
     const navigation = useNavigation();
@@ -135,9 +135,16 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                     return;
                 }
 
-                let newAddress = await callMeshModuleFunction('createNewGroup', newGroupName, parseInt(newGroupAddress, 16)) as number;
-                address = newAddress.toString(16);
-                setSelectedAddress(address);
+                let res = await callMeshModuleFunction('createNewGroup', newGroupName, parseInt(newGroupAddress, 16)) as { success: boolean, address: number, error?: string };
+                if (res.success) {
+                    address = res.address.toString(16);
+                    setSelectedAddress(address);
+                }
+                else {
+                    Alert.alert(res.error || "Error creating new group");
+                    setLoading(false);
+                    return
+                }
             }
             else {
                 if (selectedGroup) {
@@ -148,13 +155,6 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
 
             if (ttl < 0 || ttl > 255) {
                 Alert.alert("Error", "TTL must be between 0 and 255.");
-                setLoading(false);
-
-                return;
-            }
-            // Validate retransmission count (must be between 0-7)
-            if (publishRetransmissionCount < 0 || publishRetransmissionCount > 7) {
-                Alert.alert("Error", "Retransmission Count must be between 0 and 7.");
                 setLoading(false);
 
                 return;
@@ -171,16 +171,23 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                 publishRetransmissionCount,
                 publishRetransmissionInterval,
             )
+
         } catch (err) {
             Alert.alert(err.toString());
         }
     }
 
-    const disabledModels = [
-        0x0000, 0x0001, 0x0004, 0x0005, 0x0006, 0x0007, 0x0008, 0x0009,
-        0x000A, 0x000B, 0x000C, 0x000D, 0x000E, 0x000F, 0x0010, 0x0011,
-        0x0012, 0x0013, 0x0014, 0x0015
-    ]
+    const disabledModels = () => {
+        let disabledModels: Model[] = []
+        elements.map((element: Element) => {
+            element.models.map((model) => {
+                if (!model.isPublishSupported) {
+                    disabledModels.push(model)
+                }
+            })
+        })
+        return disabledModels
+    }
 
     return (
         <SafeAreaView
@@ -280,7 +287,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                     <Dropdown
                         style={[meshStyles.dropdown, { backgroundColor: 'white', borderWidth: 0, marginBottom: 10, borderRadius: 4 }]}
                         placeholderStyle={meshStyles.placeholderStyle}
-                        selectedTextStyle={meshStyles.selectedTextStyle}
+                        selectedTextStyle={[meshStyles.selectedTextStyle]}
                         data={applicationKeys}
                         maxHeight={200}
                         labelField="name"
@@ -292,64 +299,91 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                     {/* TTL */}
                     <TextInput
                         mode='flat'
-                        keyboardType='numeric'
+                        keyboardType='number-pad'
+                        returnKeyType="done"
                         label={'TTL'}
                         style={[styles.textInput, { marginBottom: 10, flex: 1 }]}
                         activeUnderlineColor={Colors.active}
                         value={ttl.toString()}
                         onChangeText={(v) => setTTL(Number(v))}
                         underlineColor={Colors.lightGray}
+                        contentStyle={{ fontWeight: 'bold' }}
                     />
 
                     {/* Publish Period */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, }}>
-                        <TextInput
-                            mode='flat'
-                            keyboardType='numeric'
-                            label={'Publish Period Interval'}
-                            style={[styles.textInput, { marginBottom: 0, flex: 1, marginRight: 10 }]}
-                            activeUnderlineColor={Colors.active}
-                            value={publishPeriodInterval.toString()}
-                            onChangeText={(v) => setPublishPeriodInterval(Number(v))}
-                            activeOutlineColor={Colors.active}
-                            underlineColor={Colors.lightGray}
-                        />
                         <View style={{ flex: 1 }}>
+                            <Text style={styles.dropdownLabel}>Period Resolution</Text>
                             <Dropdown
-                                style={[meshStyles.dropdown, { backgroundColor: 'white', borderWidth: 0, marginBottom: 0, borderRadius: 4 }]}
+                                style={[meshStyles.dropdown, { backgroundColor: 'white', borderWidth: 0, marginBottom: 0, borderRadius: 4, marginRight: 10 }]}
                                 placeholderStyle={meshStyles.placeholderStyle}
-                                selectedTextStyle={meshStyles.selectedTextStyle}
+                                selectedTextStyle={[meshStyles.selectedTextStyle, {
+                                    marginTop: 16,
+                                    marginLeft: 6, fontWeight: 'bold'
+                                }]}
                                 data={[
-                                    { name: '10 minutes' },
-                                    { name: '10 seconds' },
-                                    { name: '1 second' },
-                                    { name: '100 milliseconds' }
+                                    { label: 'disabled', value: 'disabled' },
+                                    { label: '10 minutes', value: '10 minutes' },
+                                    { label: '10 seconds', value: '10 seconds' },
+                                    { label: '1 second', value: '1 second' },
+                                    { label: '100 milliseconds', value: '100 milliseconds' },
                                 ]}
                                 maxHeight={200}
-                                labelField="name"
-                                valueField="name"
+                                labelField="label"
+                                valueField="value"
                                 value={publishPeriodResolution}
-                                onChange={(item) => setPublishPeriodResolution(item.name)}
+                                onChange={(item) => setPublishPeriodResolution(item.value)}
+                            />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <TextInput
+                                mode='flat'
+                                keyboardType='number-pad'
+                                returnKeyType="done"
+                                label={'Period Interval'}
+                                style={[styles.textInput, { marginBottom: 0, flex: 1 }]}
+                                contentStyle={{ fontWeight: 'bold' }}
+                                activeUnderlineColor={Colors.active}
+                                value={publishPeriodInterval.toString()}
+                                onChangeText={(v) => setPublishPeriodInterval(Number(v))}
+                                activeOutlineColor={Colors.active}
+                                underlineColor={Colors.lightGray}
+                                disabled={publishPeriodResolution == 'disabled'}
                             />
                         </View>
                     </View>
                     {/* Publish Retransmission Count and Interval */}
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, }}>
-                        <TextInput
-                            mode='flat'
-                            keyboardType='numeric'
-                            label={'Retransmission Count'}
-                            style={[styles.textInput, { marginBottom: 0, flex: 1, marginRight: 10 }]}
-                            value={publishRetransmissionCount?.toString()}
-                            onChangeText={(v) => setPublishRetransmissionCount(Number(v))}
-                            activeOutlineColor={Colors.active}
-                            underlineColor={Colors.lightGray}
-                            activeUnderlineColor={Colors.active}
-                        />
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.dropdownLabel}>Retransmission Count</Text>
+                            <Dropdown
+                                style={[meshStyles.dropdown, { backgroundColor: 'white', borderWidth: 0, marginBottom: 0, borderRadius: 4, marginRight: 10 }]}
+                                placeholderStyle={meshStyles.placeholderStyle}
+                                selectedTextStyle={[meshStyles.selectedTextStyle, {
+                                    marginTop: 20, marginLeft: 8, fontWeight: 'bold'
+                                }]}
+                                data={[
+                                    { name: 'disabled', value: -1 },
+                                    { name: '1', value: 1 },
+                                    { name: '2', value: 2 },
+                                    { name: '3', value: 3 },
+                                    { name: '4', value: 4 },
+                                    { name: '5', value: 5 },
+                                    { name: '6', value: 6 },
+                                    { name: '7', value: 7 },
+                                ]}
+                                maxHeight={200}
+                                labelField="name"
+                                valueField="value"
+                                value={publishRetransmissionCount}
+                                onChange={(item) => setPublishRetransmissionCount(item.value)}
+                            />
+                        </View>
                         <View style={{ flex: 1 }}>
                             <TextInput
                                 mode='flat'
-                                keyboardType='numeric'
+                                keyboardType='number-pad'
+                                returnKeyType="done"
                                 label={'Interval [ms]'}
                                 style={[styles.textInput, { marginBottom: 0, flex: 1 }]}
                                 value={publishRetransmissionInterval?.toString()}
@@ -357,6 +391,8 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                                 activeOutlineColor={Colors.active}
                                 activeUnderlineColor={Colors.active}
                                 underlineColor={Colors.lightGray}
+                                disabled={publishRetransmissionCount == -1}
+                                contentStyle={{ fontWeight: 'bold' }}
                             />
                         </View>
                     </View>
@@ -364,36 +400,38 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
 
                 <View style={{ flexDirection: 'column' }}>
                     <Text style={styles.label}>Select Models</Text>
-                    <ModelSelectionList elements={elements} disabledModels={disabledModels} selectedModels={selectedModels} setSelectedModels={setSelectedModels} />
+                    <ModelSelectionList elements={elements} disabledModels={disabledModels()} selectedModels={selectedModels} setSelectedModels={setSelectedModels} />
 
                 </View>
             </ScrollView>
 
+            {
+                loading ? (
+                    <TouchableOpacity
+                        style={meshStyles.fab}
+                        disabled
+                    >
+                        <ActivityIndicator size={25} color="white" />
 
-            {loading ? (
-                <TouchableOpacity
-                    style={meshStyles.fab}
-                    disabled
-                >
-                    <ActivityIndicator size={25} color="white" />
+                    </TouchableOpacity>
 
-                </TouchableOpacity>
-
-            ) : (
-                <TouchableOpacity
-                    style={meshStyles.fab}
-                    onPress={handleSetPublicationModels}
-                >
-                    <MaterialCommunityIcons
-                        name="check-all"
-                        size={23}
-                        color="white"
-                        style={{ marginRight: 8 }}
-                    />
-                    <Text style={[meshStyles.fabText]}>Set Publication</Text>
-                </TouchableOpacity>)}
-            <StatusesPopup results={results} isVisible={isVisible} setIsVisible={setIsVisible} title={'Set Publication Completed'} />
-        </SafeAreaView>
+                ) : (
+                    <TouchableOpacity
+                        style={[meshStyles.fab, { opacity: selectedModels.length == 0 ? 0.3 : 1 }]}
+                        disabled={selectedModels.length == 0}
+                        onPress={handleSetPublicationModels}
+                    >
+                        <MaterialCommunityIcons
+                            name="check-all"
+                            size={23}
+                            color="white"
+                            style={{ marginRight: 8 }}
+                        />
+                        <Text style={[meshStyles.fabText]}>Set Publication</Text>
+                    </TouchableOpacity>)
+            }
+            <StatusesPopup unicastAddr={unicastAddr} results={results} isVisible={isVisible} setIsVisible={setIsVisible} title={'Set Publication Completed'} />
+        </SafeAreaView >
     );
 };
 
@@ -409,7 +447,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         marginBottom: 15,
         fontSize: 14,
-        // height: 50,
+        height: 50,
     },
     radioButtonContainer: {
         display: 'flex',
@@ -422,7 +460,19 @@ const styles = StyleSheet.create({
         // backgroundColor: 'white',
         borderColor: 'black',
 
-    }
+    },
+    dropdownLabel: {
+        color: Colors.darkGray,
+        position: 'absolute',
+        // backgroundColor: 'white',
+        left: 8,
+        top: 12,
+        zIndex: 999,
+        marginHorizontal: 5,
+        // marginBottom:3,
+        // paddingHorizontal: 8,
+        fontSize: 12,
+    },
 });
 
 export default BleMeshSetPublicationModelsScreen;

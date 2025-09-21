@@ -67,7 +67,7 @@ const HomeScreen: React.FC = () => {
     const MenuItem = ({ imgPath, subject, navigationPath, navigationParams }: any) => {
         return (
             <View style={[styles.menuItemContainer]}>
-                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate(navigationPath, navigationParams)} disabled={subject == 'About'}>
+                <TouchableOpacity accessibilityLabel="scanner" style={styles.menuItem} onPress={() => navigation.navigate(navigationPath, navigationParams)} >
                     <Image style={[styles.image]} source={imgPath} />
                 </TouchableOpacity >
                 <Text style={styles.subject}>{subject}</Text>
@@ -86,11 +86,11 @@ const HomeScreen: React.FC = () => {
                 </View>
                 <View style={[styles.row, { flex: 1 }]}>
                     <MenuItem imgPath={require('../assets/images/menu_icons/stress_tests.png')} subject={'Stress Tests'} navigationPath='TestParameters' navigationParams={{ testService: null, peripheralId: null, peripheralName: null }} />
-                    <MenuItem imgPath={require('../assets/images/menu_icons/about.png')} subject={'About'} />
+                    <MenuItem imgPath={require('../assets/images/menu_icons/about.png')} subject={'About'} navigationPath='AboutScreen' />
                 </View>
             </View>
             <View style={styles.footer}>
-                <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.0.2</Text>
+                <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.1.0</Text>
                 <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
             </View>
         </View>

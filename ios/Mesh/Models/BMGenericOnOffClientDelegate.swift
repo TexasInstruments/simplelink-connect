@@ -1,5 +1,5 @@
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 class BMGenericOnOffClientDelegate: ModelDelegate {
     
@@ -33,17 +33,17 @@ class BMGenericOnOffClientDelegate: ModelDelegate {
     // MARK: - Message handlers
     
     func model(_ model: Model, didReceiveAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address, sentTo destination: MeshAddress) -> MeshMessage {
+               from source: Address, sentTo destination: MeshAddress) throws -> any NordicMesh.MeshResponse {
         fatalError("Not possible")
     }
     
-    func model(_ model: Model, didReceiveUnacknowledgedMessage message: MeshMessage,
+    func model(_ model: Model, didReceiveUnacknowledgedMessage message: any NordicMesh.UnacknowledgedMeshMessage,
                from source: Address, sentTo destination: MeshAddress) {
         // The status message may be received here if the Generic OnOff Server model
         // has been configured to publish. Ignore this message.
     }
     
-    func model(_ model: Model, didReceiveResponse response: MeshMessage,
+    func model(_ model: Model, didReceiveResponse response: any NordicMesh.MeshResponse,
                toAcknowledgedMessage request: AcknowledgedMeshMessage,
                from source: Address) {
         // Ignore.

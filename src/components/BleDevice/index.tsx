@@ -39,6 +39,7 @@ import DeviceServiceSkeleton from './DeviceServices/DeviceServiceSkeleton';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../types';
 import { getIconByPeripheralInfo } from '../../hooks/uuidToBrand';
+import { useServiceViewContext } from '../../context/ServiceViewContext';
 
 interface BleDeviceProps {
   peripheralId: string;
@@ -58,7 +59,7 @@ const initialState: BleDevicePropsState = {
 const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
   const [state, setState] = useState<BleDevicePropsState>(initialState);
   let navigation = useNavigation<DeviceScreenNavigationProp>();
-
+  const { updatePeripheral } = useServiceViewContext();
   let connectTimeout = useRef<any>(null);
 
   const discover = useCallback(
@@ -82,6 +83,7 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
         deviceState: 'Discovering',
         peripheralInfo: emptyPeripheralInfo,
       }));
+
 
       BleManager.retrieveServices(peripheralId)
         .then((peripheralInfo) => {
@@ -179,11 +181,10 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
           if (isConnected) {
             console.log('BleDevice: Peripheral is connected!');
           } else {
-            if (navigation.canGoBack()) {
-              console.log('Peripheral connection timeout');
-              alert('Peripheral connection timeout');
-              navigation.goBack();
-            }
+            console.log('Peripheral connection timeout');
+            alert('Peripheral connection timeout');
+            clearTimeout(connectTimeout.current);
+            navigation.navigate('Scanner');
           }
         });
       }, 5000);
@@ -228,7 +229,7 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
     }
 
     return () => {
-      console.log('Removing all listenders');
+      console.log('Removing all listeners');
 
       bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
       if (Platform.OS == 'android') {
@@ -245,6 +246,7 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
       console.log('focus: deviceState', state);
 
       console.log('focus: check connected');
+
       BleManager.isPeripheralConnected(props.peripheralId, []).then((isConnected) => {
         if (isConnected) {
           console.log('focus: Peripheral is connected!');
@@ -273,6 +275,12 @@ const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
       };
     }, [props.peripheralId])
   );
+
+  useEffect(() => {
+    if (state.peripheralInfo) {
+      updatePeripheral(state.peripheralInfo)
+    }
+  }, [state])
 
   return (
     <ScrollView style={[styles.container]} contentContainerStyle={styles.scrollViewContainer}>

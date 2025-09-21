@@ -156,7 +156,8 @@ export const RecordAccessControlDialog: React.FC<Props> = ({ visible, hideDialog
                                     }}>Filter Parameter: </Text>
                                     <TextInput
                                         // editable
-                                        keyboardType='numeric'
+                                        keyboardType='number-pad'
+                                        returnKeyType="done"
                                         style={[styles.textInput]}
                                         value={selectedOperand}
                                         onChangeText={text => setSelectedOperand(text)}

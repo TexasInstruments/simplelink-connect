@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity } from '../Themed';
+import { Text, TouchableOpacity } from './Themed';
 import { View } from 'react-native';
 import { Snackbar } from 'react-native-paper';
 import { Icon } from '@rneui/base';
@@ -8,15 +8,16 @@ interface Props {
     close: any;
     success: boolean;
     message: string;
+    duration?: number;
 }
 
-export const CustomSnackBar: React.FC<Props> = ({ isVisible, close, success, message }) => {
+export const CustomSnackBar: React.FC<Props> = ({ isVisible, close, success, message, duration }) => {
 
     return (
         <Snackbar
             visible={isVisible}
             onDismiss={close}
-            duration={5000}
+            duration={duration ? duration : 5000}
             elevation={5}
         >
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

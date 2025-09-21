@@ -39,9 +39,9 @@ export const getIconByPeripheralInfo = (peripheral: any) => {
     }
   }
 
-  if (manufacturerData && manufacturerData.bytes && icon == null) {
+  if (manufacturerData?.bytes?.length >= 2 && icon == null) {
     let bytes = Buffer.from(manufacturerData.bytes);
-    let uuid = bytes.readUInt16LE().toString(16).padStart(4, '0').toUpperCase();
+    let uuid = bytes.readUInt16LE(0).toString(16).padStart(4, '0').toUpperCase();
 
     let brandByBytes = getBrand(uuid);
 

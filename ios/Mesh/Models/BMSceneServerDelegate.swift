@@ -29,7 +29,7 @@
 */
 
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 class BMSceneServerDelegate: SceneServerModelDelegate {
     
@@ -111,8 +111,7 @@ class BMSceneServerDelegate: SceneServerModelDelegate {
     
     // MARK: - Message handlers
     
-    func model(_ model: Model, didReceiveAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address, sentTo destination: MeshAddress) throws -> MeshMessage {
+  func model(_ model: NordicMesh.Model, didReceiveAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) throws -> any NordicMesh.MeshResponse {
         switch request {
         case is SceneRegisterGet:
             // When a Scene Server receives a Scene Register Get message, it shall respond
@@ -161,7 +160,7 @@ class BMSceneServerDelegate: SceneServerModelDelegate {
             if transitionTime.isImmediate {
                 currentScene = request.scene
             } else {
-              let complete = Date(timeIntervalSinceNow: transitionTime.interval + TimeInterval(delay) * 0.005)
+              let complete = Date(timeIntervalSinceNow: (transitionTime.interval ?? 0) + TimeInterval(delay) * 0.005)
                 targetScene = (scene: request.scene, complete: complete)
                 currentScene = .invalidScene
             }
@@ -190,8 +189,7 @@ class BMSceneServerDelegate: SceneServerModelDelegate {
         return SceneStatus(report: currentScene)
     }
     
-    func model(_ model: Model, didReceiveUnacknowledgedMessage message: MeshMessage,
-               from source: Address, sentTo destination: MeshAddress) {
+  func model(_ model: NordicMesh.Model, didReceiveUnacknowledgedMessage message: any NordicMesh.UnacknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) {
         switch message {
         case let request as SceneRecallUnacknowledged:
             // Little validation.
@@ -234,7 +232,7 @@ class BMSceneServerDelegate: SceneServerModelDelegate {
             if transitionTime.isImmediate {
                 currentScene = request.scene
             } else {
-                let complete = Date(timeIntervalSinceNow: transitionTime.interval + TimeInterval(delay) * 0.005)
+              let complete = Date(timeIntervalSinceNow: (transitionTime.interval ?? 0) + TimeInterval(delay) * 0.005)
                 targetScene = (scene: request.scene, complete: complete)
                 currentScene = .invalidScene
             }
@@ -254,8 +252,7 @@ class BMSceneServerDelegate: SceneServerModelDelegate {
         }
     }
     
-    func model(_ model: Model, didReceiveResponse response: MeshMessage,
-               toAcknowledgedMessage request: AcknowledgedMeshMessage, from source: Address) {
+  func model(_ model: NordicMesh.Model, didReceiveResponse response: any NordicMesh.MeshResponse, toAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address){
         // Not possible.
     }
     

@@ -176,7 +176,6 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
             <Text style={[styles.title]}>App Name</Text>
             <Input
               editable={fsContext.filter.app_name.enabled}
-              keyboardType="numbers-and-punctuation"
               value={fsContext.filter.app_name.value}
               style={[styles.input, { flex: 1, marginLeft: 5, opacity: fsContext.filter.app_name.enabled ? 1 : 0.5 }]}
               onChangeText={(e) => inputDispatch(e, 'filter/app_name/set/value')}

@@ -59,6 +59,9 @@ import FontAwesome from "react-native-vector-icons/FontAwesome";
 import RNRestart from 'react-native-restart';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 interface Props extends RootTabScreenProps<'ScanTab'> { }
 
@@ -227,14 +230,16 @@ const BleScanner: React.FC<Props> = () => {
     }
   };
 
-  const handleDisconnectedPeripheral = (
+  const handleDisconnectedPeripheral = async (
     peripheralId: string,
     androidStatus: number,
     iOSDomain: string,
     iOSCode: number
   ) => {
-    console.log('handleDisconnectedPeripheral')
+    console.log('handleDisconnectedPeripheral');
 
+    // wait for peripheral to actually disconnect
+    await wait(2000);
     handleConnectedAndBondedPeripherals();
 
     /* find devices not discovered in this scan */
@@ -621,38 +626,37 @@ const BleScanner: React.FC<Props> = () => {
       <EnablerSection scanEnable={scanEnable} setScanEnable={scanSwitchEnabler} disabled={bleState == 'off'} />
       {/* Connected Devices */}
       {memoConnectedDevices.length > 0 && (
-        <View style={{ maxHeight: '40%' }}>
-          {memoConnectedDevices.length < 10 && (
-            <View >
-              <Separator style={{ backgroundColor: Colors.lightGray, padding: 10 }} text="Connected devices:" textStyles={{ fontWeight: "bold", fontSize: 15 / fontScale }} itemsCount={memoConnectedDevices.length} />
-              <ScrollView >
-                <View style={{ flex: 1 }}>
-                  <FlashList
-                    data={memoConnectedDevices}
-                    ListEmptyComponent={() => null}
-                    renderItem={({ item }) => (
-                      <ScannedDevice
-                        peripheral={item}
-                        requestConnect={() => {
-                          requestConnect(item);
-                        }}
-                        reconnect={() => {
-                          reconnect(item);
-                        }}
-                        disconnect={() => {
-                          disconnectPeripheral(item.id);
-                        }}
-                        toggleAdvertising={toggleAdvertising}
-                      />
-                    )}
-                    estimatedItemSize={200}
+        <View style={{ maxHeight: "40%" }}>
+          <Separator
+            style={{ backgroundColor: Colors.lightGray, padding: 10 }}
+            text="Connected devices:"
+            textStyles={{ fontWeight: "bold", fontSize: 15 / fontScale }}
+            itemsCount={memoConnectedDevices.length}
+          />
+          <ScrollView>
+            <View style={{ flex: 1 }}>
+              <FlashList
+                ListEmptyComponent={() => null}
+                data={memoConnectedDevices}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <ScannedDevice
+                    peripheral={item}
+                    requestConnect={() => requestConnect(item)}
+                    reconnect={() => reconnect(item)}
+                    disconnect={() => disconnectPeripheral(item.id)}
+                    toggleAdvertising={toggleAdvertising}
                   />
-                </View>
-              </ScrollView>
+                )}
+                estimatedItemSize={200}
+                showsVerticalScrollIndicator={false}
+
+              />
             </View>
-          )}
+          </ScrollView>
         </View>
       )}
+
 
       {/* Available Devices */}
       {

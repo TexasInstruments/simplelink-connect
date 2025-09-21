@@ -690,7 +690,7 @@ const makeStyles = (fontScale: number) => StyleSheet.create({
         borderColor: Colors.blue,
         height: 40,
         flex: 1,
-        width: 150,
+        width: 120,
         marginLeft: -30,
         marginRight: -30,
     },

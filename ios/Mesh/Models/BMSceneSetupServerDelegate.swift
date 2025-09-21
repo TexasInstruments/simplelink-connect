@@ -1,7 +1,8 @@
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 class BMSceneSetupServerDelegate: ModelDelegate {
+
     /// Maximum size of the Scene Register.
     private static let maxScenes = 16
     
@@ -25,8 +26,7 @@ class BMSceneSetupServerDelegate: ModelDelegate {
     
     // MARK: - Message handlers
     
-    func model(_ model: Model, didReceiveAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address, sentTo destination: MeshAddress) throws -> MeshMessage {
+  func model(_ model: NordicMesh.Model, didReceiveAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) throws -> any NordicMesh.MeshResponse {
         switch request {
         case let request as SceneStore:
             // Little validation.
@@ -73,8 +73,7 @@ class BMSceneSetupServerDelegate: ModelDelegate {
         return SceneRegisterStatus(report: currentScene, and: storedScenes)
     }
     
-    func model(_ model: Model, didReceiveUnacknowledgedMessage message: MeshMessage,
-               from source: Address, sentTo destination: MeshAddress) {
+  func model(_ model: NordicMesh.Model, didReceiveUnacknowledgedMessage message: any NordicMesh.UnacknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) {
         switch message {
         case let request as SceneStoreUnacknowledged:
             // Little validation.
@@ -114,9 +113,7 @@ class BMSceneSetupServerDelegate: ModelDelegate {
         }
     }
     
-    func model(_ model: Model, didReceiveResponse response: MeshMessage,
-               toAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address) {
+  func model(_ model: NordicMesh.Model, didReceiveResponse response: any NordicMesh.MeshResponse, toAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address) {
         // Not possible.
     }
     

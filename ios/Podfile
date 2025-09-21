@@ -5,7 +5,7 @@ require File.join(File.dirname(`node --print "require.resolve('@react-native-com
 require 'json'
 podfile_properties = JSON.parse(File.read(File.join(__dir__, 'Podfile.properties.json'))) rescue {}
 
-platform :ios, podfile_properties['ios.deploymentTarget'] || '12.0'
+platform :ios, podfile_properties['ios.deploymentTarget'] || '13.0'
 install! 'cocoapods',
   :deterministic_uuids => false
 
@@ -26,9 +26,10 @@ target 'SimplelinkConnect' do
     :app_path => "#{Dir.pwd}/.."
   )
 
-  pod 'nRFMeshProvision'
+  pod 'nRFMeshProvision', '4.3.0' 
   pod 'RxSwift'
   pod 'RxCocoa'
+  pod 'iOSMcuManagerLibrary', '1.9.4'
   
   # Uncomment to opt-in to using Flipper
   # Note that if you have use_frameworks! enabled, Flipper will not work

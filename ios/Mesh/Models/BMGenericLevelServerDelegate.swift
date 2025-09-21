@@ -1,8 +1,8 @@
 import Foundation
-import nRFMeshProvision
+import NordicMesh
 
 class BMGenericLevelServerDelegate: StoredWithSceneModelDelegate {
-    
+
     /// The Generic Default Transition Time Server model, which this model depends on.
     let defaultTransitionTimeServer: BMGenericDefaultTransitionTimeServerDelegate
     
@@ -114,168 +114,167 @@ class BMGenericLevelServerDelegate: StoredWithSceneModelDelegate {
     
     // MARK: - Message handlers
     
-    func model(_ model: Model, didReceiveAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address, sentTo destination: MeshAddress) -> MeshMessage {
-        switch request {
-        case let request as GenericLevelSet:
-            // Ignore a repeated request (with the same TID) from the same source
-            // and sent to the same destination when it was received within 6 seconds.
-            guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
-                break
-            }
-            
-            /// Message execution delay in 5 millisecond steps. By default 0.
-            let delay = TimeInterval(request.delay ?? 0) * 0.005
-            /// The time that an element will take to transition to the target
-            /// state from the present state. If not set, the default transition
-            /// time from Generic Default Transition Time Server model is used.
-            let transitionTime = request.transitionTime
-                .or(defaultTransitionTimeServer.defaultTransitionTime)
-            // Start a new transition.
-            state = BMGenericState<Int16>(transitionFrom: state, to: request.level,
-                                        delay: delay,
-                                        duration: transitionTime.interval)
-
-        case let request as GenericDeltaSet:
-            let targetLevel = Int16(truncatingIfNeeded: Int32(state.value) + request.delta)
-            
-            /// A flag indicating whether the message is sent as a continuation
-            /// (using the same transaction) as the last one.
-            let continuation = transactionHelper.isTransactionContinuation(request, from: source, to: destination)
-            /// Message execution delay in 5 millisecond steps. By default 0.
-            let delay = TimeInterval(request.delay ?? 0) * 0.005
-            /// The time that an element will take to transition to the target
-            /// state from the present state. If not set, the default transition
-            /// time from Generic Default Transition Time Server model is used.
-            let transitionTime = request.transitionTime
-                .or(defaultTransitionTimeServer.defaultTransitionTime)
-            // Is the same transaction already in progress?
-            if continuation, let transition = state.transition, transition.remainingTime > 0 {
-                // Continue the same transition.
-                state = BMGenericState<Int16>(continueTransitionFrom: state, to: targetLevel,
-                                            delay: delay,
-                                            duration: transitionTime.interval)
-            } else {
-                // Start a new transition.
-                state = BMGenericState<Int16>(transitionFrom: state, to: targetLevel,
-                                            delay: delay,
-                                            duration: transitionTime.interval)
-            }
-            
-        case let request as GenericMoveSet:
-            // Ignore a repeated request (with the same TID) from the same source
-            // and sent to the same destination when it was received within 6 seconds.
-            guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
-                break
-            }
-            
-            /// Message execution delay in 5 millisecond steps. By default 0.
-            let delay = TimeInterval(request.delay ?? 0) * 0.005
-            /// The time that an element will take to transition to the target
-            /// state from the present state. If not set, the default transition
-            /// time from Generic Default Transition Time Server model is used.
-            let transitionTime = request.transitionTime
-                .or(defaultTransitionTimeServer.defaultTransitionTime)
-            // Start a new transition.
-            state = BMGenericState<Int16>(animateFrom: state, to: request.deltaLevel,
-                                        delay: delay,
-                                        duration: transitionTime.interval)
-            
-        case is GenericLevelGet:
-            break
-            
-        default:
-            fatalError("Not possible")
-        }
-
-        // Reply with GenericLevelStatus.
-        if let transition = state.transition, transition.remainingTime > 0 {
-            return GenericLevelStatus(level: state.value,
-                                      targetLevel: transition.targetValue,
-                                      remainingTime: TransitionTime(transition.remainingTime))
-        } else {
-            return GenericLevelStatus(level: state.value)
-        }
-    }
-    
-    func model(_ model: Model, didReceiveUnacknowledgedMessage message: MeshMessage,
-               from source: Address, sentTo destination: MeshAddress) {
-        switch message {
-        case let request as GenericLevelSetUnacknowledged:
-            // Ignore a repeated request (with the same TID) from the same source
-            // and sent to the same destination when it was received within 6 seconds.
-            guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
-                break
-            }
-            
-            /// Message execution delay in 5 millisecond steps. By default 0.
-            let delay = TimeInterval(request.delay ?? 0) * 0.005
-            /// The time that an element will take to transition to the target
-            /// state from the present state. If not set, the default transition
-            /// time from Generic Default Transition Time Server model is used.
-            let transitionTime = request.transitionTime
-                .or(defaultTransitionTimeServer.defaultTransitionTime)
-            // Start a new transition.
-            state = BMGenericState<Int16>(transitionFrom: state, to: request.level,
-                                        delay: delay,
-                                        duration: transitionTime.interval)
-
-        case let request as GenericDeltaSetUnacknowledged:
-            let targetLevel = Int16(truncatingIfNeeded: Int32(state.value) + request.delta)
-            
-            /// A flag indicating whether the message is sent as a continuation
-            /// (using the same transaction) as the last one.
-            let continuation = transactionHelper.isTransactionContinuation(request, from: source, to: destination)
-            /// Message execution delay in 5 millisecond steps. By default 0.
-            let delay = TimeInterval(request.delay ?? 0) * 0.005
-            /// The time that an element will take to transition to the target
-            /// state from the present state. If not set, the default transition
-            /// time from Generic Default Transition Time Server model is used.
-            let transitionTime = request.transitionTime
-                .or(defaultTransitionTimeServer.defaultTransitionTime)
-            // Is the same transaction already in progress?
-            if continuation, let transition = state.transition, transition.remainingTime > 0 {
-                // Continue the same transition.
-                state = BMGenericState<Int16>(continueTransitionFrom: state, to: targetLevel,
-                                            delay: delay,
-                                            duration: transitionTime.interval)
-            } else {
-                // Start a new transition.
-                state = BMGenericState<Int16>(transitionFrom: state, to: targetLevel,
-                                            delay: delay,
-                                            duration: transitionTime.interval)
-            }
+      func model(_ model: NordicMesh.Model, didReceiveAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress) throws -> any NordicMesh.MeshResponse {
+            switch request {
+            case let request as GenericLevelSet:
+                // Ignore a repeated request (with the same TID) from the same source
+                // and sent to the same destination when it was received within 6 seconds.
+                guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
+                    break
+                }
                 
-        case let request as GenericMoveSetUnacknowledged:
-            // Ignore a repeated request (with the same TID) from the same source
-            // and sent to the same destination when it was received within 6 seconds.
-            guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
+                /// Message execution delay in 5 millisecond steps. By default 0.
+                let delay = TimeInterval(request.delay ?? 0) * 0.005
+                /// The time that an element will take to transition to the target
+                /// state from the present state. If not set, the default transition
+                /// time from Generic Default Transition Time Server model is used.
+                let transitionTime = request.transitionTime
+                    .or(defaultTransitionTimeServer.defaultTransitionTime)
+                // Start a new transition.
+                state = BMGenericState<Int16>(transitionFrom: state, to: request.level,
+                                            delay: delay,
+                                            duration: transitionTime.interval)
+
+            case let request as GenericDeltaSet:
+                let targetLevel = Int16(truncatingIfNeeded: Int32(state.value) + request.delta)
+                
+                /// A flag indicating whether the message is sent as a continuation
+                /// (using the same transaction) as the last one.
+                let continuation = transactionHelper.isTransactionContinuation(request, from: source, to: destination)
+                /// Message execution delay in 5 millisecond steps. By default 0.
+                let delay = TimeInterval(request.delay ?? 0) * 0.005
+                /// The time that an element will take to transition to the target
+                /// state from the present state. If not set, the default transition
+                /// time from Generic Default Transition Time Server model is used.
+                let transitionTime = request.transitionTime
+                    .or(defaultTransitionTimeServer.defaultTransitionTime)
+                // Is the same transaction already in progress?
+                if continuation, let transition = state.transition, transition.remainingTime > 0 {
+                    // Continue the same transition.
+                    state = BMGenericState<Int16>(continueTransitionFrom: state, to: targetLevel,
+                                                delay: delay,
+                                                duration: transitionTime.interval)
+                } else {
+                    // Start a new transition.
+                    state = BMGenericState<Int16>(transitionFrom: state, to: targetLevel,
+                                                delay: delay,
+                                                duration: transitionTime.interval)
+                }
+                
+            case let request as GenericMoveSet:
+                // Ignore a repeated request (with the same TID) from the same source
+                // and sent to the same destination when it was received within 6 seconds.
+                guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
+                    break
+                }
+                
+                /// Message execution delay in 5 millisecond steps. By default 0.
+                let delay = TimeInterval(request.delay ?? 0) * 0.005
+                /// The time that an element will take to transition to the target
+                /// state from the present state. If not set, the default transition
+                /// time from Generic Default Transition Time Server model is used.
+                let transitionTime = request.transitionTime
+                    .or(defaultTransitionTimeServer.defaultTransitionTime)
+                // Start a new transition.
+                state = BMGenericState<Int16>(animateFrom: state, to: request.deltaLevel,
+                                            delay: delay,
+                                            duration: transitionTime.interval)
+                
+            case is GenericLevelGet:
+                break
+                
+            default:
+                fatalError("Not possible")
+            }
+
+            // Reply with GenericLevelStatus.
+            if let transition = state.transition, transition.remainingTime > 0 {
+                return GenericLevelStatus(level: state.value,
+                                          targetLevel: transition.targetValue,
+                                          remainingTime: TransitionTime(transition.remainingTime))
+            } else {
+                return GenericLevelStatus(level: state.value)
+            }
+        }
+        
+      func model(_ model: NordicMesh.Model, didReceiveUnacknowledgedMessage message: any NordicMesh.UnacknowledgedMeshMessage, from source: NordicMesh.Address, sentTo destination: NordicMesh.MeshAddress){
+            switch message {
+            case let request as GenericLevelSetUnacknowledged:
+                // Ignore a repeated request (with the same TID) from the same source
+                // and sent to the same destination when it was received within 6 seconds.
+                guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
+                    break
+                }
+                
+                /// Message execution delay in 5 millisecond steps. By default 0.
+                let delay = TimeInterval(request.delay ?? 0) * 0.005
+                /// The time that an element will take to transition to the target
+                /// state from the present state. If not set, the default transition
+                /// time from Generic Default Transition Time Server model is used.
+                let transitionTime = request.transitionTime
+                    .or(defaultTransitionTimeServer.defaultTransitionTime)
+                // Start a new transition.
+                state = BMGenericState<Int16>(transitionFrom: state, to: request.level,
+                                            delay: delay,
+                                            duration: transitionTime.interval)
+
+            case let request as GenericDeltaSetUnacknowledged:
+                let targetLevel = Int16(truncatingIfNeeded: Int32(state.value) + request.delta)
+                
+                /// A flag indicating whether the message is sent as a continuation
+                /// (using the same transaction) as the last one.
+                let continuation = transactionHelper.isTransactionContinuation(request, from: source, to: destination)
+                /// Message execution delay in 5 millisecond steps. By default 0.
+                let delay = TimeInterval(request.delay ?? 0) * 0.005
+                /// The time that an element will take to transition to the target
+                /// state from the present state. If not set, the default transition
+                /// time from Generic Default Transition Time Server model is used.
+                let transitionTime = request.transitionTime
+                    .or(defaultTransitionTimeServer.defaultTransitionTime)
+                // Is the same transaction already in progress?
+                if continuation, let transition = state.transition, transition.remainingTime > 0 {
+                    // Continue the same transition.
+                    state = BMGenericState<Int16>(continueTransitionFrom: state, to: targetLevel,
+                                                delay: delay,
+                                                duration: transitionTime.interval)
+                } else {
+                    // Start a new transition.
+                    state = BMGenericState<Int16>(transitionFrom: state, to: targetLevel,
+                                                delay: delay,
+                                                duration: transitionTime.interval)
+                }
+                    
+            case let request as GenericMoveSetUnacknowledged:
+                // Ignore a repeated request (with the same TID) from the same source
+                // and sent to the same destination when it was received within 6 seconds.
+                guard transactionHelper.isNewTransaction(request, from: source, to: destination) else {
+                    break
+                }
+                
+                /// Message execution delay in 5 millisecond steps. By default 0.
+                let delay = TimeInterval(request.delay ?? 0) * 0.005
+                /// The time that an element will take to transition to the target
+                /// state from the present state. If not set, the default transition
+                /// time from Generic Default Transition Time Server model is used.
+                let transitionTime = request.transitionTime
+                    .or(defaultTransitionTimeServer.defaultTransitionTime)
+                // Start a new transition.
+                state = BMGenericState<Int16>(animateFrom: state, to: request.deltaLevel,
+                                            delay: delay,
+                                            duration: transitionTime.interval)
+                
+            default:
+                // Not possible.
                 break
             }
-            
-            /// Message execution delay in 5 millisecond steps. By default 0.
-            let delay = TimeInterval(request.delay ?? 0) * 0.005
-            /// The time that an element will take to transition to the target
-            /// state from the present state. If not set, the default transition
-            /// time from Generic Default Transition Time Server model is used.
-            let transitionTime = request.transitionTime
-                .or(defaultTransitionTimeServer.defaultTransitionTime)
-            // Start a new transition.
-            state = BMGenericState<Int16>(animateFrom: state, to: request.deltaLevel,
-                                        delay: delay,
-                                        duration: transitionTime.interval)
-            
-        default:
-            // Not possible.
-            break
         }
-    }
+        
+      func model(_ model: NordicMesh.Model, didReceiveResponse response: any NordicMesh.MeshResponse, toAcknowledgedMessage request: any NordicMesh.AcknowledgedMeshMessage, from source: NordicMesh.Address){
+            // Not possible.
+        }
+
     
-    func model(_ model: Model, didReceiveResponse response: MeshMessage,
-               toAcknowledgedMessage request: AcknowledgedMeshMessage,
-               from source: Address) {
-        // Not possible.
-    }
+  
     
     /// Sets a model state observer.
     ///

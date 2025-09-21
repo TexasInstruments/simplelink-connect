@@ -2,7 +2,15 @@ package com.ti.connectivity.simplelinkconnect;
 
 import static com.ti.simplelinkconnect.mesh.MeshModuleEvents.NODE_CONNECTED;
 import static com.ti.simplelinkconnect.mesh.MeshRepository.bytesToHexString;
+import static com.ti.simplelinkconnect.mesh.Utils.supportsModelBinding;
+import static com.ti.simplelinkconnect.mesh.Utils.supportsModelPublication;
+import static com.ti.simplelinkconnect.mesh.Utils.supportsModelSubscriptions;
 
+import static no.nordicsemi.android.mesh.models.SigModelParser.CONFIGURATION_CLIENT;
+import static no.nordicsemi.android.mesh.models.SigModelParser.CONFIGURATION_SERVER;
+
+import android.graphics.ColorSpace;
+import android.net.Network;
 import android.os.Build;
 import android.util.Log;
 
@@ -23,6 +31,7 @@ import com.ti.simplelinkconnect.mesh.MeshModuleEvents;
 import com.ti.simplelinkconnect.mesh.MeshRepository;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,12 +47,15 @@ import no.nordicsemi.android.mesh.MeshManagerApi;
 import no.nordicsemi.android.mesh.MeshNetwork;
 import no.nordicsemi.android.mesh.NetworkKey;
 import no.nordicsemi.android.mesh.Provisioner;
+import no.nordicsemi.android.mesh.models.ConfigurationClientModel;
 import no.nordicsemi.android.mesh.models.SigModel;
 import no.nordicsemi.android.mesh.models.VendorModel;
 import no.nordicsemi.android.mesh.provisionerstates.UnprovisionedMeshNode;
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyAdd;
 import no.nordicsemi.android.mesh.transport.ConfigAppKeyDelete;
 import no.nordicsemi.android.mesh.transport.ConfigDefaultTtlSet;
+import no.nordicsemi.android.mesh.transport.ConfigGattProxyGet;
+import no.nordicsemi.android.mesh.transport.ConfigGattProxySet;
 import no.nordicsemi.android.mesh.transport.ConfigModelAppBind;
 import no.nordicsemi.android.mesh.transport.ConfigModelAppUnbind;
 import no.nordicsemi.android.mesh.transport.ConfigModelPublicationGet;
@@ -53,6 +65,7 @@ import no.nordicsemi.android.mesh.transport.ConfigModelSubscriptionDelete;
 import no.nordicsemi.android.mesh.transport.ConfigModelSubscriptionVirtualAddressAdd;
 import no.nordicsemi.android.mesh.transport.ConfigNetKeyAdd;
 import no.nordicsemi.android.mesh.transport.ConfigNetKeyDelete;
+import no.nordicsemi.android.mesh.transport.ConfigNodeReset;
 import no.nordicsemi.android.mesh.transport.ConfigSigModelSubscriptionGet;
 import no.nordicsemi.android.mesh.transport.ConfigVendorModelSubscriptionGet;
 import no.nordicsemi.android.mesh.transport.Element;
@@ -215,20 +228,7 @@ public class MeshModule extends ReactContextBaseJavaModule {
                     nodeMap.putInt("unicastAddress", node.getUnicastAddress());
                     nodeMap.putString("deviceKey", bytesToHexString(node.getDeviceKey()));
 
-                    WritableArray features = new WritableNativeArray();
-                    Features f = node.getNodeFeatures();
-                    if (f.isFriendFeatureSupported()) {
-                        features.pushString("F");
-                    }
-                    if (f.isProxyFeatureSupported()) {
-                        features.pushString("P");
-                    }
-                    if (f.isLowPowerFeatureSupported()) {
-                        features.pushString("LP");
-                    }
-                    if (f.isRelayFeatureSupported()) {
-                        features.pushString("R");
-                    }
+                    WritableArray features = getNodeFeatures(node);
 
                     nodeMap.putArray("features", features);
                     nodeMap.putString("company", CompanyIdentifiers.getCompanyName(node.getCompanyIdentifier().shortValue()));
@@ -265,24 +265,13 @@ public class MeshModule extends ReactContextBaseJavaModule {
             MeshNetwork net = meshRepository.getMeshNetworkLiveData().getMeshNetwork();
             ProvisionedMeshNode node = net.getNode(unicastAddress);
             WritableMap nodeMap = new WritableNativeMap();
+            nodeMap.putString("uuid", node.getUuid());
             nodeMap.putString("name", node.getNodeName());
             nodeMap.putInt("unicastAddress", node.getUnicastAddress());
             nodeMap.putString("deviceKey", bytesToHexString(node.getDeviceKey()));
 
-            WritableArray features = new WritableNativeArray();
-            Features f = node.getNodeFeatures();
-            if (f.isFriendFeatureSupported()) {
-                features.pushString("F");
-            }
-            if (f.isProxyFeatureSupported()) {
-                features.pushString("P");
-            }
-            if (f.isLowPowerFeatureSupported()) {
-                features.pushString("LP");
-            }
-            if (f.isRelayFeatureSupported()) {
-                features.pushString("R");
-            }
+            WritableArray features = getNodeFeatures(node);
+
             nodeMap.putArray("features", features);
             nodeMap.putString("company", CompanyIdentifiers.getCompanyName(node.getCompanyIdentifier().shortValue()));
             nodeMap.putInt("ttl", node.getTtl());
@@ -318,6 +307,9 @@ public class MeshModule extends ReactContextBaseJavaModule {
                     else if (entry.getValue() instanceof VendorModel) {
                         modelItem.putString("type", ((VendorModel) entry.getValue()).getCompanyName());
                     }
+                    modelItem.putBoolean("isBindingSupported", supportsModelBinding(m));
+                    modelItem.putBoolean("isSubscribeSupported", supportsModelSubscriptions(m));
+                    modelItem.putBoolean("isPublishSupported", supportsModelPublication(m));
                     modelsArray.pushMap(modelItem);
                 }
 
@@ -339,7 +331,34 @@ public class MeshModule extends ReactContextBaseJavaModule {
         }
     }
 
+    public WritableArray getNodeFeatures(ProvisionedMeshNode node){
+        WritableArray features = new WritableNativeArray();
+        Features f = node.getNodeFeatures();
 
+        WritableMap friendMap = new WritableNativeMap();
+        friendMap.putString("name", "F");
+        friendMap.putInt("state", f.getFriend());
+
+        WritableMap proxyMap = new WritableNativeMap();
+        proxyMap.putString("name", "P");
+        proxyMap.putInt("state", f.getProxy());
+
+        WritableMap lowPowerMap = new WritableNativeMap();
+        lowPowerMap.putString("name", "LP");
+        lowPowerMap.putInt("state", f.getLowPower());
+
+        WritableMap relayMap = new WritableNativeMap();
+        relayMap.putString("name", "R");
+        relayMap.putInt("state", f.getRelay());
+
+
+        features.pushMap(friendMap);
+        features.pushMap(proxyMap);
+        features.pushMap(lowPowerMap);
+        features.pushMap(relayMap);
+
+        return features;
+    }
     public boolean isNetKeyAddedToNode(ProvisionedMeshNode node, final int keyIndex) {
         if (node != null) {
             return MeshParserUtils.isNodeKeyExists(node.getAddedNetKeys(), keyIndex);
@@ -958,7 +977,7 @@ public class MeshModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void selectProvisionedNodeToConnect(String nodeId, int unicastAddress, Promise promise) {
+    public void selectProvisionedNodeToConnect(String nodeId, int unicastAddress, String identifier, Promise promise) {
         ExtendedBluetoothDevice chosenDevice = null;
         String deviceName = "";
         String deviceAddress = "";
@@ -1083,6 +1102,16 @@ public class MeshModule extends ReactContextBaseJavaModule {
 
     }
 
+    /* Publication */
+    @ReactMethod
+    public void setPublicationToModelList(int unicastAddress, String groupAddress, ReadableArray models,
+                                          int appKeyIndex, int publishTtl, int publishPeriodInterval, String publishPeriodResolution,
+                                          int retransmitCount, int retransmitInterval,
+                                          Promise promise) {
+        meshRepository.setPublicationSettingsToModelList(unicastAddress, groupAddress, models, appKeyIndex, publishTtl, publishPeriodInterval, publishPeriodResolution, retransmitCount, retransmitInterval);
+        promise.resolve("success");
+    }
+
     @ReactMethod
     public void getPublicationSettings(int unicastAddress, Promise promise) {
         final ConfigModelPublicationGet publicationSet = new ConfigModelPublicationGet(meshRepository.getSelectedElement().getValue().getElementAddress(), meshRepository.getSelectedModel().getValue().getModelId());
@@ -1154,6 +1183,15 @@ public class MeshModule extends ReactContextBaseJavaModule {
         }
 
     }
+
+
+    /* Subscribe */
+    @ReactMethod
+    public void subscribeModels(int unicastAddress, String groupAddress, ReadableArray models, Promise promise) {
+        meshRepository.subscribeToModels(unicastAddress, groupAddress, models);
+        promise.resolve("success");
+    }
+
 
     @ReactMethod
     public void getSubscriptions(int unicastAddress, Promise promise) {
@@ -1233,6 +1271,7 @@ public class MeshModule extends ReactContextBaseJavaModule {
         }
     }
 
+    /* Groups */
     @ReactMethod
     public void getGroups(Promise promise) {
         List<Group> groups = meshRepository.getMeshNetworkLiveData().getMeshNetwork().getGroups();
@@ -1241,7 +1280,6 @@ public class MeshModule extends ReactContextBaseJavaModule {
         for (Group g : groups) {
             WritableMap groupMap = new WritableNativeMap();
             groupMap.putString("name", g.getName());
-            groupMap.putString("meshUuid", g.getMeshUuid());
             groupMap.putInt("address", g.getAddress());
 
             groupsList.pushMap(groupMap);
@@ -1249,6 +1287,21 @@ public class MeshModule extends ReactContextBaseJavaModule {
 
         promise.resolve(groupsList);
     }
+
+    @ReactMethod
+    public void editGroupName(int groupAddress, String groupName, Promise promise) {
+        MeshNetwork network = meshRepository.getMeshNetworkLiveData().getMeshNetwork();
+        Group group = network.getGroup(groupAddress);
+        if (group != null){
+            group.setName(groupName);
+            network.updateGroup(group);
+            promise.resolve("success");
+        }
+        else {
+            promise.reject("Group not found");
+        }
+    }
+
 
     @ReactMethod
     public void subscribeToNewGroup(int unicastAddress, String groupName, int groupAddress, Promise promise) {
@@ -1264,16 +1317,40 @@ public class MeshModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void removeGroup(int groupAddress, Promise promise) {
+        try {
+            MeshNetwork network = meshRepository.getMeshNetworkLiveData().getMeshNetwork();
+            Group group = network.getGroup(groupAddress);
+            if(group != null){
+                meshRepository.getMeshNetworkLiveData().getMeshNetwork().removeGroup(group);
+                promise.resolve("success");
+            }
+            else {
+                promise.reject("Group not found");
+            }
+        } catch (Exception exception) {
+            promise.reject(exception);
+        }
+    }
+
+    @ReactMethod
     public void createNewGroup(String groupName, int groupAddress, Promise promise) {
         Provisioner provisioner = meshRepository.getMeshNetworkLiveData().getProvisioner();
         try {
             Group group = Objects.requireNonNull(meshManagerApi.getMeshNetwork()).createGroup(provisioner, groupAddress, groupName);
             meshRepository.getMeshNetworkLiveData().getMeshNetwork().addGroup(group);
-
-            promise.resolve(group.getAddress());
-        } catch (Exception exception) {
-            promise.reject(exception);
+            WritableMap map = new WritableNativeMap();
+            map.putBoolean("success", true);
+            map.putInt("address", group.getAddress());
+            promise.resolve(map);
         }
+        catch (Exception exception) {
+                WritableMap map = new WritableNativeMap();
+                map.putBoolean("success", false);
+                map.putInt("address", -1); // dummy value
+                map.putString("error", exception.getLocalizedMessage());
+                promise.resolve(map);
+            }
     }
 
     @ReactMethod
@@ -1307,6 +1384,7 @@ public class MeshModule extends ReactContextBaseJavaModule {
         }
     }
 
+    /* General */
     @ReactMethod
     public void sendSensorGet(final int unicastAddr, Promise promise) {
         final Element element = meshRepository.getSelectedElement().getValue();
@@ -1348,8 +1426,9 @@ public class MeshModule extends ReactContextBaseJavaModule {
             }
         }
         promise.resolve("success");
-
     }
+
+    /*  Proxy Filter */
 
     @ReactMethod
     public void getProxyStatus(Promise promise) {
@@ -1407,26 +1486,14 @@ public class MeshModule extends ReactContextBaseJavaModule {
         promise.resolve("success");
     }
 
+    /* Application Keys */
     @ReactMethod
     public void bindAppKeyToModels(int unicastAddress, int appKeyIndex, ReadableArray models, Promise promise) {
         meshRepository.bindAppKeyToModels(unicastAddress, appKeyIndex, models);
         promise.resolve("success");
     }
 
-    @ReactMethod
-    public void subscribeModels(int unicastAddress, String groupAddress, ReadableArray models, Promise promise) {
-        meshRepository.subscribeToModels(unicastAddress, groupAddress, models);
-        promise.resolve("success");
-    }
-
-    @ReactMethod
-    public void setPublicationToModelList(int unicastAddress, String groupAddress, ReadableArray models,
-                                          int appKeyIndex, int publishTtl, int publishPeriodInterval, String publishPeriodResolution,
-                                          int retransmitCount, int retransmitInterval,
-                                          Promise promise) {
-        meshRepository.setPublicationSettingsToModelList(unicastAddress, groupAddress, models, appKeyIndex, publishTtl, publishPeriodInterval, publishPeriodResolution, retransmitCount, retransmitInterval);
-        promise.resolve("success");
-    }
+    /* Provisioners */
 
     @ReactMethod
     public void getProvisioners(Promise promise) {
@@ -1480,6 +1547,40 @@ public class MeshModule extends ReactContextBaseJavaModule {
             List<AllocatedSceneRange> allocatedSceneRanges = this.meshRepository.convertSenceRangesArrayToList(ranges);
             String res = this.meshRepository.editProvisionerSceneRanges(provisionerUnicastAddress, allocatedSceneRanges);
             promise.resolve(res);
+        } catch (Exception e) {
+            promise.resolve(e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void resetNode(final int nodeUnicastAddr, Promise promise) {
+        MeshNetwork net = meshRepository.getMeshNetworkLiveData().getMeshNetwork();
+        ProvisionedMeshNode node = net.getNode(nodeUnicastAddr);
+        if (node != null) {
+            final ConfigNodeReset configNodeReset = new ConfigNodeReset();
+            meshRepository.getMeshManagerApi().createMeshPdu(node.getUnicastAddress(), configNodeReset);
+        }
+        promise.resolve("success");
+    }
+    
+    @ReactMethod
+    public void readProxyState(int provisionerUnicastAddress,  Promise promise) {
+        try {
+            ConfigGattProxyGet meshMessage = new ConfigGattProxyGet();
+            meshRepository.getMeshManagerApi().createMeshPdu(provisionerUnicastAddress, meshMessage);
+            promise.resolve("success");
+        } catch (Exception e) {
+            promise.resolve(e.getMessage());
+        }
+    }
+
+    @ReactMethod
+    public void toggleProxyState(int provisionerUnicastAddress,int state,  Promise promise) {
+        try {
+            Log.i("toggleProxyState", String.valueOf(state));
+            ConfigGattProxySet meshMessage = new ConfigGattProxySet(state);
+            meshRepository.getMeshManagerApi().createMeshPdu(provisionerUnicastAddress, meshMessage);
+            promise.resolve("success");
         } catch (Exception e) {
             promise.resolve(e.getMessage());
         }

@@ -45,17 +45,23 @@ import { useCharacteristicViewContext } from '../context/CharactristicViewContex
 import GlucoseProfile from '../components/GlucoseProfile';
 import WifiProvisioningOverBLEScreen from '../components/WifiProvisioningOverBle';
 import MatterLight from '../components/MatterLight';
-import { SUPPORTED_SPAECIFIC_SCREEN } from '../constants/uuids';
 import ECG from '../components/ECG';
+import BatteryLevelService from '../components/BatteryLevelService';
+import BLERangeTestConfig from '../components/BLERangeTestConfig';
+import BLERangeStatics from '../components/BLERangeStatics';
+import ClassificationModeServiceScreen from '../components/ClassificationModeService';
+import DataAcquisitionServiceScreen from '../components/DataAcquisitionService';
+import ZephyrDFUModal from '../components/Zephyr/ZephyrDFUModal';
 
 interface Props extends RootStackScreenProps<'Characteristics'> { }
+
+export const SUPPORTED_SPECIFIC_SCREEN = ["sub-1 range test config", "sub-1 range statistics", "battery level", "classification mode", "data acquisition mode", "matter light profile", "light sensor service", "wi-fi provisioning over ble", "ti ecg service", "ecg service", "glucose", "continuous glucose monitoring", "health thermometer", "ti terminal", "ti oad", "temp", "humidity", "barometer", "optical", "movement", "simple keys", "battery", "i/o", "control", "battery service", "ti accelerometer service", , "zephyr mcu manager service"] as const;
 
 const CharacteristicScreen: React.FC<Props> = ({ route }) => {
   let peripheralInfo = route.params.peripheralInfo!;
   let serviceUuid = route.params.serviceUuid!;
   let serviceName = route.params.serviceName!;
-  console.log('peripheralInfo: ', peripheralInfo.characteristics);
-  console.log('serviceUuid: ', serviceUuid);
+
   const [screenSpecific, setScreenSpecific] = useState<keyof RootStackParamList | null>(null);
   const { characteristicView, updateService, updatePeripheralInfo } = useCharacteristicViewContext();
 
@@ -88,7 +94,7 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
   }, [serviceUuid]);
 
   let isServiceSupportSensor = () => {
-    return SUPPORTED_SPAECIFIC_SCREEN.find(sensor => serviceName.toLowerCase().includes(sensor))
+    return SUPPORTED_SPECIFIC_SCREEN.find(sensor => serviceName.toLowerCase().includes(sensor))
   }
 
   const SpecificScreen = () => {
@@ -97,13 +103,16 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
       case 'FwUpdateServiceModel':
         return <FWUpdate_Modal peripheralId={peripheralInfo.id} />
 
+      case 'ZephyrDFUServiceModel':
+        return <ZephyrDFUModal peripheralId={peripheralInfo.id} />
+
       case 'TerminalServiceModel':
         return <TerminalServiceModel peripheralId={peripheralInfo.id} />
 
       case 'CgmServiceModel':
         return <CGM peripheralId={peripheralInfo.id} />
 
-      case 'HealthTermometerServiceModel':
+      case 'HealthThermometerServiceModel':
         return <HealthThermometer peripheralId={peripheralInfo.id} />
 
       case 'SensorTagModel':
@@ -124,6 +133,21 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
 
       case 'EcgServiceModel':
         return <ECG peripheralId={peripheralInfo.id} />
+
+      case 'BatteryService':
+        return <BatteryLevelService peripheralId={peripheralInfo.id} />
+
+      case 'BLERangeTestConfig':
+        return <BLERangeTestConfig peripheralId={peripheralInfo.id} />
+
+      case 'BLERangeStatics':
+        return <BLERangeStatics peripheralId={peripheralInfo.id} />
+
+      case 'ClassificationServiceModel':
+        return <ClassificationModeServiceScreen peripheralId={peripheralInfo.id} />
+
+      case 'DataAcquisitionServiceModel':
+        return <DataAcquisitionServiceScreen peripheralId={peripheralInfo.id} />
     }
   }
 

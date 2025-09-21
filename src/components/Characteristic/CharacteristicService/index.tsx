@@ -38,7 +38,8 @@ import {
   Switch,
   TextInputSubmitEditingEventData,
   StyleSheet,
-  InteractionManager
+  InteractionManager,
+  Alert
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Text } from '../../Themed';
@@ -211,31 +212,22 @@ const CharacteristicService: React.FC<Props> = ({
   useEffect(() => {
     if (Object.values(char.properties).indexOf('Notify') > -1) {
       if (notificationSwitch) {
-        console.log('enabling notifications');
         // To enable BleManagerDidUpdateValueForCharacteristic listener
         BleManager.startNotification(peripheralId, serviceUuid, char.characteristic);
       } else {
-        console.log('disabling notifications');
         BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
       }
-    } else {
-      console.log('Notify not supported by this characteristic');
     }
   }, [notificationSwitch, selectedFormat]);
 
   useEffect(() => {
-    console.log('indication:', indicationsSwitch)
     if (Object.values(char.properties).indexOf('Indicate') > -1) {
       if (indicationsSwitch) {
-        console.log('enabling indications');
         // To enable BleManagerDidUpdateValueForCharacteristic listener
         BleManager.startNotification(peripheralId, serviceUuid, char.characteristic);
       } else {
-        console.log('disabling indications');
         BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
       }
-    } else {
-      console.log('Indications not supported by this characteristic');
     }
   }, [indicationsSwitch, selectedFormat]);
 
@@ -333,6 +325,7 @@ const CharacteristicService: React.FC<Props> = ({
         .catch((error) => {
           // Failure code
           console.log('write error: ', error);
+          Alert.alert('Write Failed', error)
         });
     },
     [writeWithResponseSwitch, selectedFormat]

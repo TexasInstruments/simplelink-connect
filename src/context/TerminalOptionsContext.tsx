@@ -5,6 +5,7 @@ export interface TerminalConfig {
   timestamp: boolean,
   messageLength: boolean,
   disabledLocalEcho: boolean,
+  continuousNotifications: boolean,
 }
 
 interface TerminalConfigContextProps {
@@ -16,6 +17,7 @@ const initialState: TerminalConfig = {
   timestamp: true,
   messageLength: false,
   disabledLocalEcho: false,
+  continuousNotifications: false,
 }
 
 const TerminalConfigContext = createContext<TerminalConfigContextProps | undefined>(undefined);
@@ -40,8 +42,12 @@ export const TerminalConfigProvider: React.FC<{ children: ReactNode }> = ({ chil
       if (!disabledLocalEcho) {
         disabledLocalEcho = false;
       }
+      let continuousNotifications = await AsyncStorage.getItem('@continuousNotifications');
+      if (!disabledLocalEcho) {
+        continuousNotifications = false;
+      }
       console.log({ timestamp: timestamp === 'true', messageLength: messageLength === 'true', disabledLocalEcho: disabledLocalEcho === 'true' })
-      setTerminalConfig({ timestamp: timestamp === 'true', messageLength: messageLength === 'true', disabledLocalEcho: disabledLocalEcho === 'true' })
+      setTerminalConfig({ timestamp: timestamp === 'true', messageLength: messageLength === 'true', disabledLocalEcho: disabledLocalEcho === 'true', continuousNotifications: continuousNotifications === 'true' })
     };
 
     initiate();
@@ -55,6 +61,7 @@ export const TerminalConfigProvider: React.FC<{ children: ReactNode }> = ({ chil
     await AsyncStorage.setItem('@showTimestamp', JSON.stringify(configurations.timestamp));
     await AsyncStorage.setItem('@showMessageLength', JSON.stringify(configurations.messageLength));
     await AsyncStorage.setItem('@disableLocalEcho', JSON.stringify(configurations.disabledLocalEcho));
+    await AsyncStorage.setItem('@continuousNotifications', JSON.stringify(configurations.continuousNotifications));
     console.log("terminal config updated with", configurations)
 
   }

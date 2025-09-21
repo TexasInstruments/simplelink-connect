@@ -17,10 +17,10 @@ const TerminalRenderItem: React.FC<RenderItemProps> = ({ message, date, received
 
   const getMessage = () => {
     if (received) {
-      return <AnsiComponent key={date} textStyle={{ color: '#03DAC5', flexWrap: 'wrap', flex: 1 }} ansi={message} />
+      return <AnsiComponent textStyle={{ color: '#03DAC5', flexWrap: 'wrap', flex: 1 }} ansi={message} />
     }
     else {
-      return <AnsiComponent key={date} textStyle={{ color: 'white', flexWrap: 'wrap', flex: 1 }} ansi={message} />
+      return <AnsiComponent textStyle={{ color: 'white', flexWrap: 'wrap', flex: 1 }} ansi={message} />
     }
   }
 
@@ -34,11 +34,14 @@ const TerminalRenderItem: React.FC<RenderItemProps> = ({ message, date, received
         display: 'flex',
         flexDirection: 'row',
         backgroundColor: 'black',
+        flex: 1
       }}
     >
-      {config.timestamp && date && <Text style={{ color: received ? '#03DAC5' : 'white', paddingRight: 5 }}>{date}</Text>}
-      {config.messageLength && length && <Text style={{ color: received ? '#03DAC5' : 'white', paddingRight: 5 }}>[{length}]</Text>}
-      {getMessage()}
+      {config.timestamp && date && <Text style={{ color: received ? '#03DAC5' : 'white', paddingRight: 5, flexWrap: 'wrap' }}>{date}</Text>}
+      {config.messageLength && length && <Text style={{ color: received ? '#03DAC5' : 'white', paddingRight: 5, flexWrap: 'wrap' }}>[{length}]</Text>}
+      <View style={{ flex: 1, backgroundColor: 'black' }}>
+        {getMessage()}
+      </View>
     </View>
   );
 };
