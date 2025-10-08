@@ -1,5 +1,5 @@
 import { Text, TouchableOpacity } from '../../Themed';
-import { StyleSheet, NativeModules, View, NativeEventEmitter, InteractionManager, Alert, SafeAreaView } from 'react-native';
+import { StyleSheet, NativeModules, View, NativeEventEmitter, InteractionManager, Alert } from 'react-native';
 import Colors from '../../../constants/Colors';
 import { useCallback, useEffect, useRef, useState, } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -16,6 +16,7 @@ import { AddAppKeyModal } from './AddAppKey';
 import { Skeleton } from '@rneui/themed';
 import LinearGradient from 'react-native-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Props extends BleMeshNodeConfigScreenProps { };
 
@@ -371,7 +372,7 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['left', 'right', 'bottom']}>
             {/* Header */}
             <View style={[meshStyles.infoContainer, { backgroundColor: Colors.lightGray }]}>
                 <View style={[meshStyles.deviceInfoIconContainer]}>

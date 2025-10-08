@@ -2,7 +2,7 @@
   "expo": {
     "name": "SimpleLink™ Connect",
     "slug": "SimplelinkConnect",
-    "version": "2.1.0",
+    "version": "2.1.1",
     "orientation": "portrait",
     "icon": "./src/assets/images/icon.png",
     "scheme": "myapp",

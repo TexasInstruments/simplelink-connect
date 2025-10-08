@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, NativeEventEmitter, NativeModules, Platform, SafeAreaView, StyleSheet } from 'react-native';
+import { Alert, KeyboardAvoidingView, NativeEventEmitter, NativeModules, Platform, StyleSheet } from 'react-native';
 import { Text, TouchableOpacity, View } from '../../Themed';
 import { callMeshModuleFunction, meshStyles, Model, SENSOR_SERVER } from '../meshUtils';
 import Colors from '../../../constants/Colors';
@@ -16,6 +16,7 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { SubscriptionModal } from './SubscriptionModal';
 import { SensorServer } from './SensorServer';
 import { VendorModel } from './VendorModel';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Props extends BleMeshNodeModelScreenProps { };
 
@@ -187,7 +188,7 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
     }
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: Colors.lightGray }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: Colors.lightGray }} edges={['left', 'right', 'bottom']}>
             <View style={styles.container}>
                 {/* Header */}
                 <View style={[meshStyles.infoContainer, { backgroundColor: Colors.lightGray }]}>

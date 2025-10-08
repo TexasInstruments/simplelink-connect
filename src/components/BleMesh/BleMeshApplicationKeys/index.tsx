@@ -9,6 +9,7 @@ import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { GenericMeshModal, GenericModalData } from '../GenericMeshModal';
 import { AddAppKeyDialog } from './AddAppKeyDialog';
 import { ApplicationKey, callMeshModuleFunction, meshStyles } from '../meshUtils';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const BleMeshApplicationKeys: React.FC = () => {
 
@@ -153,7 +154,7 @@ const BleMeshApplicationKeys: React.FC = () => {
     };
 
     return (
-        <KeyboardAvoidingView style={meshStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <SafeAreaView style={meshStyles.container} edges={['left', 'right', 'bottom']}>
             <Text style={meshStyles.title}>Application Keys</Text>
             {appKeys.length === 0 && <Text style={{ marginTop: 10 }}>No application key available</Text>}
             <ScrollView>
@@ -187,7 +188,7 @@ const BleMeshApplicationKeys: React.FC = () => {
                 appKeys={appKeys}
                 setAppKeys={setAppKeys} />
 
-        </KeyboardAvoidingView>
+        </SafeAreaView>
     );
 
 };

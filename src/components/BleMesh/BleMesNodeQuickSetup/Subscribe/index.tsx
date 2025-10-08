@@ -115,15 +115,22 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
                 }
 
                 const parsedAddress = parseInt(newGroupAddress, 16);
-                if (isNaN(parsedAddress) || parsedAddress < 0xC000 || parsedAddress > 0xFEFF) {
-                    alert("Invalid group address! Must be within 0xC000 - 0xFEFF.");
+                if (isNaN(parsedAddress)) {
+                    alert("Invalid group address! ");
                     setLoading(false);
                     return;
                 }
 
-                let newAddress = await callMeshModuleFunction('createNewGroup', newGroupName, parseInt(newGroupAddress, 16)) as number;
-                address = newAddress.toString(16);
-                setSelectedAddress(address);
+                let res = await callMeshModuleFunction('createNewGroup', newGroupName, parseInt(newGroupAddress, 16)) as { success: boolean, address: number, error?: string };
+                if (res.success) {
+                    address = res.address.toString(16);
+                    setSelectedAddress(address);
+                }
+                else {
+                    Alert.alert("Error creating new group!", res.error || "");
+                    setLoading(false);
+                    return
+                }
             }
             else {
                 if (selectedGroup) {

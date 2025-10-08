@@ -127,7 +127,7 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
         <View style={styles.footer}>
-          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.1.0</Text>
+          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.1.1</Text>
           <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
         </View>
       </KeyboardAwareScrollView>

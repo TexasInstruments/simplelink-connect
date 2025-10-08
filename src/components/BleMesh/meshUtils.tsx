@@ -400,7 +400,7 @@ export const meshStyles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        bottom: 40,
+        bottom: 60,
         right: 20,
         backgroundColor: Colors.blue,
         paddingVertical: 12,

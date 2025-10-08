@@ -1,4 +1,4 @@
-Release 2.1.0 of TI Simplelink Connect (#31)
+Release 2.1.1 of TI Simplelink Connect (#31)
 This commit consolidates work done for Release 2.1.0 of the TI
 Simplelink Connect iOS and Android application
 
@@ -15,6 +15,7 @@ Changes:
         - Proxy support.
         - Node reset functionality directly from the app.
 		- Create, remove, and modify network groups.
+        - Minor fixes.
 
     3. Stress tests:
         - Fixed calculation logic for accurate test results reporting.

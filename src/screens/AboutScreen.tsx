@@ -38,7 +38,7 @@ const AboutScreen: React.FC = () => {
             </ScrollView>
 
             <View style={styles.footer}>
-                <Text style={styles.versionText}>Version: 2.1.0</Text>
+                <Text style={styles.versionText}>Version: 2.1.1</Text>
                 <View style={styles.sourceRow}>
                     <Text style={styles.versionText}>Source Code:</Text>
                     <Text
