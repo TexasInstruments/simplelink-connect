@@ -33,11 +33,11 @@
 import { View, StyleSheet } from 'react-native';
 import { Text } from '../../../components/Themed';
 import React from 'react';
-import BleManager, { PeripheralInfo, Service } from 'react-native-ble-manager';
+import { PeripheralInfo, Service } from 'react-native-ble-manager';
 import { useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../../types';
 import { TouchableOpacity } from '../../../components/Themed';
-import { Icon } from '@rneui/themed';
+import { FontAwesome5, EvilIcons, FontAwesome } from '@expo/vector-icons';
 import Layout from '../../../constants/Layout';
 import { useState } from 'react';
 import { useEffect } from 'react';
@@ -85,15 +85,22 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
 
     checkIfServiceNameAvailable();
   }, []);
-
+  const IconComponent = () => {
+    if (icon.type === 'svg') {
+      return <TIcon name={icon.iconName} />;
+    } else if (icon.type === 'font-awesome-5') {
+      return <FontAwesome5 name={icon.iconName} size={24} color="black" />;
+    } else if (icon.type === 'font-awesome') {
+      return <FontAwesome name={icon.iconName} size={24} color="black" />;
+    } else if (icon.type === 'evilicon') {
+      return <EvilIcons name={icon.iconName} size={24} color="black" />;
+    }
+    return null;
+  };
   return (
     <View style={[styles.container]}>
       <View style={{ width: 35 }}>
-        {icon?.type === 'svg' ? (
-          <TIcon name={icon.iconName} />
-        ) : (
-          <Icon name={icon?.iconName!} type={icon?.type} />
-        )}
+        <IconComponent />
       </View>
       <View style={{ paddingLeft: 10, flexDirection: 'column', flex: 1 }}>
         <Text style={{ fontWeight: 'bold' }}>{serviceName}</Text>
@@ -126,7 +133,7 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
             })
           }
         >
-          <Icon name="chevron-right" type="evilicon" size={40} />
+          <EvilIcons name="chevron-right" size={40} color="black" />
         </TouchableOpacity>
       </View>
     </View>

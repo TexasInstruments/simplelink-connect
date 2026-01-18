@@ -116,7 +116,7 @@ export const BindAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, uni
                     // color={Colors.active}
                     onValueChange={() => {
                         handleBindAppKey(appKey);
-                    }} />
+                    }} accessibilityLabel="toggle_key" />
                 <Text style={[styles.keyText]}>{appKey.name}</Text>
             </View>
         )
@@ -142,7 +142,7 @@ export const BindAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, uni
                             <Text>No application keys are bound to this node. Go back to bind application keys</Text>
                         )
                     }
-                    <TouchableOpacity onPress={() => setModalVisible(!visible)} style={{ alignSelf: 'flex-end', marginTop: 20 }}>
+                    <TouchableOpacity onPress={() => setModalVisible(!visible)} style={{ alignSelf: 'flex-end', marginTop: 20 }} accessibilityLabel="close">
                         <Text style={{ textAlign: 'center', color: Colors.blue }}>Close</Text>
                     </TouchableOpacity>
                 </View>

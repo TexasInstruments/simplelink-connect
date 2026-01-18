@@ -40,7 +40,7 @@ import { TerminalConfig, useTerminalConfigContext } from '../context/TerminalOpt
 import { useFocusEffect } from '@react-navigation/native';
 import { useCharacteristicViewContext } from '../context/CharactristicViewContext';
 import Colors from '../constants/Colors';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { SpecificScreenConfig, useSpecificScreenConfigContext } from '../context/SpecificScreenOptionsContext';
 import { Dropdown } from 'react-native-element-dropdown';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -119,6 +119,12 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
   const [tempUnits, setTempUnits] = useState<'C' | 'F'>(specificScreenConfig.tempUnits);
   const [scaleLSB, setScaleLSB] = useState<string>('');
 
+  // HT + CGM Test
+  const [disconnectInInterval, setDisconnectInInterval] = useState<boolean>(false);
+
+  // CGM Test
+  const [showCgmData, setShowCgmData] = useState<boolean>(specificScreenConfig.showCgmData);
+
   const { fontScale } = useWindowDimensions();
 
   const TI_Terminal_uuid = 'f000c0c0-0451-4000-b000-000000000000';
@@ -132,8 +138,10 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
     { value: 60000, label: '60 seconds' },
   ]
 
-  const TI_ECG_uuid = 'f000bb00-0451-4000-b000-000000000000';
-  const TemperatureServiceUuid = 'aa00';
+  const EcgUUID = 'f000bb00-0451-4000-b000-000000000000';
+  const TemperatureServiceUUID = 'aa00';
+  const HTServiceUUID = '1809';
+  const CgmTestServiceUUID = '1100'
 
   useFocusEffect(
     useCallback(() => {
@@ -153,7 +161,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
       setMedianOn(specificScreenConfig.medianOn);
       setMedianEvery(specificScreenConfig.medianEvery);
       setApplyRespFilter(specificScreenConfig.applyRespFilter);
-
+      setDisconnectInInterval(specificScreenConfig.disconnectInInterval);
     }, [specificScreenConfig])
 
   );
@@ -246,6 +254,16 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
     updateConfig({ applyRespFilter: value })
   };
 
+  const onChangeDisconnectOnInterval = async (value: any) => {
+    setDisconnectInInterval(value);
+    updateConfig({ disconnectInInterval: value })
+  };
+
+  const onChangeShowCgmData = async (value: any) => {
+    setShowCgmData(value);
+    updateConfig({ showCgmData: value })
+  };
+
   const onChangeTempUnits = async (value: 'C' | 'F') => {
 
     setTempUnitsFocus(false);
@@ -272,8 +290,10 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
       pointsNumberToDisplay: pointsNumberToDisplay,
       recordDuration: recordDuration,
       applyRespFilter: applyRespFilter,
+      disconnectInInterval: disconnectInInterval,
       medianEvery: medianEvery,
       medianOn: medianOn,
+      showCgmData: showCgmData,
       ...overrides,
     };
     updateConfigurations(newConfig);
@@ -431,7 +451,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
           </>
         )}
 
-        {serviceUUID?.toLocaleLowerCase() === TI_ECG_uuid && characteristicView === 'specific' && (
+        {serviceUUID?.toLocaleLowerCase() === EcgUUID && characteristicView === 'specific' && (
           <>
             <Separator text="Graph Settings" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
             <View style={styles.dropdownContainer}>
@@ -531,7 +551,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
 
         )}
 
-        {serviceUUID?.toLocaleLowerCase().includes(TemperatureServiceUuid) && characteristicView === 'specific' && (
+        {serviceUUID?.toLocaleLowerCase().includes(TemperatureServiceUUID) && characteristicView === 'specific' && (
           <>
             <Separator text="Graph Settings" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
             <View style={styles.dropdownContainer}>
@@ -578,6 +598,47 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
 
         )}
 
+        {serviceUUID?.toLocaleLowerCase().includes(HTServiceUUID) && characteristicView === 'specific' && (
+          <>
+            <Separator text="Health Thermometer Settings" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
+            <View style={[styles.configContainer]}>
+              <Text style={{ fontSize: 16 / fontScale, flex: 1 }}>Disconnect and reconnect each interval</Text>
+              <Switch
+                value={disconnectInInterval}
+                onValueChange={(value) => {
+                  onChangeDisconnectOnInterval(value);
+                }}
+              />
+            </View>
+          </>
+
+        )}
+
+        {serviceUUID?.toLocaleLowerCase().includes(CgmTestServiceUUID) && characteristicView === 'specific' && (
+          <>
+            <Separator text="CGM Settings" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
+            <View style={[styles.configContainer,]}>
+              <Text style={{ fontSize: 16 / fontScale, flex: 1 }}>Display Glucose</Text>
+              <Switch
+                value={showCgmData}
+                onValueChange={(value) => {
+                  onChangeShowCgmData(value);
+                }}
+              />
+            </View>
+            <View style={[styles.configContainer, { marginBottom: 20 }]}>
+              <Text style={{ fontSize: 16 / fontScale, flex: 1 }}>Disconnect and reconnect each interval</Text>
+              <Switch
+                value={disconnectInInterval}
+                onValueChange={(value) => {
+                  onChangeDisconnectOnInterval(value);
+                }}
+              />
+            </View>
+          </>
+
+        )}
+
         {hasSpecificScreen && (
           <>
             <Separator text="View" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
@@ -596,7 +657,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
           <>
             <View style={{ height: 30 }} />
             <TouchableOpacity style={styles.button} onPress={handleSetRepoURL}>
-              <Icon name="git-network-outline" size={20} color={Colors.blue} style={styles.icon} />
+              <Ionicons name="git-network-outline" size={20} color={Colors.blue} style={styles.icon} />
               <Text style={{
                 color: Colors.blue
               }}>Config OAD Repository</Text>
@@ -608,7 +669,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
           <>
             <View style={{ height: 30 }} />
             <TouchableOpacity style={styles.button} onPress={hasTestOption ? navigateToTestScreen : undefined}>
-              <Icon name="flask" size={20} color={Colors.blue} style={styles.icon} />
+              <Ionicons name="flask" size={20} color={Colors.blue} style={styles.icon} />
               <Text allowFontScaling adjustsFontSizeToFit style={{ color: Colors.blue }}>Enter Stress Test Mode</Text>
             </TouchableOpacity>
           </>

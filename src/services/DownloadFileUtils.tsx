@@ -18,15 +18,6 @@ async function downloadAndroid(data: string, fileName: string, fileType: string)
         }
 
         if (granted) {
-            // try {
-
-            //     let directory = await ScopedStorage.openDocumentTree(true);
-            //     await ScopedStorage.writeFile(directory.uri, data, fileName, fileType, 'utf8', false);
-
-            // } catch (error) {
-            //     console.log(error);
-            //     alert('Error exporting results: ' + error);
-            // }
             await downloadFile(data, fileName, fileType);
         } else {
             alert('Permission denied.');

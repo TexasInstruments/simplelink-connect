@@ -37,7 +37,6 @@ import { useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { Text, TouchableOpacity, View } from '../Themed';
 import Colors from '../../constants/Colors';
-import useColorScheme from '../../hooks/useColorScheme';
 import BleManager from 'react-native-ble-manager';
 import { decode } from 'base-64';
 import { useNavigation } from '@react-navigation/native';
@@ -99,18 +98,12 @@ const FWUpdate_Modal: React.FC<Props> = ({ peripheralId }: any) => {
 
   let fakeUpdateInterval = useRef<ReturnType<typeof setInterval>>();
 
-  let theme = useColorScheme();
-
   const BleManagerModule = NativeModules.BleManager;
   const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
   let fwImageByteArray: Uint8Array;
   let blockSize = 20;
   let numBlocks = 0;
-
-  let blockEventSubstription: any = undefined;
-
-  console.log('FWUpdate_Modal', peripheralId);
 
   useEffect(() => {
     /* component mounting, disable lock screen sleep */

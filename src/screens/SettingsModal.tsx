@@ -39,7 +39,7 @@ import { TextInput as Input, StyleSheet, Image, useWindowDimensions, Switch } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import Colors from '../constants/Colors';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { Divider } from 'react-native-paper';
 interface Props extends DrawerContentComponentProps { }
 
@@ -102,13 +102,13 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
               onPress={() => handleNavigation('FilterSortOptions')}
               accessibilityLabel="filterSortOptions"
               testID="filterSortOptions">
-              <Icon name="filter" size={25} color={Colors.blue} style={styles.icon} />
+              <Ionicons name="filter" size={25} color={Colors.blue} style={styles.icon} />
               <Text style={[styles.menuText, { fontSize: 16 / fontScale, }]}>Filter and Sort Options</Text>
             </TouchableOpacity>
             <Divider />
 
             <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('ConfigRepository')}>
-              <Icon name="git-network-outline" size={25} color={Colors.blue} style={styles.icon} />
+              <Ionicons name="git-network-outline" size={25} color={Colors.blue} style={styles.icon} />
               <Text style={[styles.menuText, { fontSize: 16 / fontScale, }]}>Config OAD Repository</Text>
             </TouchableOpacity>
             <Divider />
@@ -127,7 +127,7 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
         <View style={styles.footer}>
-          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.1.1</Text>
+          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.1.3</Text>
           <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
         </View>
       </KeyboardAwareScrollView>

@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { callMeshModuleFunction, Group, meshStyles } from '../meshUtils';
 import Colors from '../../../constants/Colors';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { Divider } from 'react-native-paper';
 import { GenericModalData, GenericMeshModal } from '../GenericMeshModal';
 import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -75,7 +75,7 @@ const BleMeshGroups: React.FC = () => {
                     <View style={{ flexDirection: 'row', justifyContent: 'flex-start', flex: 1 }}>
                         <Text style={[meshStyles.subject, { flex: 1 }]} numberOfLines={1} >{group.name}</Text>
                     </View>
-                    <Icon name={group.expand ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} />
+                    <MaterialIcons name={group.expand ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} />
                 </TouchableOpacity>
                 {
                     (group.expand && (
@@ -87,7 +87,7 @@ const BleMeshGroups: React.FC = () => {
                                     <Text style={[styles.text]}>{group.name}</Text>
                                 </View>
                                 <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handlePressedEditName(group)}>
-                                    <Icon name="edit" size={20} />
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
                             </View>
                             <Divider />

@@ -35,7 +35,6 @@
  * https://reactnavigation.org/docs/getting-started
  *
  */
-import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer, DefaultTheme, DarkTheme, Theme, DrawerActions, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -73,8 +72,7 @@ import BleMeshProvisionNode from '../components/BleMesh/BleMeshProvisionNode';
 import BleMeshNetworkKeys from '../components/BleMesh/BleMeshNetworkKeys';
 import HomeScreen from '../screens/HomeScreen';
 import BrandIcon from '../components/BrandIcon';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons, MaterialIcons, FontAwesome, AntDesign } from '@expo/vector-icons';
 import BleMeshApplicationKeys from '../components/BleMesh/BleMeshApplicationKeys';
 import { GenericModelView } from '../components/BleMesh/ModelViews/GenericModelView';
 import { downloadDataToLocalStorage } from '../services/DownloadFileUtils';
@@ -428,7 +426,7 @@ function RootNavigator() {
           headerLeft: (props) => {
             return (
               <TouchableOpacity {...props} onPress={() => { navigation.navigate('HomeScreen') }} >
-                <Icon name="home" size={24} color="white" />
+                <MaterialIcons name="home" size={24} color="white" />
               </TouchableOpacity>)
           },
           headerRight: () => {
@@ -438,7 +436,7 @@ function RootNavigator() {
                 visible={meshMenuVisible}
                 onDismiss={closeMenu}
                 anchor={
-                  <TouchableOpacity style={{ paddingRight: 15 }} onPress={openMenu}>
+                  <TouchableOpacity style={{ paddingRight: 15 }} onPress={openMenu} accessibilityLabel="dots_vertical">
                     <MaterialCommunityIcons name="dots-vertical" size={24} color="white" />
                   </TouchableOpacity>
                 }
@@ -455,6 +453,7 @@ function RootNavigator() {
                 <Menu.Item
                   onPress={() => { navigation.navigate('BleMeshProvisionerScreen'); closeMenu() }}
                   title="Provisioners"
+                  accessibilityLabel="provisioners"
                   leadingIcon={(({ size }) => (
                     <MaterialCommunityIcons name="transit-connection-horizontal" size={size} color={"black"}></MaterialCommunityIcons>
                   ))}
@@ -463,6 +462,7 @@ function RootNavigator() {
                 <Menu.Item
                   onPress={() => { navigation.navigate('BleMeshProxies'); closeMenu() }}
                   title="Proxies"
+                  accessibilityLabel="proxies"
                   leadingIcon={(({ size }) => (
                     <MaterialCommunityIcons name="arrow-decision" size={size} color={"black"}></MaterialCommunityIcons>
                   ))}
@@ -470,6 +470,7 @@ function RootNavigator() {
                 />
                 <Menu.Item
                   onPress={() => { navigation.navigate('BleMeshNetworkKeys'); closeMenu() }}
+                  accessibilityLabel="configure_network_keys"
                   title="Configure network keys"
                   leadingIcon={(({ size }) => (
                     <MaterialCommunityIcons name="key" size={size} color={"black"}></MaterialCommunityIcons>
@@ -479,6 +480,7 @@ function RootNavigator() {
                 <Menu.Item
                   onPress={() => { navigation.navigate('BleMeshApplicationKeys'); closeMenu() }}
                   title="Configure app keys"
+                  accessibilityLabel="configure_app_keys"
                   leadingIcon={(({ size }) => (
                     <MaterialCommunityIcons name="key" size={size} color={"black"}></MaterialCommunityIcons>
                   ))}
@@ -486,6 +488,7 @@ function RootNavigator() {
                 <Menu.Item
                   onPress={exportMeshNetwork}
                   title="Export network"
+                  accessibilityLabel="export_network"
                   leadingIcon={(({ size }) => (
                     <MaterialCommunityIcons name="download" size={size} color={"black"}></MaterialCommunityIcons>
                   ))}
@@ -494,6 +497,7 @@ function RootNavigator() {
                 <Menu.Item
                   onPress={resetMeshNetwork}
                   title="Reset network"
+                  accessibilityLabel="reset_network"
                   leadingIcon={(({ size }) => (
                     <MaterialCommunityIcons name="trash-can-outline" size={size} color={"black"}></MaterialCommunityIcons>
                   ))}
@@ -595,7 +599,7 @@ function RootNavigator() {
           headerLeft: (props) => {
             return (
               //We could use some svg icon
-              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} accessibilityLabel="back_arrow" >
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity >)
           }
@@ -705,7 +709,7 @@ function RootNavigator() {
           headerLeft: (props) => {
             return (
               //We could use some svg icon
-              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} >
+              <TouchableOpacity {...props} onPress={() => { navigation.pop(); }} accessibilityLabel="back_arrow">
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
@@ -727,7 +731,7 @@ function RootNavigator() {
           headerLeft: (props) => {
             return (
               //We could use some svg icon
-              <TouchableOpacity {...props} onPress={async () => { navigation.navigate('BleMesh'); await callMeshModuleFunction('disconnect'); console.log('CALLING DISCONNECT') }} >
+              <TouchableOpacity {...props} onPress={async () => { navigation.navigate('BleMesh'); await callMeshModuleFunction('disconnect'); console.log('CALLING DISCONNECT') }} accessibilityLabel="back_arrow">
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
@@ -748,7 +752,7 @@ function RootNavigator() {
           headerTintColor: 'white',
           headerLeft: (props) => {
             return (
-              <TouchableOpacity {...props} onPress={() => { navigation.navigate('BleMesh'); }} >
+              <TouchableOpacity {...props} onPress={() => { navigation.navigate('BleMesh'); }} accessibilityLabel="back_arrow">
                 <AntDesign name="left" size={24} color="white" />
               </TouchableOpacity>)
           }
@@ -808,7 +812,7 @@ function DrawerNavigation() {
 
             return (
               <TouchableOpacity {...props} style={{ paddingLeft: 15 }} onPress={goHome}>
-                <Icon name="home" size={24} color="white" />
+                <MaterialIcons name="home" size={24} color="white" />
               </TouchableOpacity>
             );
           },
@@ -835,7 +839,7 @@ function CharacteristicsDrawer({ route, navigation }) {
       }
       drawerContent={(props) => <CharacteristicsSettingsDrawer {...props} />}
     >
-      <CharacteristicSettingDrawer.Screen name="Characteristics" component={CharacteristicScreen} initialParams={{ ...route.params }}
+      <CharacteristicSettingDrawer.Screen name="CharacteristicsScreen" component={CharacteristicScreen} initialParams={{ ...route.params }}
         options={{
           headerShown: false
         }}

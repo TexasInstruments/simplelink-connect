@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { StyleSheet, TouchableOpacity, View, Image, InteractionManager } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Image, InteractionManager, NativeModules, NativeEventEmitter } from 'react-native';
 import { Text } from '../components/Themed';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Colors from '../constants/Colors';
@@ -44,17 +44,20 @@ const HomeScreen: React.FC = () => {
     const [showScannerTutorial, setShowScannerTutorial] = useState(false);
     let navigation = useNavigation();
 
+    const { MeshModule } = NativeModules;
+    const bleMeshEmitter = new NativeEventEmitter(MeshModule);
+
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(async () => {
                 try {
+                    bleMeshEmitter.addListener('onNetworkLoaded', (response) => { console.log('onNetworkLoaded', response) })
                     callMeshModuleFunction('meshInit');
                     setShowMeshTutorial(await meshTutorial());
                     setShowScannerTutorial(await scannerTutorial());
                 } catch (error) {
                     console.error(error);
                 }
-
             });
 
             return async () => {
@@ -67,7 +70,7 @@ const HomeScreen: React.FC = () => {
     const MenuItem = ({ imgPath, subject, navigationPath, navigationParams }: any) => {
         return (
             <View style={[styles.menuItemContainer]}>
-                <TouchableOpacity accessibilityLabel="scanner" style={styles.menuItem} onPress={() => navigation.navigate(navigationPath, navigationParams)} >
+                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate(navigationPath, navigationParams)} accessibilityLabel={`${subject.toLowerCase()}`}>
                     <Image style={[styles.image]} source={imgPath} />
                 </TouchableOpacity >
                 <Text style={styles.subject}>{subject}</Text>
@@ -90,10 +93,11 @@ const HomeScreen: React.FC = () => {
                 </View>
             </View>
             <View style={styles.footer}>
-                <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.1.1</Text>
+                <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.1.3</Text>
                 <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
             </View>
         </View>
+
     )
 };
 

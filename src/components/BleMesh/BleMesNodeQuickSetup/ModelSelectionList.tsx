@@ -73,7 +73,7 @@ const ModelSelectionList: React.FC<ModelSelectionListProps> = ({
                             {element.name} (0x{element.address.toString(16)})
                         </Text>
 
-                        <TouchableOpacity onPress={() => toggleSelectAllModels(element)} style={styles.selectAllButton}>
+                        <TouchableOpacity onPress={() => toggleSelectAllModels(element)} style={styles.selectAllButton} accessibilityLabel="select_all">
                             <Text style={meshStyles.textButton}>Select All</Text>
                         </TouchableOpacity>
                     </View>
@@ -87,6 +87,7 @@ const ModelSelectionList: React.FC<ModelSelectionListProps> = ({
                                 key={modelIndex}
                                 style={[styles.dataContainer, isSelected ? styles.selectedModel : null, { opacity: disabled ? 0.5 : 1 }]}
                                 onPress={() => toggleModelSelection(element.address, model.id, model.type)}
+                                accessibilityLabel={model.id.toString(16)}
                             >
                                 {isSelected ? (
                                     <MaterialCommunityIcons name="check-circle" size={20} color={Colors.blue} />

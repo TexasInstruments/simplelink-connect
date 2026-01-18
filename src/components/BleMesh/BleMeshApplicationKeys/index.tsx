@@ -3,7 +3,7 @@ import { StyleSheet, View, KeyboardAvoidingView, Platform, Alert } from 'react-n
 import Colors from '../../../constants/Colors';
 import { useEffect, useRef, useState, } from 'react';
 import { Divider } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
 import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { GenericMeshModal, GenericModalData } from '../GenericMeshModal';
@@ -107,8 +107,8 @@ const BleMeshApplicationKeys: React.FC = () => {
         return (
             <View style={[meshStyles.optionsBox, meshStyles.shadow]}>
                 <TouchableOpacity style={[meshStyles.item]} onPress={() => toggleExpand(appKey)}>
-                    <Text style={[meshStyles.subject]}>{appKey.name}</Text>
-                    <Icon name={appKey.expand ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} />
+                    <Text style={[meshStyles.subject]} accessibilityLabel={appKey.name}>{appKey.name}</Text>
+                    <MaterialIcons name={appKey.expand ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} />
                 </TouchableOpacity>
                 {
                     (appKey.expand && (
@@ -119,7 +119,7 @@ const BleMeshApplicationKeys: React.FC = () => {
                                     <Text style={[styles.text]}>{appKey.name}</Text>
                                 </View>
                                 <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => onPressEditKeyName(appKey)}>
-                                    <Icon name="edit" size={20} />
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
                             </View>
                             <Divider />
@@ -130,7 +130,7 @@ const BleMeshApplicationKeys: React.FC = () => {
 
                                 </View>
                                 <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => onPressEditKeyVal(appKey)}>
-                                    <Icon name="edit" size={20} />
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
 
                             </View>
@@ -165,6 +165,7 @@ const BleMeshApplicationKeys: React.FC = () => {
             <TouchableOpacity
                 style={meshStyles.fab}
                 onPress={openAddKeyModal}
+                accessibilityLabel="add_key_btn"
             >
                 <MaterialCommunityIcons
                     name="plus-thick"

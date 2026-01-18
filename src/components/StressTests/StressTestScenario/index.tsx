@@ -311,6 +311,8 @@ const StressTestScenario: React.FC = ({ }) => {
 
                     // First time asking for permission - need to reload the app
                     const hasAskedPermission = await AsyncStorage.getItem('hasAskedPermission');
+                    console.log("hasAsk!!!!!!!!!!!!!!", hasAskedPermission)
+
                     if (hasAskedPermission !== 'true') {
                         await AsyncStorage.setItem('hasAskedPermission', 'true');
                         RNRestart.Restart();

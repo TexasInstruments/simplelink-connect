@@ -41,6 +41,9 @@ export const SubscriptionModal: React.FC<Props> = ({ visible, setModalVisible, u
         let groups = await callMeshModuleFunction('getGroups') as Group[];
         setGroups(groups);
         setNewGroupName('My Group ' + (groups.length + 1));
+        if (groups.length > 0) {
+            setSelectedGroup(groups[0])
+        }
     }
 
     const handleApply = async () => {
@@ -49,6 +52,10 @@ export const SubscriptionModal: React.FC<Props> = ({ visible, setModalVisible, u
             let addressType = selectedAddressType.type;
             if (addressType === 2) { // GROUPS
                 if (useExistingGroup) {
+                    if (!selectedGroup) {
+                        alert('A group must be selected')
+                        return
+                    }
                     await callMeshModuleFunction('subscribeToExistingGroup', unicastAddress, selectedGroup?.address);
                 }
                 else {
@@ -104,6 +111,7 @@ export const SubscriptionModal: React.FC<Props> = ({ visible, setModalVisible, u
                                 setSelectedAddressType(item);
                                 setAddress(item.value);
                             }}
+                            accessibilityLabel="address_type"
                         />
                         {selectedAddressType.label === 'Groups' && (
                             <View>
@@ -121,6 +129,7 @@ export const SubscriptionModal: React.FC<Props> = ({ visible, setModalVisible, u
                                             value="first"
                                             status={useExistingGroup ? 'checked' : 'unchecked'}
                                             onPress={() => setUseExistingGroup(true)}
+                                            accessibilityLabel="use_existing_group"
                                         />
                                     </View>
 
@@ -143,6 +152,7 @@ export const SubscriptionModal: React.FC<Props> = ({ visible, setModalVisible, u
                                             onChange={(item) => {
                                                 setSelectedGroup(item);
                                             }}
+                                            accessibilityLabel="choose_group"
                                         />
                                     )
                                 }
@@ -222,10 +232,10 @@ export const SubscriptionModal: React.FC<Props> = ({ visible, setModalVisible, u
 
                         {/* Actions Buttons */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 }}>
-                            <TouchableOpacity onPress={() => setModalVisible(!visible)}>
+                            <TouchableOpacity onPress={() => setModalVisible(!visible)} accessibilityLabel="close">
                                 <Text style={{ textAlign: 'center', color: Colors.blue }}>Close</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={handleApply}>
+                            <TouchableOpacity onPress={handleApply} accessibilityLabel="apply">
                                 <Text style={{ textAlign: 'center', color: Colors.blue }}>Apply</Text>
                             </TouchableOpacity>
                         </View>

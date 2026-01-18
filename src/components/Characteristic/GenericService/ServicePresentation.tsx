@@ -30,12 +30,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { Icon } from '@rneui/themed';
 import { StyleSheet } from 'react-native';
 import { View } from '../../Themed';
 import Colors from '../../../constants/Colors';
 import useColorScheme from '../../../hooks/useColorScheme';
 import TIcon from '../../TIcon';
+import { EvilIcons, FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 
 interface Props {
   icon: {
@@ -44,8 +44,21 @@ interface Props {
   };
 }
 
+
 const ServicePresentation: React.FC<Props> = ({ icon }) => {
   let theme = useColorScheme();
+  const IconComponent = () => {
+    if (icon.type === 'svg') {
+      return <TIcon name={icon.iconName} />;
+    } else if (icon.type === 'font-awesome-5') {
+      return <FontAwesome5 name={icon.iconName} size={24} color="black" />;
+    } else if (icon.type === 'font-awesome') {
+      return <FontAwesome name={icon.iconName} size={24} color="black" />;
+    } else if (icon.type === 'evilicon') {
+      return <EvilIcons name={icon.iconName} size={24} color="black" />;
+    }
+    return null;
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.lightGray }]}>
@@ -60,7 +73,7 @@ const ServicePresentation: React.FC<Props> = ({ icon }) => {
         {icon?.type === 'svg' ? (
           <TIcon name={icon.iconName} />
         ) : (
-          <Icon name={icon?.iconName!} type={icon?.type} />
+          <IconComponent />
         )}
       </View>
     </View>

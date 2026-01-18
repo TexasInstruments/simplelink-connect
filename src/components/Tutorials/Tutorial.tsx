@@ -111,7 +111,7 @@ export const Tutorial: React.FC<Props> = ({ slides, skipTutorial }) => {
                     </TouchableOpacity>
                     <Paginator items={slides} scrollX={scrollX} />
 
-                    <TouchableOpacity onPress={skipTutorial}>
+                    <TouchableOpacity onPress={skipTutorial} accessibilityLabel='skip'>
                         <Text style={{ fontSize: 20, paddingRight: 20, color: Colors.blue }}>Skip</Text>
                     </TouchableOpacity>
                 </View>

@@ -76,6 +76,7 @@ export const AddressRangeMeshModal: React.FC<Props> = ({ visible, title, current
                                     <TouchableOpacity
                                         style={{ alignSelf: 'center', marginRight: 10 }}
                                         onPress={() => setCurrentRanges(prev => prev.filter(r => !(r.lowAddress === item.lowAddress && r.highAddress === item.highAddress)))}
+                                        accessibilityLabel="remove_range"
                                     >
                                         <FontAwesome5 name="trash-alt" size={20} color={Colors.primary} />
                                     </TouchableOpacity>
@@ -97,6 +98,7 @@ export const AddressRangeMeshModal: React.FC<Props> = ({ visible, title, current
                             style={styles.textInput}
                             underlineColor="gray"
                             activeOutlineColor={Colors.active}
+                            accessibilityLabel="bot_range"
                         />
                         <Text style={{ alignSelf: 'center', fontSize: 40 }}> - </Text>
                         <TextInput
@@ -107,8 +109,9 @@ export const AddressRangeMeshModal: React.FC<Props> = ({ visible, title, current
                             style={styles.textInput}
                             underlineColor="gray"
                             activeOutlineColor={Colors.active}
+                            accessibilityLabel="top_range"
                         />
-                        <TouchableOpacity onPress={handleAdd} style={[styles.addButton, meshStyles.shadow]}>
+                        <TouchableOpacity onPress={handleAdd} style={[styles.addButton, meshStyles.shadow]} accessibilityLabel="plus">
                             <MaterialCommunityIcons
                                 name={'plus'}
                                 size={25}
@@ -123,7 +126,7 @@ export const AddressRangeMeshModal: React.FC<Props> = ({ visible, title, current
                         <TouchableOpacity onPress={() => setModalVisible(!visible)}>
                             <Text style={[styles.buttonText]}>Close</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={() => { onClickSave(currentRanges); setModalVisible(false); }}>
+                        <TouchableOpacity onPress={() => { onClickSave(currentRanges); setModalVisible(false); }} accessibilityLabel="save">
                             <Text style={[styles.buttonText]}>Save</Text>
                         </TouchableOpacity>
                     </View>

@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { StyleSheet, View, Alert, Modal } from 'react-native';
 import Colors from '../../../constants/Colors';
 import { useEffect, useState } from 'react';
@@ -6,6 +6,7 @@ import { ApplicationKey, callMeshModuleFunction, Group, meshStyles } from '../me
 import { RadioButton, TextInput } from 'react-native-paper';
 import { Dropdown } from 'react-native-element-dropdown';
 import { PublicationSettings } from './GenericModelView';
+import { ActivityIndicator } from 'react-native-paper';
 
 interface Props {
     setModalVisible: any;
@@ -63,10 +64,10 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                 setSelectedAddress(publicationSettings?.publishAddress.toString(16));
             }
             if (publicationSettings?.publishRetransmitCount != undefined) {
-                if (publicationSettings?.publishRetransmitCount == 0){
+                if (publicationSettings?.publishRetransmitCount == 0) {
                     setPublishRetransmissionCount(-1);
                 }
-                else{
+                else {
                     setPublishRetransmissionCount(publicationSettings?.publishRetransmitCount);
                 }
             }
@@ -141,7 +142,6 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                 selectedAddressType?.label !== 'Groups'
             );
     }
-
 
     const handleApply = async () => {
         setIsLoading(true)
@@ -233,6 +233,7 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                         setSelectedAddressType(item);
                                         setSelectedAddress(item.value.toString(16));
                                     }}
+                                    accessibilityLabel="address_type"
                                 />
                             </View>
 
@@ -247,6 +248,7 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                         underlineColor="gray"
                                         activeOutlineColor={Colors.active}
                                         disabled={selectedAddressType?.label !== 'Unicast Address'}
+                                        accessibilityLabel="insert_publish_address"
                                     />
                                 </View>
                             )}
@@ -306,7 +308,8 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                             color="#007BFF"
                                             value="second"
                                             status={!useExistingGroup ? 'checked' : 'unchecked'}
-                                            onPress={() => setUseExistingGroup(false)} />
+                                            onPress={() => setUseExistingGroup(false)}
+                                            accessibilityLabel="create_new_group" />
 
                                     </View>
                                     <Text>Create new group to subscribe</Text>
@@ -324,6 +327,7 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                                 onChangeText={setNewGroupName}
                                                 underlineColor="gray"
                                                 activeOutlineColor={Colors.active}
+                                                accessibilityLabel="set_group_name"
                                             />
 
                                             <Text style={styles.label}>Address</Text>
@@ -336,6 +340,7 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                                     onChangeText={setNewGroupAddress}
                                                     underlineColor="gray"
                                                     activeOutlineColor={Colors.active}
+                                                    accessibilityLabel="set_group_address"
                                                 />
                                             </View>
                                         </View>
@@ -358,6 +363,7 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                             placeholder='Key'
                             value={selectedBoundKey}
                             onChange={(item) => setSelectedBoundKey(item)}
+                            accessibilityLabel={selectedBoundKey?.name}
                         />
                         {/* TTL */}
                         <View style={{ flex: 1 }}>
@@ -371,6 +377,7 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                 onChangeText={(v) => setTTL(Number(v))}
                                 underlineColor="gray"
                                 activeOutlineColor={Colors.active}
+                                accessibilityLabel="set_ttl"
                             />
                         </View>
 
@@ -395,6 +402,7 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                     placeholder='Resolution'
                                     value={publishPeriodResolution}
                                     onChange={(item) => setPublishPeriodResolution(item.name)}
+                                    accessibilityLabel='resolution'
                                     dropdownPosition='top'
 
                                 />
@@ -411,12 +419,11 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                     underlineColor="gray"
                                     activeOutlineColor={Colors.active}
                                     disabled={publishPeriodResolution == 'disabled'}
-
+                                    accessibilityLabel="set_publish_period_interval"
                                 />
                             </View>
 
                         </View>
-
 
                         {/* Publish Retransmission Count and Interval */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -441,6 +448,7 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                     valueField="value"
                                     value={publishRetransmissionCount}
                                     onChange={(item) => setPublishRetransmissionCount(item.value)}
+                                    accessibilityLabel="set_retransmission_count"
                                     dropdownPosition='top'
                                 />
                             </View>
@@ -455,16 +463,17 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                                     onChangeText={(v) => setPublishRetransmissionInterval(Number(v))}
                                     underlineColor="gray"
                                     activeOutlineColor={Colors.active}
+                                    accessibilityLabel="set_retransmission_interval"
                                     disabled={publishRetransmissionCount == -1}
                                 />
                             </View>
                         </View>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 }}>
-                            <TouchableOpacity onPress={() => setModalVisible(!visible)}>
+                            <TouchableOpacity onPress={() => setModalVisible(!visible)} accessibilityLabel="close">
                                 <Text style={[meshStyles.modalTextButton]}>Close</Text>
                             </TouchableOpacity>
                             {!isLoading ? (
-                                <TouchableOpacity onPress={handleApply} disabled={!isFormValid()}>
+                                <TouchableOpacity onPress={handleApply} disabled={!isFormValid()} accessibilityLabel="apply">
                                     <Text style={[meshStyles.modalTextButton, { opacity: isFormValid() ? 1 : 0.2 }]}>Apply</Text>
                                 </TouchableOpacity>
                             ) :
@@ -491,8 +500,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        padding: 35,
-        paddingBottom: 50,
+        padding: 20,
+        paddingBottom: 40,
     },
     modalView: {
         flexGrow: 1,
@@ -502,9 +511,9 @@ const styles = StyleSheet.create({
         // paddingBottom: 40,
     },
     label: {
-        fontSize: 14,
+        fontSize: 12,
         marginBottom: 5,
-        fontWeight: '500'
+        fontWeight: 'bold'
     },
     textInput: {
         borderColor: 'gray',

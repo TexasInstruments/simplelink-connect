@@ -10,6 +10,8 @@ export interface SpecificScreenConfig {
   medianOn: number,
   medianEvery: number,
   applyRespFilter: boolean,
+  disconnectInInterval: boolean,
+  showCgmData: boolean
 }
 
 interface SpecificScreenConfigContextProps {
@@ -18,14 +20,24 @@ interface SpecificScreenConfigContextProps {
 }
 
 const initialState: SpecificScreenConfig = {
+  //  WIFI Provisioning
   wifiProvisioningConnectionTimeout: 5000,
+
+  // Temperature Service
   temperatureSensorScaleLSB: '0.03125',
   tempUnits: 'C',
+
+  // ECG
   pointsNumberToDisplay: 1000,
   recordDuration: 'no limit',
   medianOn: 20,
   medianEvery: 20,
   applyRespFilter: true,
+
+  // CGM Test Profile & HT Profile
+  disconnectInInterval: false,
+  showCgmData: true
+
 }
 
 const SpecificScreensConfigContext = createContext<SpecificScreenConfigContextProps | undefined>(undefined);
@@ -42,6 +54,7 @@ export const SpecificScreenConfigProvider: React.FC<{ children: ReactNode }> = (
         connectionTimeout = '5000';
       }
 
+      // Temperature and Accelerometer services.
       let temperatureSensorScaleLSB = await AsyncStorage.getItem('@temperatureSensorScaleLSB');
       if (!temperatureSensorScaleLSB) {
         temperatureSensorScaleLSB = '0.03125';
@@ -51,6 +64,7 @@ export const SpecificScreenConfigProvider: React.FC<{ children: ReactNode }> = (
         tempUnits = 'C';
       }
 
+      // ECG
       let pointsNumberToDisplay = await AsyncStorage.getItem('@pointsNumberToDisplay');
       if (!pointsNumberToDisplay) {
         pointsNumberToDisplay = '1000';
@@ -67,13 +81,19 @@ export const SpecificScreenConfigProvider: React.FC<{ children: ReactNode }> = (
       if (!medianEvery) {
         medianEvery = '20';
       }
+
       let applyRespFilter = await AsyncStorage.getItem('@applyRespFilter');
       if (!applyRespFilter) {
         applyRespFilter = 'true';
       }
 
+      let showCgmData = await AsyncStorage.getItem('@showCgmData');
+      if (!showCgmData) {
+        showCgmData = 'true';
+      }
+
       let updatedConf: SpecificScreenConfig = {
-        wifiProvisioningConnectionTimeout: Number(connectionTimeout), temperatureSensorScaleLSB: temperatureSensorScaleLSB, tempUnits: tempUnits, pointsNumberToDisplay: Number(pointsNumberToDisplay), recordDuration: (recordDuration === 'no limit' ? recordDuration : Number(recordDuration)), medianEvery: Number(medianEvery), medianOn: Number(medianOn), applyRespFilter: applyRespFilter === 'true',
+        wifiProvisioningConnectionTimeout: Number(connectionTimeout), temperatureSensorScaleLSB: temperatureSensorScaleLSB, tempUnits: tempUnits, pointsNumberToDisplay: Number(pointsNumberToDisplay), recordDuration: (recordDuration === 'no limit' ? recordDuration : Number(recordDuration)), medianEvery: Number(medianEvery), medianOn: Number(medianOn), applyRespFilter: applyRespFilter === 'true', disconnectInInterval: false, showCgmData: showCgmData === 'true'
       }
       console.log('updatedConf', updatedConf)
       setSpecificScreenConfig(updatedConf)
@@ -95,6 +115,7 @@ export const SpecificScreenConfigProvider: React.FC<{ children: ReactNode }> = (
     await AsyncStorage.setItem('@medianOn', JSON.stringify(configurations.medianOn));
     await AsyncStorage.setItem('@medianEvery', JSON.stringify(configurations.medianEvery));
     await AsyncStorage.setItem('@applyRespFilter', JSON.stringify(configurations.applyRespFilter));
+    await AsyncStorage.setItem('@showCgmData', JSON.stringify(configurations.showCgmData));
 
     console.log("screen config updated with", configurations)
 

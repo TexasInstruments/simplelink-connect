@@ -90,13 +90,21 @@ export const RecordAccessControlDialog: React.FC<Props> = ({ visible, hideDialog
         }
 
         const data = Buffer.from(command);
+        // check if peripheral is bonded
+        if (Platform.OS == "android"){
+            let bondedPeripherals = await BleManager.getBondedPeripherals()
+            if (!(bondedPeripherals.find((p)=> p.id == peripheralId))){
+                alert("To send commands, peripheral must be bonded")
+            }
+        }
+        
         // write value to characteristic
         try {
-            await BleManager.write(peripheralId, serviceUuid, writeChar, data.toJSON().data, data.length);
+            BleManager.write(peripheralId, serviceUuid, writeChar, data.toJSON().data, data.length);
         }
         catch (err) {
             Alert.alert(err,
-                'Tip: Verify indications are enabled',)
+                'Tip: Verify indications are enabled and device is bonded',)
         }
         if (selectedOpCode === 0x01) {
             resetChart();

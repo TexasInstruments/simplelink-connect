@@ -30,12 +30,10 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { Icon } from '@rneui/themed';
 import { StyleSheet } from 'react-native';
 import { Text, View } from '../../Themed';
 import Colors from '../../../constants/Colors';
 import useColorScheme from '../../../hooks/useColorScheme';
-import BleManager from 'react-native-ble-manager';
 import Spacing from '../../Spacing';
 import { Peripheral } from 'react-native-ble-manager';
 import PeripheralIcon from '../../PeripheralIcon';

@@ -8,7 +8,7 @@ import {
     FlatList,
 } from 'react-native';
 import { meshStyles } from '../meshUtils';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 
 interface ModelSelectionListProps {
@@ -42,7 +42,7 @@ const StatusesPopup: React.FC<ModelSelectionListProps> = ({
                         keyExtractor={(item, index) => `${item.task}-${index}`}
                         renderItem={({ item }) => (
                             <View style={styles.itemRow}>
-                                <Icon
+                                <MaterialIcons
                                     name={item.success ? 'check-circle' : 'error'}
                                     size={24}
                                     color={item.success ? 'green' : 'red'}
@@ -56,7 +56,7 @@ const StatusesPopup: React.FC<ModelSelectionListProps> = ({
                         horizontal={false}
                     />
                     <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
-                        <TouchableOpacity onPress={() => setIsVisible(false)} style={[meshStyles.button, { alignSelf: 'flex-end', marginTop: 30 }]}>
+                        <TouchableOpacity onPress={() => setIsVisible(false)} accessibilityLabel="close" style={[meshStyles.button, { alignSelf: 'flex-end', marginTop: 30 }]}>
                             <Text style={meshStyles.textButton}>Close</Text>
                         </TouchableOpacity>
 

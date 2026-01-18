@@ -8,7 +8,7 @@ import {
     NativeEventEmitter,
     NativeModules,
     Alert,
-    ActivityIndicator,
+    Platform,
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { ApplicationKey, callMeshModuleFunction, Element, Group, meshStyles, Model } from '../../meshUtils';
@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { TextInput } from 'react-native-paper';
 import ModelSelectionList from '../ModelSelectionList';
 import StatusesPopup from '../StatusesPopup';
+import { ActivityIndicator } from 'react-native-paper';
 
 export interface NetworkKey {
     expand?: boolean;
@@ -191,7 +192,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
 
     return (
         <SafeAreaView
-            style={meshStyles.container} edges={['left', 'right', 'bottom']}
+            style={meshStyles.container} edges={Platform.OS == "ios" ? ['left', 'right', 'bottom'] : ['left', 'right']}
         >
             <Text style={meshStyles.title}>Models Publication</Text>
 
@@ -221,7 +222,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                                     {
                                         useExistingGroup && (
                                             <Dropdown
-                                                style={[meshStyles.dropdown, { marginLeft: 30, backgroundColor: 'white', borderWidth: 0, marginBottom: 10 }]}
+                                                style={[meshStyles.dropdown, { marginLeft: 30, backgroundColor: 'white', borderWidth: 0 }]}
                                                 placeholderStyle={meshStyles.placeholderStyle}
                                                 selectedTextStyle={meshStyles.selectedTextStyle}
                                                 data={groups}
@@ -240,7 +241,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                             )}
 
                             <View style={[styles.radioButtonContainer]}>
-                                <TouchableOpacity onPress={() => setUseExistingGroup(!useExistingGroup)}>
+                                <TouchableOpacity onPress={() => setUseExistingGroup(!useExistingGroup)} accessibilityLabel="create_new_group">
                                     {!useExistingGroup ? (
                                         <MaterialCommunityIcons name="check-circle" size={20} color={Colors.blue} style={styles.checkIcon} />
                                     ) : (
@@ -260,6 +261,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                                             onChangeText={setNewGroupName}
                                             activeUnderlineColor={Colors.active}
                                             underlineColor={Colors.lightGray}
+                                            accessibilityLabel="set_group_name"
                                         />
 
                                         <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
@@ -275,6 +277,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                                                 }}
                                                 underlineColor={Colors.lightGray}
                                                 activeUnderlineColor={Colors.active}
+                                                accessibilityLabel="set_group_address"
                                             />
                                         </View>
                                     </View>
@@ -285,7 +288,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                     <Text style={[styles.label, { marginBottom: 5 }]}>Select Publication Settings </Text>
                     {/* App key */}
                     <Dropdown
-                        style={[meshStyles.dropdown, { backgroundColor: 'white', borderWidth: 0, marginBottom: 10, borderRadius: 4 }]}
+                        style={[meshStyles.dropdown, { backgroundColor: 'white', borderWidth: 0, borderRadius: 4 }]}
                         placeholderStyle={meshStyles.placeholderStyle}
                         selectedTextStyle={[meshStyles.selectedTextStyle]}
                         data={applicationKeys}
@@ -307,6 +310,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                         value={ttl.toString()}
                         onChangeText={(v) => setTTL(Number(v))}
                         underlineColor={Colors.lightGray}
+                        accessibilityLabel="set_ttl"
                         contentStyle={{ fontWeight: 'bold' }}
                     />
 
@@ -347,6 +351,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                                 value={publishPeriodInterval.toString()}
                                 onChangeText={(v) => setPublishPeriodInterval(Number(v))}
                                 activeOutlineColor={Colors.active}
+                                accessibilityLabel="set_publish_period_interval"
                                 underlineColor={Colors.lightGray}
                                 disabled={publishPeriodResolution == 'disabled'}
                             />
@@ -377,6 +382,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                                 valueField="value"
                                 value={publishRetransmissionCount}
                                 onChange={(item) => setPublishRetransmissionCount(item.value)}
+                                accessibilityLabel="set_retransmission_count"
                             />
                         </View>
                         <View style={{ flex: 1 }}>
@@ -391,6 +397,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                                 activeOutlineColor={Colors.active}
                                 activeUnderlineColor={Colors.active}
                                 underlineColor={Colors.lightGray}
+                                accessibilityLabel="set_retransmission_interval"
                                 disabled={publishRetransmissionCount == -1}
                                 contentStyle={{ fontWeight: 'bold' }}
                             />
@@ -420,6 +427,7 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                         style={[meshStyles.fab, { opacity: selectedModels.length == 0 ? 0.3 : 1 }]}
                         disabled={selectedModels.length == 0}
                         onPress={handleSetPublicationModels}
+                        accessibilityLabel="set_publication"
                     >
                         <MaterialCommunityIcons
                             name="check-all"
@@ -428,7 +436,8 @@ const BleMeshSetPublicationModelsScreen: React.FC = ({ route }) => {
                             style={{ marginRight: 8 }}
                         />
                         <Text style={[meshStyles.fabText]}>Set Publication</Text>
-                    </TouchableOpacity>)
+                    </TouchableOpacity>
+                )
             }
             <StatusesPopup unicastAddr={unicastAddr} results={results} isVisible={isVisible} setIsVisible={setIsVisible} title={'Set Publication Completed'} />
         </SafeAreaView >

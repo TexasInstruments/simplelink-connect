@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, NativeEventEmitter, NativeModules, Platform, ScrollView, StyleSheet } from 'react-native';
+import { NativeEventEmitter, NativeModules, Platform, ScrollView, StyleSheet } from 'react-native';
 import { LinearProgress } from '@rneui/base';
 import { Text, TouchableOpacity, View } from '../Themed';
 import Colors from '../../constants/Colors';
@@ -15,10 +15,10 @@ import { TextInput, Menu, Divider } from 'react-native-paper';
 import { CustomSnackBar } from '../CustomSnackBar';
 import { Dropdown } from 'react-native-element-dropdown';
 import { CheckBox } from '@rneui/themed';
-import Icon from "react-native-vector-icons/MaterialIcons";
+import { MaterialIcons } from "@expo/vector-icons";
 import IdleTimerManager from 'react-native-idle-timer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
+import { ActivityIndicator } from 'react-native-paper';
 
 interface Props {
   peripheralId: string;
@@ -202,7 +202,7 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
 
 
     /* component mounting, disable lock screen sleep */
-    IdleTimerManager.setIdleTimerDisabled(true, 'fw-update-screen');
+    IdleTimerManager.setIdleTimerDisabled(true, 'fota-update-screen');
 
     const initialize = async () => {
       try {
@@ -218,7 +218,7 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
 
     return () => {
       /* component unmounting, enable lock screen sleep */
-      IdleTimerManager.setIdleTimerDisabled(false, 'fw-update-screen');
+      IdleTimerManager.setIdleTimerDisabled(false, 'fota-update-screen');
 
       setStatusColor('black')
 
@@ -481,7 +481,7 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
 
         {/* Main row content */}
         <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Icon name="insert-drive-file" size={24} color={Colors.blue} style={{ marginRight: 10 }} />
+          <MaterialIcons name="insert-drive-file" size={24} color={Colors.blue} style={{ marginRight: 10 }} />
           <View style={{ flex: 1 }}>
             <Text style={styles.imageTitle}>
               Image {index} (Slot {img.slot})

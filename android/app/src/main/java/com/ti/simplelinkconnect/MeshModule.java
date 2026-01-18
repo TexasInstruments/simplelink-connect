@@ -800,8 +800,13 @@ public class MeshModule extends ReactContextBaseJavaModule {
     @ReactMethod
     public void startProvisioningNode(Promise promise) {
         final UnprovisionedMeshNode node = meshRepository.getUnprovisionedMeshNode();
-        meshRepository.getMeshManagerApi().startProvisioning(node);
-        promise.resolve("success");
+        try {
+            meshRepository.getMeshManagerApi().startProvisioning(node);
+            promise.resolve("success");
+        } catch (Exception e){
+            promise.reject(e);
+        }
+
 
     }
 

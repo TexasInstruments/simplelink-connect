@@ -5,7 +5,7 @@ import { Dropdown } from 'react-native-element-dropdown';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { View, Text, TouchableOpacity } from '../../components/Themed';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import BleManager from 'react-native-ble-manager';
 import { convertStringToByteArray } from '../../hooks/convert';
 import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
@@ -279,7 +279,7 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
                     {/* Header */}
                     <View style={{ backgroundColor: Colors.lightGray, marginBottom: 30 }}>
                         <View style={styles.sectionHeader}>
-                            <Icon name="wifi" size={28} style={styles.icon} />
+                            <Ionicons name="wifi" size={28} style={styles.icon} />
                             <Text style={styles.sectionTitle} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Enter SSID and Password</Text>
                         </View>
                     </View>

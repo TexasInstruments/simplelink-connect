@@ -111,6 +111,7 @@ export const VendorModel: React.FC<{ nodeUnicastAddress: number, scrollViewRef: 
                                 setOpcode(text);
                                 validateOpCode(text);
                             }}
+                            accessibilityLabel="opcode"
                         />
                     </View>
 
@@ -124,12 +125,13 @@ export const VendorModel: React.FC<{ nodeUnicastAddress: number, scrollViewRef: 
                             style={[styles.textInput]}
                             value={parameters}
                             onChangeText={setParameters}
+                            accessibilityLabel="parameters"
                         />
                     </View>
                 </View>
                 <Divider />
                 <View style={[meshStyles.item, { height: 50, flex: 1, justifyContent: 'center' }]}>
-                    <TouchableOpacity onPress={sendCommand} style={[styles.sendButton, { opacity: boundApplicationsKeys.length == 0 ? 0.2 : 1 }]} disabled={boundApplicationsKeys.length == 0}>
+                    <TouchableOpacity onPress={sendCommand} style={[styles.sendButton, { opacity: boundApplicationsKeys.length == 0 ? 0.2 : 1 }]} disabled={boundApplicationsKeys.length == 0} accessibilityLabel="send">
                         <Text style={[meshStyles.textButton, { marginRight: 5 }]}>Send</Text>
                         <Icon solid={true} name={'send-o'} size={16} color={Colors.blue} type="font-awesome" />
                     </TouchableOpacity>
@@ -137,7 +139,7 @@ export const VendorModel: React.FC<{ nodeUnicastAddress: number, scrollViewRef: 
             </View>
             {/* Response */}
             <>
-                <View style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'row', backgroundColor: Colors.lightGray }}>
+                <View style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'row', backgroundColor: Colors.lightGray }} accessibilityLabel="response_tab">
                     <Text style={[styles.title]}>Response</Text>
                 </View>
                 <View style={[styles.controlContainer]}>
@@ -148,7 +150,7 @@ export const VendorModel: React.FC<{ nodeUnicastAddress: number, scrollViewRef: 
                     <Divider />
                     <View style={[meshStyles.item, { height: 50 }]}>
                         <Text style={[meshStyles.subject]}>Parameters</Text>
-                        <Text >{response ? response.parameters : 'N/A'}</Text>
+                        <Text accessibilityLabel="vendor_parameters">{response ? response.parameters : 'N/A'}</Text>
                     </View>
                     <Divider />
                     <View style={[meshStyles.item, { height: 50 }]}>

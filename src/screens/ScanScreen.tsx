@@ -35,7 +35,7 @@ import BleScanner from '../src/components/SimpleBleScanner';
 */
 import BleScanner from '../components/BleScanner';
 import { useEffect } from 'react';
-import { Icon } from '@rneui/themed';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TouchableOpacity, View } from '../components/Themed';
 
 export default function ScanScreen({ navigation, route }: any) {
@@ -47,9 +47,8 @@ export default function ScanScreen({ navigation, route }: any) {
             accessibilityLabel="openDrawerIcon"
             testID="openDrawerIcon"
             onPress={() => navigation.toggleDrawer()}>
-            <Icon
+            <MaterialCommunityIcons
               name="dots-vertical"
-              type="material-community"
               color={'white'}
               size={26}
               style={{ paddingRight: 15 }}

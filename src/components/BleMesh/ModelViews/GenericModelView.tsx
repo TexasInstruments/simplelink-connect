@@ -173,10 +173,10 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
         return (
             <View style={[styles.dataContainer,]} key={keyIndex}>
                 <View style={{ display: 'flex', flexDirection: 'column' }}>
-                    <Text style={[styles.name]}>{appKey?.name}</Text>
+                    <Text style={[styles.name]} accessibilityLabel={appKey?.name}>{appKey?.name}</Text>
                     <Text style={[styles.val]}>{appKey?.key}</Text>
                 </View>
-                <TouchableOpacity onPress={() => unbindAppKey(keyIndex)} >
+                <TouchableOpacity onPress={() => unbindAppKey(keyIndex)} accessibilityLabel="remove_app_key">
                     <FontAwesome5 name="trash-alt" size={20} color={Colors.primary} />
                 </TouchableOpacity>
             </View>
@@ -210,15 +210,17 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                     <ScrollView
                         style={{ marginTop: 20 }}
                         contentContainerStyle={{
+                            flexGrow: 1,
                             marginHorizontal: 20,
                             backgroundColor: Colors.lightGray,
-                            paddingBottom: 0,
+                            paddingBottom: 40,
                         }}
+                        keyboardShouldPersistTaps="handled"
                     >
                         {/* Bind Application Key */}
                         <View style={{ display: 'flex', justifyContent: 'space-between', flexDirection: 'row', backgroundColor: Colors.lightGray }}>
                             <Text style={[styles.title]}>Bound Application Keys</Text>
-                            <TouchableOpacity onPress={() => setIsBindAppKeyModalVisible(true)} disabled={!model.isBindingSupported}>
+                            <TouchableOpacity onPress={() => setIsBindAppKeyModalVisible(true)} disabled={!model.isBindingSupported} accessibilityLabel="bind_key">
                                 <Text style={[meshStyles.textButton,
                                 { opacity: !model.isBindingSupported ? 0.4 : 1 }
                                 ]}>Bind key</Text>
@@ -229,7 +231,7 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                         ))}
                         {boundApplicationsKeys.length === 0 && (
                             <View style={[styles.dataContainer]}>
-                                <Text style={[styles.name]}>No keys</Text>
+                                <Text style={[styles.name]} accessibilityLabel="no_keys">No keys</Text>
                             </View>
                         )}
 
@@ -240,6 +242,7 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                                 <TouchableOpacity
                                     onPress={() => setIsPublicationModalVisible(true)}
                                     disabled={boundApplicationsKeys.length === 0 || !model.isPublishSupported}
+                                    accessibilityLabel="set_publication"
                                 >
                                     <Text
                                         style={[
@@ -255,8 +258,8 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                                 <View style={[styles.publishContainer]}>
                                     <View style={[styles.publishContainer]}>
                                         <View style={[meshStyles.item, { height: 50 }]}>
-                                            <Text style={[meshStyles.subject]}>Address</Text>
-                                            <Text>0x{(publicSettings.publishAddress ?? 0).toString(16).toLocaleUpperCase()}</Text>
+                                            <Text style={[meshStyles.subject]} >Address</Text>
+                                            <Text accessibilityLabel="address_publication">0x{(publicSettings.publishAddress ?? 0).toString(16).toLocaleUpperCase()}</Text>
                                         </View>
                                         <Divider />
                                         <View style={[meshStyles.item, { height: 50 }]}>
@@ -297,7 +300,8 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                                                 )
                                             }
                                         </View>
-                                        <TouchableOpacity style={[styles.removeButton]} onPress={removePublication}>
+                                        <TouchableOpacity style={[styles.removeButton]} onPress={removePublication}
+                                            accessibilityLabel="remove_publication">
                                             <Text style={[styles.removeText]}>Remove Publication</Text>
                                             <FontAwesome5 name="trash-alt" size={16} color={Colors.primary} />
                                         </TouchableOpacity>
@@ -319,6 +323,7 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                                 <TouchableOpacity
                                     onPress={() => setIsSubscriptionModalVisible(true)}
                                     disabled={boundApplicationsKeys.length === 0 || !model.isSubscribeSupported}
+                                    accessibilityLabel="subscribe"
                                 >
                                     <Text
                                         style={[
@@ -337,8 +342,8 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
                             ) : (
                                 subscriptionList.map((subscription, index) => (
                                     <View style={[styles.dataContainer, { marginBottom: 5 }]} key={index}>
-                                        <Text style={[styles.name]}>0x{subscription.toString(16).toLocaleUpperCase()}</Text>
-                                        <TouchableOpacity onPress={() => unsubscribe(index)} >
+                                        <Text style={[styles.name]} accessibilityLabel="subscription_output">0x{subscription.toString(16).toLocaleUpperCase()}</Text>
+                                        <TouchableOpacity onPress={() => unsubscribe(index)} accessibilityLabel="unsubscribe">
                                             <FontAwesome5 name="trash-alt" size={16} color={Colors.primary} />
                                         </TouchableOpacity>
                                     </View>

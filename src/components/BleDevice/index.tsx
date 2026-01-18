@@ -40,6 +40,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../types';
 import { getIconByPeripheralInfo } from '../../hooks/uuidToBrand';
 import { useServiceViewContext } from '../../context/ServiceViewContext';
+import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
 
 interface BleDeviceProps {
   peripheralId: string;
@@ -56,231 +57,177 @@ const initialState: BleDevicePropsState = {
   deviceState: 'not connected',
 };
 
-const BleDevice: React.FC<BleDeviceProps> = (props: BleDeviceProps) => {
+const BleDevice: React.FC<BleDeviceProps> = ({ peripheralId, ...props }) => {
   const [state, setState] = useState<BleDevicePropsState>(initialState);
-  let navigation = useNavigation<DeviceScreenNavigationProp>();
+  const { specificScreenConfig } = useSpecificScreenConfigContext();
+  const disconnectInInterval = useRef<boolean>(specificScreenConfig.disconnectInInterval);
+
+  const navigation = useNavigation<DeviceScreenNavigationProp>();
   const { updatePeripheral } = useServiceViewContext();
-  let connectTimeout = useRef<any>(null);
+  const connectTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const discover = useCallback(
-    (peripheralId: string) => {
-      let emptyPeripheralInfo: PeripheralInfo = {
-        id: peripheralId,
-        rssi: -40,
-        advertising: {},
-        showAdvertising: false,
-        isBonded: false,
-        isConnected: false,
-        services: [],
-        advertiesmentCount: 0,
-        prevAdvertismentCount: 0,
-        advertismentActive: 0,
-        advertismentInActive: false,
-        filter: false
-      };
-      setState((prev) => ({
-        ...prev,
-        deviceState: 'Discovering',
-        peripheralInfo: emptyPeripheralInfo,
-      }));
+  const BleManagerModule = NativeModules.BleManager;
+  const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
+  const connectionPromises: Record<string, Promise<void> | undefined> = {};
+  const connectionTimeouts: Record<string, NodeJS.Timeout | undefined> = {};
 
-      BleManager.retrieveServices(peripheralId)
-        .then((peripheralInfo) => {
-          let services: any = peripheralInfo.services;
-          let parsedServices =
-            Platform.OS === 'ios' ? services.map((uuid: string) => ({ uuid })) : services;
-
-          if (peripheralInfo.name == null) {
-            peripheralInfo.name = 'Unknown';
-          }
-
-          peripheralInfo = getIconByPeripheralInfo(peripheralInfo)
-
-          setState((prev) => ({
-            ...prev,
-            deviceState: 'Connected',
-            peripheralInfo: {
-              ...peripheralInfo,
-              services: parsedServices,
-            },
-          }));
-
-          Promise.resolve();
-        })
-        .catch((error) => {
-          console.log('retrieveServices: ', error);
-          Promise.resolve();
-        });
-    },
-    [props.peripheralId, state.deviceState]
-  );
-
-  const connectionPromises: Promise<void>[] = [];
-
-  function handleConnection(peripheralId: string): void {
-    // Check if there are any pending connection promises
-    if (connectionPromises.length > 0) {
-      console.log('Another connection is already in progress');
-      return;
-    }
-
-    // Create a new promise for the connection
-    const connectionPromise: Promise<void> = new Promise((resolve, reject) => {
-      BleManager.connect(peripheralId)
-        .then(() => {
-          console.log('Connected');
-          setState({
-            deviceState: 'Connected',
-          });
-          clearTimeout(connectTimeout.current);
-          discover(peripheralId);
-          resolve(); // Resolve the promise on successful connection
-        })
-        .catch((error) => {
-          console.log('connect: ', error);
-          clearTimeout(connectTimeout.current);
-          reject(error); // Reject the promise on connection error
-        });
-    });
-
-    // Add the promise to the global array
-    connectionPromises.push(connectionPromise);
-
-    // Execute the connection promise
-    connectionPromise
-      .then(() => {
-        // Connection resolved, remove it from the array
-        const index = connectionPromises.indexOf(connectionPromise);
-        if (index !== -1) {
-          connectionPromises.splice(index, 1);
-        }
-      })
-      .catch(() => {
-        // Connection rejected, remove it from the array
-        const index = connectionPromises.indexOf(connectionPromise);
-        if (index !== -1) {
-          connectionPromises.splice(index, 1);
-        }
-      });
-  }
-
-  const connect = (peripheralId: string) => {
-    setState({
-      deviceState: 'Connecting',
-      peripheralInfo: undefined,
-    });
-
-    console.log('connect: ', peripheralId);
-    console.log('expected: ', props.peripheralId);
-
-    if (peripheralId === props.peripheralId) {
-      console.log('connect: started timeout');
-      connectTimeout.current = setTimeout(() => {
-        BleManager.isPeripheralConnected(props.peripheralId, []).then((isConnected) => {
-          if (isConnected) {
-            console.log('BleDevice: Peripheral is connected!');
-          } else {
-            console.log('Peripheral connection timeout');
-            alert('Peripheral connection timeout');
-            clearTimeout(connectTimeout.current);
-            navigation.navigate('Scanner');
-          }
-        });
-      }, 5000);
-
-      console.log('handleConnection');
-      handleConnection(peripheralId);
-    }
-  };
-
-  useEffect(() => {
-    BleManager.isPeripheralConnected(props.peripheralId, []).then((isConnected) => {
-      if (isConnected) {
-        console.log('BleDevice: Peripheral is connected!');
-      } else {
-        console.log('BleDevice: Peripheral is NOT connected!');
-        connect(props.peripheralId);
-      }
-    });
-
-    return () => {
-      console.log('Cleared');
-      clearTimeout(connectTimeout.current);
+  // --- Discover services ---
+  const discover = useCallback(async (id: string) => {
+    const emptyPeripheralInfo: PeripheralInfo = {
+      id,
+      rssi: -40,
+      advertising: {},
+      showAdvertising: false,
+      isBonded: false,
+      isConnected: false,
+      services: [],
+      advertiesmentCount: 0,
+      prevAdvertismentCount: 0,
+      advertismentActive: 0,
+      advertismentInActive: false,
+      filter: false,
     };
+
+    setState(prev => ({ ...prev, deviceState: 'Discovering', peripheralInfo: emptyPeripheralInfo }));
+
+    try {
+      const peripheralInfo = await BleManager.retrieveServices(id);
+      const parsedServices =
+        Platform.OS === 'ios'
+          ? peripheralInfo.services.map((uuid: string) => ({ uuid }))
+          : peripheralInfo.services;
+
+      if (!peripheralInfo.name) peripheralInfo.name = 'Unknown';
+      const infoWithIcon = getIconByPeripheralInfo(peripheralInfo);
+
+      setState(prev => ({
+        ...prev,
+        deviceState: 'Connected',
+        peripheralInfo: { ...infoWithIcon, services: parsedServices },
+      }));
+    } catch (error) {
+      console.log('retrieveServices error:', error);
+    }
   }, []);
 
-  useEffect(() => {
-    console.log('BleDevice componentDidUpdate peripheral id', props.peripheralId);
+  // --- Handle a single connection ---
+  const handleConnection = (id: string) => {
+    if (connectionPromises[id]) return connectionPromises[id];
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
-    bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
-    bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', () => {
-      setState({
-        deviceState: 'Disconnected',
-      });
+    const connectionPromise = new Promise<void>(async (resolve, reject) => {
+      let resolvedOrRejected = false;
 
-      connect(props.peripheralId);
+      connectionTimeouts[id] = setTimeout(() => {
+        if (!resolvedOrRejected) {
+          resolvedOrRejected = true;
+          console.log(`Connection timeout for ${id}`);
+          reject(new Error(`Connection timeout for ${id}`));
+        }
+      }, 5000);
+
+      try {
+        await BleManager.connect(id);
+
+        resolvedOrRejected = true;
+        clearTimeout(connectionTimeouts[id]);
+        delete connectionTimeouts[id];
+
+        console.log(`Connected to ${id}`);
+        setState({ deviceState: 'Connected' });
+
+        // Small delay to allow services to stabilize
+        setTimeout(async () => {
+          try {
+            await discover(id);
+            resolve();
+          } catch (e) {
+            console.log(`Discover failed for ${id}:`, e);
+            resolve(); // resolve anyway, don't reject here
+          }
+        }, 150);
+      } catch (error) {
+        resolvedOrRejected = true;
+        clearTimeout(connectionTimeouts[id]);
+        delete connectionTimeouts[id];
+
+        console.log(`Connection failed for ${id}:`, error);
+        reject(error instanceof Error ? error : new Error('Connection error'));
+      }
     });
 
-    if (props.peripheralId !== props.peripheralId) {
-      connect(props.peripheralId);
-    }
+    connectionPromises[id] = connectionPromise;
 
-    return () => {
-      console.log('Removing all listeners');
+    connectionPromise.finally(() => {
+      delete connectionPromises[id];
+    });
 
-      bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
-      if (Platform.OS == 'android') {
-        bleManagerEmitter.removeAllListeners('BleManagerPeripheralDidBond');
+    return connectionPromise;
+  };
+
+
+  // --- Connect wrapper ---
+  const connect = (id: string) => {
+    setState({ deviceState: 'Connecting', peripheralInfo: undefined });
+
+    if (id !== peripheralId) return;
+
+    connectTimeout.current = setTimeout(async () => {
+      const isConnected = await BleManager.isPeripheralConnected(id, []);
+      if (!isConnected) {
+        console.log('Peripheral connection timeout');
+        alert('Peripheral connection timeout');
+      } else {
+        console.log('Peripheral already connected, clearing timeout');
       }
-    };
-  }, [props.peripheralId]);
+    }, 5000);
+
+    handleConnection(id)
+      .catch(e => console.warn('Connection attempt failed (handled):', e.message || e))
+      .finally(() => clearTimeout(connectTimeout.current!));
+  };
+
+  // --- Effects ---
+  useEffect(() => {
+    disconnectInInterval.current = specificScreenConfig.disconnectInInterval;
+  }, [specificScreenConfig.disconnectInInterval]);
+
+  useEffect(() => {
+    BleManager.isPeripheralConnected(peripheralId, []).then(isConnected => {
+      if (!isConnected) connect(peripheralId);
+    });
+
+    return () => clearTimeout(connectTimeout.current!);
+  }, [peripheralId]);
 
   useFocusEffect(
     useCallback(() => {
-      // The screen is focused
-      // Call any action
-      console.log('focus:', props.peripheralId);
-      console.log('focus: deviceState', state);
+      const onDisconnect = () => {
+        setState({ deviceState: 'Disconnected' });
+        if (!disconnectInInterval.current) connect(peripheralId);
+      };
 
-      console.log('focus: check connected');
+      bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
+      bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', onDisconnect);
 
-      BleManager.isPeripheralConnected(props.peripheralId, []).then((isConnected) => {
-        if (isConnected) {
-          console.log('focus: Peripheral is connected!');
-
-          discover(props.peripheralId);
-
-          //Did not mount, set disconnect callback here
-          const BleManagerModule = NativeModules.BleManager;
-          const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
-          bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
-          bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', () => {
-            setState({
-              deviceState: 'Disconnected',
-            });
-
-            connect(props.peripheralId);
-          });
-        } else {
-          console.log('focus: Not connect, connect');
-          connect(props.peripheralId);
-        }
+      BleManager.isPeripheralConnected(peripheralId, []).then(isConnected => {
+        if (isConnected) discover(peripheralId);
+        else connect(peripheralId);
       });
 
       return () => {
-        clearTimeout(connectTimeout.current);
+        clearTimeout(connectTimeout.current!);
+        bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
+        if (Platform.OS === 'android') {
+          bleManagerEmitter.removeAllListeners('BleManagerPeripheralDidBond');
+        }
       };
-    }, [props.peripheralId])
+    }, [peripheralId])
   );
 
   useEffect(() => {
-    if (state.peripheralInfo) {
-      updatePeripheral(state.peripheralInfo)
-    }
-  }, [state])
+    if (state.peripheralInfo) updatePeripheral(state.peripheralInfo);
+  }, [state, updatePeripheral]);
 
   return (
     <ScrollView style={[styles.container]} contentContainerStyle={styles.scrollViewContainer}>

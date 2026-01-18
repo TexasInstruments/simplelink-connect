@@ -1,5 +1,5 @@
 import { Dialog, TextInput } from "react-native-paper";
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Platform, StyleSheet, View } from 'react-native';
 import { useEffect, useState } from "react";
 import { Text, TouchableOpacity } from '../Themed';
 import { CustomDropdwn } from "./CustomDropdwn";
@@ -84,13 +84,20 @@ export const SpecificOpsControlPointDialog: React.FC<Props> = ({ visible, hideDi
         }
 
         const data = Buffer.from(command);
-        // write value to characteristic
+        // check if peripheral is bonded
+        if (Platform.OS == "android"){
+            let bondedPeripherals = await BleManager.getBondedPeripherals()
+            if (!(bondedPeripherals.find((p)=> p.id == peripheralId))){
+                alert("To send commands, peripheral must be bonded")
+            }
+        }
         try {
-            await BleManager.write(peripheralId, CGM_PROFILE.uuid, CGM_PROFILE.cgm_specific_op_cp, data.toJSON().data, data.length);
+            // write value to characteristic      
+            BleManager.write(peripheralId, CGM_PROFILE.uuid, CGM_PROFILE.cgm_specific_op_cp, data.toJSON().data, data.length);
         }
         catch (err) {
             Alert.alert(err,
-                'Tip: Verify indications are enabled',)
+                'Tip: Verify indications are enabled and device is bonded',)
         }
         hideDialog();
     }

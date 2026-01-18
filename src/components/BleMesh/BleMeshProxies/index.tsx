@@ -18,7 +18,7 @@ import {
 import { Dropdown } from 'react-native-element-dropdown';
 import { callMeshModuleFunction, Group, meshStyles } from '../meshUtils';
 import Colors from '../../../constants/Colors';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import CheckBox from '@react-native-community/checkbox';
 import FontAwesome5 from '@expo/vector-icons/build/FontAwesome5';
 import { Snackbar } from 'react-native-paper';
@@ -192,7 +192,7 @@ const BleMeshProxies: React.FC = () => {
                                 onChangeText={setCustomAddress}
                             />
                             <TouchableOpacity onPress={addCustomAddress} style={styles.iconButton}>
-                                <Icon name="add-circle-outline" size={28} />
+                                <MaterialIcons name="add-circle-outline" size={28} />
                             </TouchableOpacity>
                         </View>
                         {customAddresses.length > 0 && (
@@ -240,7 +240,8 @@ const BleMeshProxies: React.FC = () => {
                                     value={modalSelectedAddresses.includes(item.value)}
                                     onValueChange={() => {
                                         toggleSelection(item.value)
-                                    }} />
+                                    }}
+                                    accessibilityLabel={item.label} />
                                 <Text style={styles.textOption}>
                                     {item.label} (0x{item.value.toString(16).toUpperCase()})
                                 </Text>
@@ -254,7 +255,7 @@ const BleMeshProxies: React.FC = () => {
                         <TouchableOpacity onPress={() => setIsModalVisible(false)}>
                             <Text style={[meshStyles.textButton, { fontSize: 16 }]}>Cancel</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={onModalDone}>
+                        <TouchableOpacity onPress={onModalDone} accessibilityLabel="done">
                             <Text style={[meshStyles.textButton, { fontSize: 16 }]}>Done</Text>
                         </TouchableOpacity>
 
@@ -324,6 +325,7 @@ const BleMeshProxies: React.FC = () => {
                                 valueField="value"
                                 placeholder="Select Type"
                                 value={selectedFilterType}
+                                accessibilityLabel="filter_type"
                                 onChange={(item) => {
                                     setSelectedFilterType(item.value);
                                     updateFilterType(item.value);
@@ -334,7 +336,7 @@ const BleMeshProxies: React.FC = () => {
                         <View style={{ flexDirection: 'column' }}>
                             <View style={[styles.row, { marginBottom: 5 }]}>
                                 <Text style={styles.label}>Filter Addresses</Text>
-                                <TouchableOpacity onPress={openModal} disabled={selectedFilterType == null} style={{ opacity: selectedFilterType == null ? 0.5 : 1 }}>
+                                <TouchableOpacity onPress={openModal} disabled={selectedFilterType == null} style={{ opacity: selectedFilterType == null ? 0.5 : 1 }} accessibilityLabel="proxy_add_address">
                                     <Text style={meshStyles.textButton}>Add address</Text>
                                 </TouchableOpacity>
                             </View>
@@ -367,10 +369,11 @@ const BleMeshProxies: React.FC = () => {
                             visible={statusVisible}
                             onDismiss={() => setStatusVisible(false)}
                             duration={5000}
+                            accessibilityLabel="snack_bar"
                         >
                             <View style={{ flexDirection: 'row' }}>
-                                <Icon name="info" size={20} color={'white'} />
-                                <Text style={{ alignSelf: 'center', textAlignVertical: 'center', marginLeft: 5, fontWeight: '600', color: 'white' }}>
+                                <MaterialIcons name="info" size={20} color={'white'} />
+                                <Text style={{ alignSelf: 'center', textAlignVertical: 'center', marginLeft: 5, fontWeight: '600', color: 'white' }} accessibilityLabel={status}>
                                     {status}
                                 </Text>
                             </View>

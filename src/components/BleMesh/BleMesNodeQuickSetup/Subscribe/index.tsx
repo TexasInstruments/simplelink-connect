@@ -8,7 +8,7 @@ import {
     NativeEventEmitter,
     NativeModules,
     Alert,
-    ActivityIndicator,
+    Platform,
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { callMeshModuleFunction, Group, meshStyles, Model, Element } from '../../meshUtils';
@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { TextInput } from 'react-native-paper';
 import ModelSelectionList from '../ModelSelectionList';
 import StatusesPopup from '../StatusesPopup';
+import { ActivityIndicator } from 'react-native-paper';
 
 export interface NetworkKey {
     expand?: boolean;
@@ -158,7 +159,7 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
 
     return (
         <SafeAreaView
-            style={meshStyles.container} edges={['left', 'right', 'bottom']}
+            style={meshStyles.container} edges={Platform.OS == "ios" ? ['left', 'right', 'bottom'] : ['left', 'right']}
         >
             <Text style={meshStyles.title}>Models Subscriptions</Text>
 
@@ -207,7 +208,7 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
                             )}
 
                             <View style={[styles.radioButtonContainer]}>
-                                <TouchableOpacity onPress={() => setUseExistingGroup(!useExistingGroup)}>
+                                <TouchableOpacity onPress={() => setUseExistingGroup(!useExistingGroup)} accessibilityLabel="create_new_group">
                                     {!useExistingGroup ? (
                                         <MaterialCommunityIcons name="check-circle" size={20} color={Colors.blue} style={styles.checkIcon} />
                                     ) : (
@@ -227,6 +228,7 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
                                             onChangeText={setNewGroupName}
                                             underlineColor="gray"
                                             activeUnderlineColor={Colors.active}
+                                            accessibilityLabel="set_group_name"
                                         />
 
                                         <View style={{ display: 'flex', flexDirection: 'row', alignItems: 'center' }}>
@@ -242,6 +244,7 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
                                                 }}
                                                 underlineColor="gray"
                                                 activeUnderlineColor={Colors.active}
+                                                accessibilityLabel="set_group_address"
                                             />
                                         </View>
                                     </View>
@@ -273,6 +276,7 @@ const BleMeshSubscribeModelsScreen: React.FC = ({ route }) => {
                 <TouchableOpacity
                     style={[meshStyles.fab, { opacity: selectedModels.length == 0 ? 0.3 : 1 }]}
                     onPress={handleSubscribeModels}
+                    accessibilityLabel="subscribe"
                     disabled={selectedModels.length == 0}
                 >
                     <MaterialCommunityIcons

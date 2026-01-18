@@ -2,7 +2,7 @@ import { Text, TouchableOpacity } from '../Themed';
 import { StyleSheet, NativeModules, View, NativeEventEmitter, InteractionManager, EmitterSubscription, Alert, Platform } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useCallback, useRef, useState, } from 'react';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { FAB } from 'react-native-paper';
 import { ApplicationKey, callMeshModuleFunction, Feature, MeshNode, meshStyles } from './meshUtils';
@@ -117,7 +117,7 @@ const BleMesh: React.FC = () => {
             <View style={[styles.node, meshStyles.shadow]}>
                 <View style={[styles.row, { justifyContent: 'space-between' }]}>
                     <View style={{ flex: 1, marginRight: 10 }}>
-                        <Text style={styles.nodeName} numberOfLines={2} ellipsizeMode="tail">
+                        <Text style={styles.nodeName} numberOfLines={2} ellipsizeMode="tail" accessibilityLabel="node_name">
                             {node.name ?? "Unknown"}
                         </Text>
                         <Text style={styles.nodeCompany}>{node.company}</Text>
@@ -153,6 +153,7 @@ const BleMesh: React.FC = () => {
                         onPress={() => navigation.navigate('BleMeshConfigureNode', { unicastAddr: node.unicastAddress, isConnecting: false })}
                         size={'small'}
                         color='black'
+                        accessibilityLabel={"right_arrow_" + node.unicastAddress.toString(16).toLocaleUpperCase()}
                     />
                 </View>
             </View>
@@ -173,7 +174,7 @@ const BleMesh: React.FC = () => {
         <View style={styles.container}>
             <View style={styles.titleContainer}>
                 <Text style={styles.title} numberOfLines={1}>{netName}</Text>
-                <Icon name="edit" size={30} onPress={() => setIsEditNameModalVisible(true)} />
+                <MaterialIcons name="edit" size={30} onPress={() => setIsEditNameModalVisible(true)} accessibilityLabel="edit_network_name" />
             </View>
             <Text style={styles.subtitle}>Last update: {netTimestamp}</Text>
 
@@ -188,6 +189,7 @@ const BleMesh: React.FC = () => {
                 <TouchableOpacity
                     style={[meshStyles.button, meshStyles.shadow, { backgroundColor: 'white' }]}
                     onPress={onAddNodePressed}
+                    accessibilityLabel='add_node_btn'
                 >
                     <Text style={styles.addButtonText}>Add node</Text>
                 </TouchableOpacity>

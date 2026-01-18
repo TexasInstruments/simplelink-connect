@@ -52,10 +52,11 @@ import BLERangeStatics from '../components/BLERangeStatics';
 import ClassificationModeServiceScreen from '../components/ClassificationModeService';
 import DataAcquisitionServiceScreen from '../components/DataAcquisitionService';
 import ZephyrDFUModal from '../components/Zephyr/ZephyrDFUModal';
+import CgmTestService from '../components/CgmTestService';
 
 interface Props extends RootStackScreenProps<'Characteristics'> { }
 
-export const SUPPORTED_SPECIFIC_SCREEN = ["sub-1 range test config", "sub-1 range statistics", "battery level", "classification mode", "data acquisition mode", "matter light profile", "light sensor service", "wi-fi provisioning over ble", "ti ecg service", "ecg service", "glucose", "continuous glucose monitoring", "health thermometer", "ti terminal", "ti oad", "temp", "humidity", "barometer", "optical", "movement", "simple keys", "battery", "i/o", "control", "battery service", "ti accelerometer service", , "zephyr mcu manager service"] as const;
+export const SUPPORTED_SPECIFIC_SCREEN = ["cgm test service", "sub-1 range test config", "sub-1 range statistics", "battery level", "classification mode", "data acquisition mode", "matter light profile", "light sensor service", "wi-fi provisioning over ble", "ti ecg service", "ecg service", "glucose", "continuous glucose monitoring", "health thermometer", "ti terminal", "ti oad", "temp", "humidity", "barometer", "optical", "movement", "simple keys", "battery", "i/o", "control", "battery service", "ti accelerometer service", , "zephyr mcu manager service"] as const;
 
 const CharacteristicScreen: React.FC<Props> = ({ route }) => {
   let peripheralInfo = route.params.peripheralInfo!;
@@ -64,7 +65,6 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
 
   const [screenSpecific, setScreenSpecific] = useState<keyof RootStackParamList | null>(null);
   const { characteristicView, updateService, updatePeripheralInfo } = useCharacteristicViewContext();
-
 
   let serviceCharacteristics: BleManager.Characteristic[] = useMemo(() => {
     return peripheralInfo.characteristics!.filter(
@@ -148,6 +148,10 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
 
       case 'DataAcquisitionServiceModel':
         return <DataAcquisitionServiceScreen peripheralId={peripheralInfo.id} />
+
+      case 'CGMTestServiceModel':
+        return <CgmTestService peripheralId={peripheralInfo.id} />
+
     }
   }
 

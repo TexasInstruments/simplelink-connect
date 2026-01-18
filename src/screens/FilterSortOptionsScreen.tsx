@@ -10,7 +10,7 @@ import Colors from '../constants/Colors';
 import { FilterSortState, FilterSortDispatch } from '../context/FilterSortContext';
 import { useProfilesContext } from '../context/ProfileListContext';
 import { EnablerActionTypes, ValueActionTypes } from '../reducers/FilterSortReducer';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Switch } from 'react-native-paper';
 
@@ -109,7 +109,7 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
 
         {/* Sort */}
         <View style={styles.sectionHeader}>
-          <Icon name="sort" size={24} style={styles.icon} />
+          <MaterialIcons name="sort" size={24} style={styles.icon} />
           <Text style={styles.sectionTitle}>Sort Options</Text>
         </View>
         <Text style={styles.sectionDescription}>Choose how you want to sort the list of devices:</Text>
@@ -147,7 +147,7 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
 
         {/* Filter */}
         <View style={styles.sectionHeader}>
-          <Icon name="filter-list" size={24} style={styles.icon} />
+          <MaterialIcons name="filter-list" size={24} style={styles.icon} />
           <Text style={styles.sectionTitle}>Filter Options</Text>
         </View>
         <Text style={styles.sectionDescription}>

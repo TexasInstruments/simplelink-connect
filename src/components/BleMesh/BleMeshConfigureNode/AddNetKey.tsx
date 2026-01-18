@@ -109,7 +109,9 @@ export const AddNetKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
                     // color={Colors.active}
                     onValueChange={() => {
                         setPrimaryNetKey({ ...primaryNetKey, checked: !primaryNetKey.checked })
-                    }} />
+                    }}
+                    accessibilityLabel={netKey.name}
+                />
                 <Text style={[styles.keyText]}>{netKey.name}</Text>
             </View>
         )
@@ -123,7 +125,8 @@ export const AddNetKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
                     // color={Colors.active}
                     onValueChange={() => {
                         handleAddSubNetKey(netKey);
-                    }} />
+                    }}
+                    accessibilityLabel={netKey.name} />
                 <Text style={[styles.keyText]}>{netKey.name}</Text>
             </View>
         )
@@ -145,7 +148,7 @@ export const AddNetKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
                             return <DisplaySubNetKey netKey={netKey} key={index} />
                         })
                     }
-                    <TouchableOpacity onPress={() => setModalVisible(!visible)} style={{ alignSelf: 'flex-end', marginTop: 20 }}>
+                    <TouchableOpacity onPress={() => setModalVisible(!visible)} style={{ alignSelf: 'flex-end', marginTop: 20 }} accessibilityLabel="close">
                         <Text style={{ textAlign: 'center', color: Colors.blue }}>Close</Text>
                     </TouchableOpacity>
                 </View>

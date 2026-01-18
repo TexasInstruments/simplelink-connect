@@ -31,60 +31,53 @@ export const ServiceViewProvider = ({ children }) => {
     const BleManagerModule = NativeModules.BleManager;
     const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
 
-
     useEffect(() => {
-        requestAndroidPermissions().then(() => {
-            if (Platform.OS == 'android') {
+        const setupBle = async () => {
+            await requestAndroidPermissions();
+
+            if (Platform.OS === 'android') {
                 bleManagerEmitter.addListener('BleManagerPeripheralDidBond', handleNewDeviceBonded);
             }
-        });
+        };
+        setupBle();
 
         return () => {
-            if (Platform.OS == 'android') {
-                bleManagerEmitter.removeAllListeners('BleManagerPeripheralDidBond')
+            if (Platform.OS === 'android') {
+                bleManagerEmitter.removeAllListeners('BleManagerPeripheralDidBond');
             }
-        }
-
-    }, [])
+        };
+    }, []);
 
     useEffect(() => {
 
-        const checkIfPeripheralIsBonded = async (): Promise<boolean> => {
-            if (Platform.OS !== 'android') return false;
+        const updateOptions = async () => {
+            let oadserviceUuidList = peripheralInfo?.services?.filter(
+                service =>
+                    service.uuid.toUpperCase() === OadServiceUuid ||
+                    service.uuid.toUpperCase() === OadResetServiceUuid
+            );
+            setHasOadOption(!!oadserviceUuidList?.length);
 
-            try {
-                let bondedPeripherals = await BleManager.getBondedPeripherals();
-                let found = bondedPeripherals.find((per) => per.id == peripheralInfo?.id);
-                return found ? true : false;
-            } catch (error) {
-                return false;
+            let dfuUUid = peripheralInfo?.services?.filter(
+                service => service.uuid.toLowerCase() === McuManagerServiceUuid
+            );
+            setHasDfuOption(!!dfuUUid?.length);
+
+            if (Platform.OS == "android") {
+                const granted = await PermissionsAndroid.check(
+                    PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT
+                );
+                if (granted) {
+                    const bondedPeripherals = await BleManager.getBondedPeripherals();
+                    const found = bondedPeripherals.find(p => p.id === peripheralInfo?.id);
+                    setIsBonded(!!found);
+                }
             }
+
         };
 
-        let oadserviceUuidList = peripheralInfo?.services?.filter(
-            (service) =>
-                service.uuid.toUpperCase() === OadServiceUuid ||
-                service.uuid.toUpperCase() === OadResetServiceUuid
-        );
-
-        //@ts-ignore
-        let hasOadserviceUuid: boolean = oadserviceUuidList?.length > 0;
-        setHasOadOption(hasOadserviceUuid);
-
-        let dfuUUid = peripheralInfo?.services?.filter(
-            (service) =>
-                service.uuid.toLocaleLowerCase() === McuManagerServiceUuid);
-
-        let hasDfuServiceUuid: boolean = dfuUUid ? dfuUUid.length > 0 : false;
-        setHasDfuOption(hasDfuServiceUuid)
-
-        checkIfPeripheralIsBonded().then((bonded) => {
-            if (peripheralInfo?.id) {
-                setIsBonded(bonded);
-            }
-        });
-
-    }, [peripheralInfo])
+        updateOptions();
+    }, [peripheralInfo]);
 
     async function requestAndroidPermissions(): Promise<void> {
         if (Platform.OS === 'android') {
@@ -107,6 +100,8 @@ export const ServiceViewProvider = ({ children }) => {
 
                     // First time asking for permission - need to reload the app
                     const hasAskedPermission = await AsyncStorage.getItem('hasAskedPermission');
+                    console.log("hasAsk!!!!!!!!!!!!!!", hasAskedPermission)
+
                     if (hasAskedPermission !== 'true') {
                         await AsyncStorage.setItem('hasAskedPermission', 'true');
                         RNRestart.Restart();

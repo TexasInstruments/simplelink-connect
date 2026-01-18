@@ -8,7 +8,7 @@ import { FirmwareRepo, useFirmwareRepoContext } from '../context/FirmwareRepoCon
 import { View, Text, TouchableOpacity } from '../components/Themed';
 import { ConfigRepositoryScreenProps } from '../../types';
 import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import { Switch } from 'react-native-paper';
 
 
@@ -166,7 +166,7 @@ const ConfigRepositoryUrlScreen: React.FC<Props> = () => {
         {/* Header */}
         <View style={{ backgroundColor: Colors.lightGray }}>
           <View style={styles.sectionHeader}>
-            <Icon name="git-network" size={24} style={styles.icon} />
+            <Ionicons name="git-network" size={24} style={styles.icon} />
             <Text style={styles.sectionTitle} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Config OAD Repository</Text>
           </View>
         </View>

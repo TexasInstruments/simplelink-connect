@@ -34,7 +34,6 @@ import { View, StyleSheet, Platform, useWindowDimensions } from 'react-native';
 import { Text } from '../../Themed';
 import React, { memo, useRef, useState } from 'react';
 import { Peripheral } from 'react-native-ble-manager';
-import { Icon } from '@rneui/themed';
 import { TouchableOpacity } from '../../Themed';
 import ScannedDeviceInfo from './ScannedDeviceInfo';
 import Colors from '../../../constants/Colors';
@@ -44,6 +43,7 @@ import { ScanScreenNavigationProp } from '../../../../types';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
 import { faLink } from '@fortawesome/free-solid-svg-icons/faLink'
 import { faLinkSlash } from '@fortawesome/free-solid-svg-icons/faLinkSlash'
+import { EvilIcons, FontAwesome } from '@expo/vector-icons';
 
 
 interface Device {
@@ -159,10 +159,9 @@ const ScannedDevice: React.FC<Device> = ({
                   style={{ paddingHorizontal: 10 }}
                 />
                 {Platform.OS === 'android' && (
-                  <Icon
+                  <FontAwesome
                     name={'lock'}
                     color={peripheral.isBonded ? Colors.blue : peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'}
-                    type="font-awesome"
                     size={20}
                     paddingLeft={5}
                   />
@@ -173,29 +172,25 @@ const ScannedDevice: React.FC<Device> = ({
                   <Text style={{ paddingHorizontal: 5, color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black', fontSize: 14 / fontScale }}>
                     Advertising
                   </Text>
-                  <Icon
-                    type='font-awesome'
+                  <FontAwesome
                     name={'square'}
                     color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 0 ? Colors.blue : Colors.lightGray}
                     size={5}
                     style={{ paddingHorizontal: 1 }}
                   />
-                  <Icon
-                    type='font-awesome'
+                  <FontAwesome
                     name={'square'}
                     color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 1 ? Colors.blue : Colors.lightGray}
                     size={5}
                     style={{ paddingHorizontal: 1 }}
                   />
-                  <Icon
-                    type='font-awesome'
+                  <FontAwesome
                     name={'square'}
                     color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 2 ? Colors.blue : Colors.lightGray}
                     size={5}
                     style={{ paddingHorizontal: 1 }}
                   />
-                  <Icon
-                    type='font-awesome'
+                  <FontAwesome
                     name={'square'}
                     color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : (peripheral.advertismentActive % 5) == 3 ? Colors.blue : Colors.lightGray}
                     size={5}
@@ -209,14 +204,14 @@ const ScannedDevice: React.FC<Device> = ({
           {/* connect button */}
           {!peripheral.isConnected && (
             <View style={{ flexDirection: 'row', height: '100%' }}>
-              <Icon name="signal" type="font-awesome" style={{ marginTop: 3, }} color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
+              <FontAwesome name="signal" size={20} style={{ marginTop: 3, }} color={peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black'} />
               <Text style={{ width: 35, textAlign: 'center', marginTop: 6, color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black', fontSize: 14 / fontScale }}> {peripheral.rssi} </Text>
               <TouchableOpacity
                 onPress={peripheral.advertismentInActive ? () => { } : peripheral.filter ? () => { } : requestConnect}
                 testID='requestConnectButton'
                 accessibilityLabel='requestConnectButton'
               >
-                <Icon name="chevron-right" type="evilicon" size={40} color={peripheral.filter ? 'white' : peripheral.advertismentInActive ? 'white' : 'black'} />
+                <EvilIcons name="chevron-right" size={40} color={peripheral.filter ? 'white' : peripheral.advertismentInActive ? 'white' : 'black'} />
               </TouchableOpacity>
             </View>
           )}
@@ -228,7 +223,7 @@ const ScannedDevice: React.FC<Device> = ({
                 <FontAwesomeIcon icon={faLinkSlash} size={20} style={{ marginTop: 5 }} />
               </TouchableOpacity>
               <TouchableOpacity onPress={reconnectLocal}>
-                <Icon name="chevron-right" type="evilicon" size={40} color={peripheral.advertismentInActive ? 'white' : 'black'} />
+                <EvilIcons name="chevron-right" size={40} color={peripheral.advertismentInActive ? 'white' : 'black'} />
               </TouchableOpacity>
             </View>
           )}

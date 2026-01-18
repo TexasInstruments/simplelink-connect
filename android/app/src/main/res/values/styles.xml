@@ -5,6 +5,8 @@
     <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
     <item name="colorPrimary">@color/colorPrimary</item>
     <item name="colorPrimaryDark">#cc0000</item>
+    <item name="android:windowBackground">@drawable/splashscreen_image</item>
+
   </style>
   <style name="ResetEditText" parent="@android:style/Widget.EditText">
     <item name="android:padding">0dp</item>
@@ -12,7 +14,7 @@
     <item name="android:textColor">@android:color/black</item>
   </style>
   <style name="Theme.App.SplashScreen" parent="AppTheme">
-    <item name="android:windowBackground">@drawable/splashscreen</item>
+    <item name="android:windowBackground">@drawable/splashscreen_image</item>
     <item name="android:statusBarColor">@color/statusBar</item>
   </style>
 </resources>

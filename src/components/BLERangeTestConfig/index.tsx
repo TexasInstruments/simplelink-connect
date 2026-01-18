@@ -3,7 +3,7 @@ import Colors from '../../constants/Colors';
 import { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity } from '../Themed';
 import { useNavigation } from '@react-navigation/native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Ionicons } from '@expo/vector-icons';
 import BleManager from 'react-native-ble-manager';
 import { convertStringToByteArray, getBytes } from '../../hooks/convert';
 import { Buffer } from 'buffer';
@@ -227,7 +227,7 @@ const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
             <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                 <View style={{ backgroundColor: Colors.lightGray, marginBottom: 30 }}>
                     <View style={styles.sectionHeader}>
-                        <Icon name="cog" size={28} style={styles.icon} />
+                        <Ionicons name="cog" size={28} style={styles.icon} />
                         <Text style={styles.sectionTitle} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Config Parameters</Text>
                     </View>
                 </View>

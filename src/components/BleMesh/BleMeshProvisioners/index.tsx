@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { AddressRange, callMeshModuleFunction, meshStyles, ProvisionerNode } from '../meshUtils';
 import Colors from '../../../constants/Colors';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { Divider } from 'react-native-paper';
 import { GenericModalData, GenericMeshModal } from '../GenericMeshModal';
 import { AddressRangeMeshModal, AddressRangeModalData } from './AddressRangeMeshModal';
@@ -206,12 +206,12 @@ const BleMeshProvisioners: React.FC = () => {
     const DisplayProvisionerNode = ({ provisioner }: { provisioner: ProvisionerNode }) => {
         return (
             <View style={[meshStyles.optionsBox, meshStyles.shadow]}>
-                <TouchableOpacity style={[meshStyles.item]} onPress={() => toggleExpand(provisioner.unicastAddress)}>
+                <TouchableOpacity style={[meshStyles.item]} onPress={() => toggleExpand(provisioner.unicastAddress)} accessibilityLabel="down_arrow">
                     <View style={{ flexDirection: 'row', justifyContent: 'flex-start', flex: 1 }}>
                         <Text style={[meshStyles.subject, { flex: 1 }]} numberOfLines={1} >{provisioner.name}</Text>
                         <Text style={[meshStyles.subject]} >{provisioner.isCurrent ? '(Current)' : ''}</Text>
                     </View>
-                    <Icon name={provisioner.expand ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} />
+                    <MaterialIcons name={provisioner.expand ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} />
                 </TouchableOpacity>
                 {
                     (provisioner.expand && (
@@ -223,7 +223,7 @@ const BleMeshProvisioners: React.FC = () => {
                                     <Text style={[styles.text]}>{provisioner.name}</Text>
                                 </View>
                                 <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handlePressedEditName(provisioner)}>
-                                    <Icon name="edit" size={20} />
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
                             </View>
                             <Divider />
@@ -233,8 +233,8 @@ const BleMeshProvisioners: React.FC = () => {
                                     <Text style={[meshStyles.topic]}>Unicast Address</Text>
                                     <Text numberOfLines={1} style={[styles.text, { maxWidth: 200 }]}>0x{provisioner.unicastAddress.padStart(4, '0')}</Text>
                                 </View>
-                                <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handlePressedEditUnicastAddress(provisioner)}>
-                                    <Icon name="edit" size={20} />
+                                <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handlePressedEditUnicastAddress(provisioner)} accessibilityLabel="unicast_addr">
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
 
                             </View>
@@ -257,7 +257,7 @@ const BleMeshProvisioners: React.FC = () => {
                                     <Text numberOfLines={1} style={[styles.text, { maxWidth: 200 }]}>{provisioner.ttl}</Text>
                                 </View>
                                 <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handlePressedEditTtl(provisioner)}>
-                                    <Icon name="edit" size={20} />
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
 
                             </View>
@@ -272,8 +272,8 @@ const BleMeshProvisioners: React.FC = () => {
                                         </Text>
                                     ))}
                                 </View>
-                                <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handlePressedEditUnicastRanges(provisioner)}>
-                                    <Icon name="edit" size={20} />
+                                <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handlePressedEditUnicastRanges(provisioner)} accessibilityLabel="allocated_unicast_ranges">
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
                             </View>
                             <Divider />
@@ -288,7 +288,7 @@ const BleMeshProvisioners: React.FC = () => {
                                     ))}
                                 </View>
                                 <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handlePressedEditGroupRanges(provisioner)}>
-                                    <Icon name="edit" size={20} />
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
                             </View>
                             <Divider />
@@ -303,7 +303,7 @@ const BleMeshProvisioners: React.FC = () => {
                                     ))}
                                 </View>
                                 <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => handlePressedEditScenesRanges(provisioner)}>
-                                    <Icon name="edit" size={20} />
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
                             </View>
                         </View>

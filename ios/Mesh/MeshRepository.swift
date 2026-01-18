@@ -2057,7 +2057,7 @@ extension MeshRepository : ProxyFilterDelegate {
   
   func proxyFilterUpdateAcknowledged(type: ProxyFilerType, listSize: UInt16) {
     print("proxyFilterUpdateAcknowledged", type, listSize)
-    self.meshModule.sendEvent(withName: "onProxyFilterUpdated", body: ["type": type, "listSize": listSize])
+    self.meshModule.sendEvent(withName: "onProxyFilterUpdated", body: ["type": ProxyFilerType.acceptList == type ? 0 : 1, "listSize": listSize])
     
   }
 }

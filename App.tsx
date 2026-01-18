@@ -31,8 +31,11 @@
  */
 
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { Platform, StyleSheet } from 'react-native';
+import { Provider as PaperProvider } from 'react-native-paper';
+import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import useCachedResources from './src/hooks/useCachedResources';
 import useColorScheme from './src/hooks/useColorScheme';
 import Navigation from './src/navigation';
@@ -41,42 +44,61 @@ import { ProfileListProvider } from './src/context/ProfileListContext';
 import { CharacteristicViewProvider } from './src/context/CharactristicViewContext';
 import { RepositoryDetailsProvider } from './src/context/FirmwareRepoContext';
 import { SpecificScreenConfigProvider } from './src/context/SpecificScreenOptionsContext';
-import { Provider as PaperProvider } from 'react-native-paper';
 import { TutorialsProvider } from './src/context/TutorialContext';
 import { ServiceViewProvider } from './src/context/ServiceViewContext';
 import Colors from './src/constants/Colors';
 import { BleRangeProvider } from './src/context/RangeTestContext';
 
+function AppContent({ colorScheme }: { colorScheme: string }) {
+  return (
+    <SafeAreaView
+      style={[
+        styles.container,
+      ]}
+      edges={Platform.OS == "android" ? ['left', 'right', 'bottom'] : ['left', 'right']}
+    >
+      <CharacteristicViewProvider>
+        <ServiceViewProvider>
+          <TerminalConfigProvider>
+            <SpecificScreenConfigProvider>
+              <RepositoryDetailsProvider>
+                <ProfileListProvider>
+                  <TutorialsProvider>
+                    <BleRangeProvider>
+                      <Navigation colorScheme={colorScheme} />
+                      <StatusBar />
+                    </BleRangeProvider>
+                  </TutorialsProvider>
+                </ProfileListProvider>
+              </RepositoryDetailsProvider>
+            </SpecificScreenConfigProvider>
+          </TerminalConfigProvider>
+        </ServiceViewProvider>
+      </CharacteristicViewProvider>
+    </SafeAreaView>
+  );
+}
+
 export default function App() {
   const [isLoadingComplete] = useCachedResources();
   const colorScheme = useColorScheme();
 
-  if (!isLoadingComplete) {
-    return null;
-  } else {
-    return (
+  if (!isLoadingComplete) return null;
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+
       <SafeAreaProvider>
-        <PaperProvider theme={Colors.lightTheme} >
-          <CharacteristicViewProvider>
-            <ServiceViewProvider>
-              <TerminalConfigProvider>
-                <SpecificScreenConfigProvider>
-                  <RepositoryDetailsProvider>
-                    <ProfileListProvider>
-                      <TutorialsProvider>
-                        <BleRangeProvider>
-                          <Navigation colorScheme={colorScheme} />
-                          <StatusBar />
-                        </BleRangeProvider>
-                      </TutorialsProvider>
-                    </ProfileListProvider>
-                  </RepositoryDetailsProvider>
-                </SpecificScreenConfigProvider>
-              </TerminalConfigProvider>
-            </ServiceViewProvider>
-          </CharacteristicViewProvider>
+        <PaperProvider theme={Colors.lightTheme}>
+          <AppContent colorScheme={colorScheme} />
         </PaperProvider>
       </SafeAreaProvider>
-    );
-  }
+    </GestureHandlerRootView>
+  );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

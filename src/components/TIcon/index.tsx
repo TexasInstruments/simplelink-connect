@@ -30,7 +30,7 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { createIconSetFromFontello } from 'react-native-vector-icons';
+import { createIconSetFromFontello } from '@expo/vector-icons';
 import config from '../../assets/fonts/config.json';
 
 const TI_Icon_Names = ['terminal-solid'] as const;

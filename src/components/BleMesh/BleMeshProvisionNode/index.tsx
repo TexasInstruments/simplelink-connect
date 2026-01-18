@@ -6,13 +6,13 @@ import { useNavigation } from '@react-navigation/native';
 import PeripheralIcon from '../../PeripheralIcon';
 import Spacing from '../../Spacing';
 import { Divider } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { LinearProgress } from '@rneui/base';
 import { GenericMeshModal, GenericModalData } from '../GenericMeshModal';
 import { callMeshModuleFunction, meshStyles, NetworkKey } from '../meshUtils';
 import { Skeleton } from '@rneui/themed';
 import LinearGradient from 'react-native-linear-gradient';
-import { ActivityIndicator } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 
 interface IdentifiedNode {
     unicastAddress: number,
@@ -110,9 +110,15 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
         }
     }
 
-    const startProvisionNode = () => {
+    const startProvisionNode = async () => {
         setInProvisioningProgress(true);
-        callMeshModuleFunction('startProvisioningNode');
+        try {
+            await callMeshModuleFunction('startProvisioningNode');
+        } catch (e) {
+            setInProvisioningProgress(false);
+            alert(e.message || "An unknown error occurred")
+            return
+        }
     }
 
     const onPressEditNodeName = () => {
@@ -120,7 +126,7 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
             title: 'Edit Node Name',
             onClickSave: onEditNodeName,
             currentValue: identifiedNode!.name,
-            label: 'name'
+            label: 'name',
         });
         setIsModalVisible(true);
     }
@@ -195,8 +201,8 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
                                 <Text style={[meshStyles.subject]}>Name</Text>
                                 <View style={{ display: 'flex', flexDirection: 'row' }}>
                                     <Text >{identifiedNode?.name ? identifiedNode?.name : 'N/A'}</Text>
-                                    <TouchableOpacity style={{ marginLeft: 10 }} onPress={onPressEditNodeName}>
-                                        <Icon name="edit" size={20} />
+                                    <TouchableOpacity style={{ marginLeft: 10 }} onPress={onPressEditNodeName} accessibilityLabel="edit_name">
+                                        <MaterialIcons name="edit" size={20} />
                                     </TouchableOpacity>
                                 </View>
 
@@ -206,8 +212,8 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
                                 <Text style={[meshStyles.subject]}>Unicast address</Text>
                                 <View style={{ display: 'flex', flexDirection: 'row' }}>
                                     <Text>0x{identifiedNode?.unicastAddress.toString(16).toLocaleUpperCase()}</Text>
-                                    <TouchableOpacity style={{ marginLeft: 10 }} onPress={onPressEditUnicastAddr}>
-                                        <Icon name="edit" size={20} />
+                                    <TouchableOpacity style={{ marginLeft: 10 }} onPress={onPressEditUnicastAddr} accessibilityLabel="edit_address">
+                                        <MaterialIcons name="edit" size={20} />
                                     </TouchableOpacity>
                                 </View>
 
@@ -222,7 +228,7 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
                             </View>
                         </View>
                         {!inProvisioningProgress && (
-                            <TouchableOpacity style={[meshStyles.button]} onPress={startProvisionNode}>
+                            <TouchableOpacity style={[meshStyles.button]} onPress={startProvisionNode} accessibilityLabel="provision">
                                 <Text style={[meshStyles.textButton]}>Provision</Text>
                             </TouchableOpacity>
                         )}
@@ -246,7 +252,7 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
                             <Text style={{ marginRight: 8 }}>
                                 {Math.floor(progress * 100).toFixed(0)}%
                             </Text>
-                            <ActivityIndicator size="small" color={Colors.darkGray} />
+                            <ActivityIndicator size={15} color={Colors.darkGray} />
                         </View>
                     </View>
                 )}

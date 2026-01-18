@@ -55,7 +55,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Colors from '../../constants/Colors';
 import { getIconByPeripheralInfo } from '../../hooks/uuidToBrand';
-import FontAwesome from "react-native-vector-icons/FontAwesome";
+import { FontAwesome } from "@expo/vector-icons";
 import RNRestart from 'react-native-restart';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -184,6 +184,7 @@ const BleScanner: React.FC<Props> = () => {
       console.log('BleScanner: removeAllListeners');
       bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
       bleManagerEmitter.removeAllListeners('BleManagerStopScan');
+      // bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
 
       clearInterval(peripheralViewUpdateInterval.current);
     } else {
@@ -382,6 +383,8 @@ const BleScanner: React.FC<Props> = () => {
 
           // First time asking for permission - need to reload the app
           const hasAskedPermission = await AsyncStorage.getItem('hasAskedPermission');
+          console.log("hasAsk!!!!!!!!!!!!!!", hasAskedPermission)
+
           if (hasAskedPermission !== 'true') {
             await AsyncStorage.setItem('hasAskedPermission', 'true');
             RNRestart.Restart();

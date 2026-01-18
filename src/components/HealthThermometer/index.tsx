@@ -3,7 +3,7 @@ import { Text } from '../Themed';
 import { StyleSheet, NativeModules, Dimensions } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import Colors from '../../constants/Colors';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import BleManager from 'react-native-ble-manager';
 import { Buffer } from 'buffer';
 import { Divider } from 'react-native-paper';
@@ -13,6 +13,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
 import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
+import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
+import IdleTimerManager from 'react-native-idle-timer';
 
 interface Props {
     peripheralId: string;
@@ -32,6 +34,8 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
     const SERVICE_UUID = '1809';
     const CHAR_UUID = '2A1C';
 
+    const { specificScreenConfig, updateConfigurations } = useSpecificScreenConfigContext();
+
     const [indicationsSwitch, setIndicationsSwitch] = useState<boolean>(false);
     const [temperature, setTemperature] = useState<{ temp: number, unit: string } | null>(null);
     const [time, setTime] = useState<string | null>(null);
@@ -40,15 +44,42 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
     const [temperatureDataSet, setTemperatureDataSet] = useState<TemperatureData[]>([]);
     const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
     const [selectedInterval, setSelectedInterval] = useState('10'); // Default interval is 10 seconds
+    const isConnecting = useRef<boolean>(false);
+    const disconnectInInterval = useRef<boolean>(specificScreenConfig.disconnectInInterval);
+    const logBuffer = useRef<string[]>([]);
 
     const BleManagerModule = NativeModules.BleManager;
     const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+
+    // Update local variable when context is changing
+    useEffect(() => {
+        disconnectInInterval.current = specificScreenConfig.disconnectInInterval;
+    }, [specificScreenConfig.disconnectInInterval]);
+
+
+    useEffect(() => {
+        /* Disable lock screen sleep */
+        IdleTimerManager.setIdleTimerDisabled(true, 'ht-screen');
+
+        // Update disconnectInInterval bool to be false as default
+        updateConfigurations({ ...specificScreenConfig, disconnectInInterval: false })
+
+        return () => {
+            /* Enable lock screen sleep */
+            IdleTimerManager.setIdleTimerDisabled(false, 'ht-screen');
+            updateConfigurations({ ...specificScreenConfig, disconnectInInterval: false })
+        };
+    }, []);
 
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(() => {
                 bleManagerEmitter.addListener(
                     'BleManagerDidUpdateValueForCharacteristic', handleIndication);
+                bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', () => {
+                    addLog("device disconnected from phone")
+                })
+
             });
 
             return () => {
@@ -56,8 +87,10 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
                 if (pollingInterval) {
                     clearInterval(pollingInterval);
                     setPollingInterval(null);
+                    addLog("polling interval cleared")
                 }
                 bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+                bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, CHAR_UUID); // Stop notifications
             };
         }, [pollingInterval])
@@ -66,24 +99,116 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
     useEffect(() => {
         if (indicationsSwitch) {
             // Start polling interval if indicationsSwitch is enabled
-            pollTemperature();
-            const interval = setInterval(pollTemperature, Number(selectedInterval) * 1000);
+            // pollTemperature();
+            const interval = setInterval(onIntervalTimeout, Number(selectedInterval) * 1000);
             setPollingInterval(interval);
+
         } else {
             // Clear polling interval
             if (pollingInterval) {
                 clearInterval(pollingInterval);
+                addLog("polling interval cleared")
                 setPollingInterval(null);
             }
+
+            // Connect the device if not connected
+            addLog("Trying to connect to peripheral")
+            connect(peripheralId)
         }
     }, [indicationsSwitch]);
 
+    // In each interval timeout, connect to the device, enable notification and disconnect the device.
+    const onIntervalTimeout = () => {
+        addLog("Interval timeout")
+        if (isConnecting.current) {
+            addLog('Connection already in progress, skipping...');
+            return; // Prevent multiple connection attempts
+        }
+        isConnecting.current = true
+
+        if (disconnectInInterval.current) {
+            connect(peripheralId, 0, 5) // 5 retries
+                .then(() => {
+                    addLog('Peripheral connected, retrieving services..');
+                    BleManager.retrieveServices(peripheralId).then(() => {
+                        pollTemperature();
+
+                    }).catch((e) => {
+                        addLog('Retrieve services failed:', e);
+                    }).finally(() => {
+                        isConnecting.current = false;
+                    });
+                })
+                .catch((e) => {
+                    addLog('Final connection attempt failed:', e);
+                })
+                .finally(() => {
+                    isConnecting.current = false;
+                });
+        }
+        else {
+            BleManager.isPeripheralConnected(peripheralId, [])
+                .then(isConnected => {
+                    if (isConnected) {
+                        addLog('Peripheral already connected, polling temperature..');
+                        isConnecting.current = false;
+                        pollTemperature();
+                    } else {
+                        connect(peripheralId, 0, 0)
+                            .then(() => {
+                                addLog('Peripheral connected');
+                                BleManager.retrieveServices(peripheralId)
+                                    .then(() => {
+                                        pollTemperature();
+                                    })
+                                    .catch((e) => {
+                                        addLog('Retrieve services failed:', e);
+                                    })
+                                    .finally(() => {
+                                        isConnecting.current = false;
+                                    });
+                            })
+                            .catch((e) => {
+                                addLog('Final connection attempt failed:', e);
+                            })
+                            .finally(() => {
+                                isConnecting.current = false;
+                            });
+                    }
+                }).catch((e) => addLog("isPeripheralConnected failed" + e));
+
+        }
+    }
+
+    const connect = (peripheralId: string, retries = 0, maxRetries = 5) => {
+        return new Promise((resolve, reject) => {
+            BleManager.connect(peripheralId)
+                .then(() => {
+                    addLog(`Connected to ${peripheralId}`);
+                    resolve('success');
+                })
+                .catch((error) => {
+                    addLog(`Connection failed: ${error}. Retrying... (${retries + 1}/${maxRetries})`);
+
+                    if (retries < maxRetries) {
+                        setTimeout(() => {
+                            connect(peripheralId, retries + 1, maxRetries).then(resolve).catch(reject);
+                        }, 2000);
+                    } else {
+                        reject('Max retries reached, failed to connect');
+                    }
+                });
+        });
+    };
+
     const pollTemperature = () => {
-        console.log('Polling temperature...');
+        addLog('Polling temperature...');
         BleManager.startNotification(peripheralId, SERVICE_UUID, CHAR_UUID);
     };
 
     const handleIndicationSwitch = useCallback(async () => {
+        // poll temperature right away
+        pollTemperature()
         setIndicationsSwitch((prev) => !prev);
     }, [indicationsSwitch]);
 
@@ -143,8 +268,8 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
     }
 
     const handleIndication =
-        ({ value, peripheral, characteristic, service }: any) => {
-            console.log(`notification: ${value}, characteristic: ${characteristic}`);
+        async ({ value, peripheral, characteristic, service }: any) => {
+            addLog(`Got notification: ${value}, characteristic: ${characteristic}`);
 
             if (characteristic.toLowerCase().includes(CHAR_UUID.toLowerCase()) && value) {
 
@@ -183,9 +308,6 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
                     timeString = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
                     dateString = timestamp.toLocaleDateString("en-US", options);
 
-                    console.log('Time:', timeString);
-                    console.log('Date:', dateString);
-
                     setTime(timeString);
                     setDate(dateString);
                 }
@@ -195,10 +317,9 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
 
                 // Display parsed data
                 let units = temperatureUnitsFlag ? 'Fahrenheit' : 'Celsius'
-                console.log("Temperature Units Flag:", units);
 
                 setTemperature({ temp: tempMeasureRounded, unit: units });
-                console.log("Temperature Type:", temperatureType);
+                addLog(`Time: ${timeString}, Date: ${dateString}, Temperature Units Flag: ${units}, Type: ${temperatureType}`)
 
                 const location = tempTypeToDefinition(temperatureType)
                 setTemperatureType(location);
@@ -219,8 +340,23 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
                     }
                     return newSet;
                 });
-
-                BleManager.stopNotification(peripheralId, SERVICE_UUID, CHAR_UUID);
+                try {
+                    BleManager.stopNotification(peripheralId, SERVICE_UUID, CHAR_UUID)
+                }
+                catch (e) {
+                    addLog('stopNotification failed:', e);
+                }
+                finally {
+                    if (disconnectInInterval.current) {
+                        // disconnect from device
+                        addLog("trying to disconnect the peripheral")
+                        BleManager.disconnect(peripheralId).then(() => {
+                            addLog('Peripheral Disconnected')
+                        }).catch((error) => {
+                            console.error(error)
+                        })
+                    }
+                }
             }
 
         }
@@ -252,11 +388,33 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
     }
 
     const exportData = () => {
-        console.log("press enter to export")
         let csvStr = convertToCSV(temperatureDataSet);
-
         downloadDataToLocalStorage(csvStr, "Health_Thermometer_Service.csv", 'text/csv');
     }
+
+    function getTimeStamp() {
+        const now = new Date();
+        const hh = String(now.getHours()).padStart(2, "0");
+        const mm = String(now.getMinutes()).padStart(2, "0");
+        const ss = String(now.getSeconds()).padStart(2, "0");
+        const ms = String(now.getMilliseconds()).padStart(3, "0");
+        return `${hh}:${mm}:${ss} (${ms})`;
+    }
+
+    const addLog = (message: string) => {
+
+        const timestamp = getTimeStamp()
+        console.log(message)
+        const logEntry = `[${timestamp}] ${message}`;
+
+        // Store log in buffer
+        logBuffer.current = [...logBuffer.current, logEntry];
+    }
+
+    const exportLogs = () => {
+        downloadDataToLocalStorage(logBuffer.current.join('\n'), "CGM_Service_logs.txt", 'text/plain');
+    }
+
 
     return (
         <KeyboardAvoidingView style={[styles.container]}>
@@ -297,10 +455,12 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
                             <Dropdown
                                 style={[styles.dropdown]}
                                 data={Object.values([
+                                    { value: '1', label: '1 second', },
                                     { value: '5', label: '5 seconds', },
                                     { value: '10', label: '10 seconds', },
-                                    { value: '30', label: '30 seconds', },
-                                    { value: '60', label: '60 seconds', },
+                                    { value: '60', label: '1 minute', },
+                                    { value: '120', label: '2 minutes', },
+                                    { value: '300', label: '5 minutes', },
                                 ])}
                                 value={selectedInterval}
                                 onChange={(v: any) => {
@@ -326,17 +486,22 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
                     />
                 )}
 
-                <TouchableOpacity style={[styles.button]} onPress={exportData}>
-                    <Text style={{ color: Colors.blue, fontSize: 14, marginRight: 8 }}>Export Data</Text>
-                    <AntDesign name="download" size={20} color={Colors.blue} />
-                </TouchableOpacity>
+                <View style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <TouchableOpacity style={[styles.button]} onPress={exportData}>
+                        <Text style={{ color: Colors.blue, fontSize: 14, marginRight: 8 }}>Export Data</Text>
+                        <AntDesign name="download" size={20} color={Colors.blue} />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.button]} onPress={exportLogs}>
+                        <Text style={{ color: Colors.blue, fontSize: 14, marginRight: 8 }}>Export Logs</Text>
+                        <AntDesign name="download" size={20} color={Colors.blue} />
+                    </TouchableOpacity>
+                </View>
 
             </ScrollView>
 
         </KeyboardAvoidingView>
     );
 };
-
 
 const styles = StyleSheet.create({
     intervalPickerContainer: {

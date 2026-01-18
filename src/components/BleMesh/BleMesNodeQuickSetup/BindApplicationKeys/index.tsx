@@ -8,7 +8,7 @@ import {
     NativeEventEmitter,
     NativeModules,
     Alert,
-    ActivityIndicator,
+    Platform,
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { ApplicationKey, callMeshModuleFunction, meshStyles, Model, Element } from '../../meshUtils';
@@ -17,6 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import ModelSelectionList from '../ModelSelectionList';
 import StatusesPopup from '../StatusesPopup';
+import { ActivityIndicator } from 'react-native-paper';
 
 export interface NetworkKey {
     expand?: boolean;
@@ -96,7 +97,7 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
 
     return (
         <SafeAreaView
-            style={meshStyles.container} edges={['left', 'right', 'bottom']}
+            style={meshStyles.container} edges={Platform.OS == "ios" ? ['left', 'right', 'bottom'] : ['left', 'right']}
         >
             <Text style={meshStyles.title}>Bind Application Keys</Text>
 
@@ -104,7 +105,7 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
                 <View style={{ flexDirection: 'column' }}>
                     <Text style={styles.label}>Select Application Key</Text>
                     <Dropdown
-                        style={[meshStyles.dropdown, { flex: undefined, backgroundColor: 'white', borderWidth: 0 }]}
+                        style={[meshStyles.dropdown, { flex: undefined, backgroundColor: 'white', borderWidth: 0, marginBottom: 20 }]}
                         placeholderStyle={meshStyles.placeholderStyle}
                         selectedTextStyle={meshStyles.selectedTextStyle}
                         data={applicationKeys}
@@ -114,6 +115,7 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
                         placeholder=""
                         value={selectedApplicationKeyIdx}
                         onChange={(item) => setSelectedApplicationKeyIdx(item.index)}
+                        accessibilityLabel="set_app_key"
                     />
                 </View>
 
@@ -137,6 +139,7 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
             ) : (
                 <TouchableOpacity
                     onPress={handleBindModels}
+                    accessibilityLabel="bind"
                     style={[meshStyles.fab, { opacity: selectedModels.length == 0 ? 0.3 : 1 }]}
                     disabled={selectedModels.length == 0}
                 >

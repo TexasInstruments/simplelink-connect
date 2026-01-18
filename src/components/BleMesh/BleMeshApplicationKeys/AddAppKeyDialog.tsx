@@ -83,6 +83,7 @@ export const AddAppKeyDialog: React.FC<Props> = ({ visible, setAppKeys, appKeys,
                             onChangeText={setNewKeyName}
                             underlineColor="gray"
                             activeOutlineColor={Colors.active}
+                            accessibilityLabel="name"
                         />
                         <TextInput
                             mode='outlined'
@@ -97,7 +98,7 @@ export const AddAppKeyDialog: React.FC<Props> = ({ visible, setAppKeys, appKeys,
                             <TouchableOpacity onPress={() => setModalVisible(!visible)} style={[meshStyles.modalButton]}>
                                 <Text style={[meshStyles.modalTextButton]}>Close</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => { addNewKey(); setModalVisible(false); }} style={[meshStyles.modalButton]}>
+                            <TouchableOpacity onPress={() => { addNewKey(); setModalVisible(false); }} style={[meshStyles.modalButton]} accessibilityLabel="save">
                                 <Text style={[meshStyles.modalTextButton]}>Save</Text>
                             </TouchableOpacity>
                         </View>

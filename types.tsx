@@ -75,6 +75,7 @@ export type RootStackParamList = {
   ClassificationServiceModel: { peripheralId: string };
   DataAcquisitionServiceModel: { peripheralId: string };
   HealthThermometerServiceModel: { peripheralId: string };
+  CGMTestServiceModel: { peripheralId: string };
   CgmServiceModel: { peripheralId: string };
   MatterLightServiceModel: { peripheralId: string };
   TerminalServiceModel: { peripheralId: string };
@@ -86,6 +87,7 @@ export type RootStackParamList = {
   ModalScreen: { peripheralId: string };
   SettingsModal: undefined;
   TerminalSettingsDrawer: undefined;
+  CharacteristicsScreen: undefined;
   NotFound: undefined;
   FilterSortOptions: undefined;
   ConfigRepository: undefined;

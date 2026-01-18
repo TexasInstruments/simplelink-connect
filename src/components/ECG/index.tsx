@@ -107,6 +107,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
 
     const SERVICE_UUID = 'f000bb00-0451-4000-b000-000000000000';
     const ECG_PATCH_UUID = 'f000bb01-0451-4000-b000-000000000000';
+    const ECG_HOLTER_AI_UUID = 'f000bb03-0451-4000-b000-000000000000';
     const ECG_HOLTER_UUID = 'f000bb02-0451-4000-b000-000000000000';
 
     const BleManagerModule = NativeModules.BleManager;
@@ -143,6 +144,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
     const paceHolterRef = useRef<{ amp: DataChart[], width: DataChart[], pol: DataChart[] }>({ amp: [], width: [], pol: [] });
 
     //Indicator
+    const isAiIncluded = useRef(false)
     const indicatorRef = useRef<number>(NoIndicator.value);
     const [labelsTooltip, setLabelsTooltip] = useState({ normal: false, mild: false, severe: false, emergency: false });
     const indicatorDataRef = useRef<{ time: string, formattedTime: string, value: string }[]>([]);
@@ -177,6 +179,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                 try {
                     BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID);
                     BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID);
+                    BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_AI_UUID);
                 } catch (e) {
                     console.log(e)
                 }
@@ -232,6 +235,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
 
         BleManager.startNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID).catch((e) => console.log(e));
         BleManager.startNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID).catch((e) => console.log(e));
+        BleManager.startNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_AI_UUID).catch((e) => console.log(e));
 
         console.log('notification started');
 
@@ -250,6 +254,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
 
         BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID).catch((e) => console.log(e));
         BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID).catch((e) => console.log(e));
+        BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_AI_UUID).catch((e) => console.log(e));
 
         console.log('notification stopped');
 
@@ -378,19 +383,27 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
         }
     }
 
-    function parseEcgHolterData(hexVal: string) {
+    function parseEcgHolterData(hexVal: string, aiIncluded: boolean) {
         if (!notificationSwitch.current) {
             return;
         }
+        isAiIncluded.current = aiIncluded;
 
-        const indicatorByte = parseInt(hexVal.slice(-2), 16);
-        console.log('Indicator:', indicatorByte)
-        indicatorRef.current = indicatorByte;
-        let label = Indicators.find(e => e.value === indicatorByte)?.title ?? 'Unknown Indicator'
-        let date = getDateTimeStr('indication')
-        indicatorDataRef.current = [...indicatorDataRef.current, { time: date.x, formattedTime: date.time, value: label }]
+        if (aiIncluded) {
+            if (hexVal.length < 2) {
+                console.warn('Insufficient hex data for AI indicator parsing');
+                return;
+            }
+            const indicatorByte = parseInt(hexVal.slice(-2), 16);
+            console.log('Indicator:', indicatorByte)
+            indicatorRef.current = indicatorByte;
+            let label = Indicators.find(e => e.value === indicatorByte)?.title ?? 'Unknown Indicator'
+            let date = getDateTimeStr('indication')
+            indicatorDataRef.current = [...indicatorDataRef.current, { time: date.x, formattedTime: date.time, value: label }]
 
-        hexVal = hexVal.slice(0, -2);
+            hexVal = hexVal.slice(0, -2);
+
+        }
 
         const newEcg1Data: DataChart[] = [];
         const newEcg2Data: DataChart[] = [];
@@ -564,7 +577,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                 parseEcgPatchData(hexString);
             }
         }
-        else if (characteristic.toLowerCase().includes(ECG_HOLTER_UUID.toLowerCase()) && value) {
+        else if (characteristic.toLowerCase().includes(ECG_HOLTER_AI_UUID.toLowerCase()) && value) {
             if (!notificationSwitch.current) {
                 return;
             }
@@ -573,7 +586,20 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                 const hexString = Array.from(notificationData)
                     .map(byte => byte.toString(16).padStart(2, '0'))
                     .join('');
-                parseEcgHolterData(hexString);
+                parseEcgHolterData(hexString, true);
+            }
+        }
+        else if (characteristic.toLowerCase().includes(ECG_HOLTER_UUID.toLowerCase()) && value) {
+            if (!notificationSwitch.current) {
+                return;
+            }
+            const notificationData = new Uint8Array(value);
+
+            if (notificationData.length > 0) {
+                const hexString = Array.from(notificationData)
+                    .map(byte => byte.toString(16).padStart(2, '0'))
+                    .join('');
+                parseEcgHolterData(hexString, false);
             }
         }
     };
@@ -857,8 +883,8 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
 
             downloadDataToLocalStorage(csvCombined, 'ECG.csv', 'text/csv');
         }
-        else if (ecgHolterDataRef.current.channel1.length > 0) {
-            console.log(indicatorDataRef.current.length, ecgHolterDataRef.current.channel1.length)
+        else if (ecgHolterDataRef.current.channel1.length > 0 && isAiIncluded.current) {
+
             const mergedEcgPaceHolter = ecgHolterDataRef.current.channel1.map((data, index) => {
                 return {
                     x: data.x,
@@ -908,6 +934,57 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                 csvCombined = 'Time,Formatted Time,Pace Amplitude,Pace Width,Pace Polarity,ECG1,ECG2,ECG3,ECG4' + margin + 'Time,Formatted Time,Holter Respiration' + margin + 'Time,Formatted Time,Filtered Respiration' + margin + 'Time,Formatted Time,Indicator\r\n';
                 for (let i = 0; i < maxLength; i++) {
                     csvCombined += csvEcgPaceArray[i] + margin + csvRespirationArray[i] + margin + csvRespirationFilteredArray[i] + margin + csvIndicationArray[i] + '\r\n';
+                }
+            }
+
+            downloadDataToLocalStorage(csvCombined, 'ECG.csv', 'text/csv');
+        }
+        else if (ecgHolterDataRef.current.channel1.length > 0 && !isAiIncluded.current) {
+            const mergedEcgPaceHolter = ecgHolterDataRef.current.channel1.map((data, index) => {
+                return {
+                    x: data.x,
+                    time: data.time,
+                    paceAmp: paceHolterRef.current.amp[index].y,
+                    paceWidth: paceHolterRef.current.width[index].y,
+                    pacePol: paceHolterRef.current.pol[index].y,
+                    ecg1: data.y,
+                    ecg2: ecgHolterDataRef.current.channel2[index].y,
+                    ecg3: ecgHolterDataRef.current.channel3[index].y,
+                    ecg4: ecgHolterDataRef.current.channel4[index].y,
+                };
+            });
+
+            let csvEcgPaceArray = convertToCSV(mergedEcgPaceHolter);
+            let csvRespirationArray = convertToCSV(pcgRawDataRef.current);
+
+            // Ensure both arrays have the same length by filling the shorter one with empty values
+            const maxLength = Math.max(csvEcgPaceArray.length, csvRespirationArray.length);
+            while (csvEcgPaceArray.length < maxLength) {
+                csvEcgPaceArray.push(",,,,,,,,"); // Eight empty cells for ECG table
+            }
+            while (csvRespirationArray.length < maxLength) {
+                csvRespirationArray.push(",,,"); // Three empty cells for Respiration table
+            }
+
+            // Add a margin (empty columns) between the tables
+            let margin = ",,,"; // Adjust the number of commas to create the desired margin
+            // Merge both arrays side by side with margin
+            let csvCombined = 'Time,Formatted Time,Pace Amplitude,Pace Width,Pace Polarity,ECG1,ECG2,ECG3,ECG4' + margin + 'Time,Formatted Time,Holter Respiration\r\n';
+            for (let i = 0; i < maxLength; i++) {
+                csvCombined += csvEcgPaceArray[i] + margin + csvRespirationArray[i] + '\r\n';
+            }
+            if (applyFilter.current) {
+                let sortedFilteredPcg = filteredPcgRef.current.sort((a, b) => parseFloat(a.x) - parseFloat(b.x));
+                let csvRespirationFilteredArray = convertToCSV(sortedFilteredPcg);
+
+                // Ensure the filtered respiration array also has the same length
+                while (csvRespirationFilteredArray.length < maxLength) {
+                    csvRespirationFilteredArray.push(",,");
+                }
+
+                csvCombined = 'Time,Formatted Time,Pace Amplitude,Pace Width,Pace Polarity,ECG1,ECG2,ECG3,ECG4' + margin + 'Time,Formatted Time,Holter Respiration' + margin + 'Time,Formatted Time,Filtered Respiration\r\n';
+                for (let i = 0; i < maxLength; i++) {
+                    csvCombined += csvEcgPaceArray[i] + margin + csvRespirationArray[i] + margin + csvRespirationFilteredArray[i] + '\r\n';
                 }
             }
 
@@ -1013,7 +1090,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
     const renderLabelSection = useMemo(() => {
         return (
             <>
-                {recordStarted && ecgHolterDataRef.current.channel1.length > 0 && (
+                {isAiIncluded.current && recordStarted && ecgHolterDataRef.current.channel1.length > 0 && (
                     <View style={styles.chartContainer}>
                         <View style={{ padding: 10, display: 'flex' }}>
                             <Text style={{ fontSize: 16 / fontScale, fontWeight: '500', alignSelf: 'center' }}>Arrhythmia Classification</Text>
@@ -1028,7 +1105,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                 )}
             </>
         );
-    }, [indicatorRef.current, recordStarted, ecgHolterDataRef.current.channel1, labelsTooltip]);
+    }, [indicatorRef.current, recordStarted, ecgHolterDataRef.current.channel1, labelsTooltip, isAiIncluded.current]);
 
     function toolTip(visible: boolean, setVisible: any, toolTip: { text: string, title: string, value: number }) {
         return (<Tooltip

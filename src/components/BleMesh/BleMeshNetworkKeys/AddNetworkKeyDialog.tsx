@@ -87,6 +87,7 @@ export const AddNetworkKeyDialog: React.FC<Props> = ({ visible, setNetKeys, netK
                             activeOutlineColor={Colors.active}
                             numberOfLines={1}
                             multiline={false}
+                            accessibilityLabel="name"
                         />
                         <TextInput
                             mode='outlined'
@@ -104,7 +105,7 @@ export const AddNetworkKeyDialog: React.FC<Props> = ({ visible, setNetKeys, netK
                             <TouchableOpacity onPress={() => setModalVisible(!visible)}>
                                 <Text style={styles.closeText}>Close</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => { addNewKey(); setModalVisible(false); }}>
+                            <TouchableOpacity onPress={() => { addNewKey(); setModalVisible(false); }} accessibilityLabel="save">
                                 <Text style={styles.saveText}>Save</Text>
                             </TouchableOpacity>
                         </View>

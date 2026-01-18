@@ -3,7 +3,7 @@ import { StyleSheet, View, KeyboardAvoidingView, Platform, Alert } from 'react-n
 import Colors from '../../../constants/Colors';
 import { useEffect, useRef, useState, } from 'react';
 import { Divider } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
 import { FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AddNetworkKeyDialog } from './AddNetworkKeyDialog';
@@ -19,7 +19,6 @@ export interface NetworkKey {
 }
 
 const BleMeshNetworkKeys: React.FC = () => {
-
     const [primaryNetKey, setPrimaryNetKey] = useState<NetworkKey>();
     const [subNetKeys, setSubNetKeys] = useState<NetworkKey[]>([]);
     const [addKeyModalVisible, setAddKeyModalVisible] = useState(false);
@@ -136,8 +135,8 @@ const BleMeshNetworkKeys: React.FC = () => {
         return (
             <View style={[meshStyles.optionsBox, meshStyles.shadow]}>
                 <TouchableOpacity style={[meshStyles.item]} onPress={() => toggleExpand(netKey, isPrimaryKey)}>
-                    <Text style={[meshStyles.subject]}>{netKey.name}</Text>
-                    <Icon name={netKey.expand ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} />
+                    <Text style={[meshStyles.subject]} accessibilityLabel={netKey.name}>{netKey.name}</Text>
+                    <MaterialIcons name={netKey.expand ? "keyboard-arrow-up" : "keyboard-arrow-down"} size={20} />
                 </TouchableOpacity>
                 {
                     (netKey.expand && (
@@ -148,7 +147,7 @@ const BleMeshNetworkKeys: React.FC = () => {
                                     <Text style={[meshStyles.text]}>{netKey.name}</Text>
                                 </View>
                                 <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => onPressEditKeyName(netKey)}>
-                                    <Icon name="edit" size={20} />
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
                             </View>
                             <Divider />
@@ -159,7 +158,7 @@ const BleMeshNetworkKeys: React.FC = () => {
 
                                 </View>
                                 <TouchableOpacity style={{ marginLeft: 10 }} onPress={() => onPressEditKeyVal(netKey)}>
-                                    <Icon name="edit" size={20} />
+                                    <MaterialIcons name="edit" size={20} />
                                 </TouchableOpacity>
 
                             </View>
@@ -207,15 +206,15 @@ const BleMeshNetworkKeys: React.FC = () => {
                 <View style={{ height: 15 }} />
                 <Text style={[meshStyles.subject, { marginBottom: 10 }]}>Sub Network Keys</Text>
                 {subNetKeys.map((key, index) => {
-                    return <DisplayNetworkKey netKey={key} key={index} isPrimaryKey={false} />;
+                    return <DisplayNetworkKey netKey={key} key={index} isPrimaryKey={false} accessibilityLabel={key} />;
                 })}
                 {subNetKeys.length === 0 && <Text>No sub keys available</Text>}
-
             </ScrollView>
 
             <TouchableOpacity
                 style={meshStyles.fab}
                 onPress={openAddKeyModal}
+                accessibilityLabel="add_sub_key"
             >
                 <MaterialCommunityIcons
                     name="plus-thick"

@@ -1,7 +1,8 @@
 import { Text, TouchableOpacity } from '../../Themed';
 import { StyleSheet, NativeModules, View, NativeEventEmitter, PermissionsAndroid, Platform, EmitterSubscription } from 'react-native';
 import { useEffect, useState, } from 'react';
-import { Icon, Skeleton } from '@rneui/themed';
+import { Skeleton } from '@rneui/themed';
+import { EvilIcons, FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LogBox } from 'react-native';
 import { callMeshModuleFunction, meshStyles } from '../meshUtils';
@@ -94,6 +95,7 @@ const BleMeshScanner: React.FC<Props> = ({ route }) => {
 
                     // First time asking for permission - need to reload the app
                     const hasAskedPermission = await AsyncStorage.getItem('hasAskedPermission');
+                    console.log("hasAsk!!!!!!!!!!!!!!", hasAskedPermission)
                     if (hasAskedPermission !== 'true') {
                         await AsyncStorage.setItem('hasAskedPermission', 'true');
                         RNRestart.Restart();
@@ -177,7 +179,8 @@ const BleMeshScanner: React.FC<Props> = ({ route }) => {
         return (
             <TouchableOpacity
                 style={[styles.scannedDeviceContainer, meshStyles.shadow]}
-                onPress={() => onSelectNode(peripheral)}
+                onPress={() => onSelectNode(peripheral)} accessibilityLabel={peripheral.id + " " + peripheral.lastSeen} testID={peripheral.id + " " + peripheral.lastSeen}
+                contentDescription={peripheral.id + " " + peripheral.lastSeen}
             >
                 <View style={styles.leftSection}>
                     <View style={styles.deviceInfo}>
@@ -186,12 +189,11 @@ const BleMeshScanner: React.FC<Props> = ({ route }) => {
                     </View>
                 </View>
                 <View style={styles.rightSection}>
-                    <Icon name="signal" type="font-awesome" color={'black'} size={20} />
+                    <FontAwesome name="signal" color={'black'} size={20} />
                     <Text style={styles.rssiText}>{peripheral.rssi} dBm</Text>
                     {Platform.OS === 'android' ? ( // Android - default provisioning
-                        <Icon
+                        <EvilIcons
                             name="chevron-right"
-                            type="evilicon"
                             size={40}
                             color="black"
                             style={{ marginBottom: 8 }}
@@ -208,7 +210,7 @@ const BleMeshScanner: React.FC<Props> = ({ route }) => {
                             }}
                         />
                     ) : peripheral.bearers && peripheral.bearers.length === 1 && peripheral.bearers[0] === 'PB GATT' ? ( // iOS - default provisioning
-                        <Icon
+                        <EvilIcons
                             name="chevron-right"
                             type="evilicon"
                             size={40}

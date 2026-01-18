@@ -346,6 +346,24 @@ export default [
     serviceSpecificScreen: 'HealthThermometerServiceModel'
   },
   {
+    serviceName: 'CGM Test Service',
+    serviceUuid: '1100',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'thermometer-half',
+    },
+    serviceSpecificScreen: 'CGMTestServiceModel'
+  },
+  {
+    serviceName: 'CGM Test Service',
+    serviceUuid: 'f0001100-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'thermometer-half',
+    },
+    serviceSpecificScreen: 'CGMTestServiceModel'
+  },
+  {
     serviceName: 'Heart Rate',
     serviceUuid: '180D',
     icon: {

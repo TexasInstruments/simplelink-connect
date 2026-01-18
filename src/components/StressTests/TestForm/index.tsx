@@ -15,7 +15,7 @@ import TextInputFeild from '../../TextInputFeild';
 import { useStressTestContext } from '../../../context/TestParamsContext';
 import { getCurrentDateTimeString, TestParams, GATT_SERVICES, PHY_OPTIONS, TEST_CASE, TEST_CASES_OPTIONS, data_stream } from '../testsUtils';
 import { downloadDataToLocalStorage } from '../../../services/DownloadFileUtils';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { meshStyles } from '../../BleMesh/meshUtils';
 
 interface Props {
@@ -569,7 +569,7 @@ const TestForm: React.FC<Props> = (
                                                             <TouchableOpacity
                                                                 onPress={() => handleClickEdit(index)}
                                                                 style={styles.button}>
-                                                                <Icon name="edit" size={20} color='black' />
+                                                                <MaterialIcons name="edit" size={20} color='black' />
                                                             </TouchableOpacity>
                                                             <Text style={[styles.text]}>{item}</Text>
                                                         </View>

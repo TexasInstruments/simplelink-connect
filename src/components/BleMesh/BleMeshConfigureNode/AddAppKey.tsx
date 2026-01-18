@@ -103,7 +103,8 @@ export const AddAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
                     // color={Colors.active}
                     onValueChange={() => {
                         handleAddAppKey(appKey);
-                    }} />
+                    }} 
+                    accessibilityLabel={appKey.name} />
                 <Text style={[styles.keyText]}>{appKey.name}</Text>
             </View>
         )
@@ -131,7 +132,7 @@ export const AddAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
                             return <DisplayAppKey appKey={appKey} key={index} />
                         })
                     }
-                    <TouchableOpacity onPress={() => setModalVisible(!visible)} style={{ alignSelf: 'flex-end', marginTop: 20 }}>
+                    <TouchableOpacity onPress={() => setModalVisible(!visible)} style={{ alignSelf: 'flex-end', marginTop: 20 }} accessibilityLabel="close">
                         <Text style={{ textAlign: 'center', color: Colors.blue }}>Close</Text>
                     </TouchableOpacity>
                 </View>

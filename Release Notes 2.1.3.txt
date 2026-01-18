@@ -1,0 +1,9 @@
+Release 2.1.3 of TI Simplelink Connect (#31)
+This commit consolidates work done for Release 2.1.3 of the TI
+Simplelink Connect iOS and Android application
+
+Changes:
+    1. Create specific screen for CES (CGM Test).
+        
+        
+Signed-off-by: Texas Instruments

@@ -34,7 +34,8 @@ import { Text } from '@rneui/themed';
 import { View } from '../Themed';
 import Colors from '../../constants/Colors';
 import { StyleSheet } from 'react-native';
-import { Icon } from '@rneui/themed';
+import TIcon from '../TIcon';
+import { FontAwesome5, FontAwesome, EvilIcons } from '@expo/vector-icons';
 
 interface Props {
   name: string;
@@ -43,11 +44,26 @@ interface Props {
 }
 
 const SensorPresentation: React.FC<Props> = ({ name, uuid, icon }) => {
+
+  const IconComponent = () => {
+    if (!icon) { return null }
+    if (icon.type === 'svg') {
+      return <TIcon name={icon.iconName} />;
+    } else if (icon.type === 'font-awesome-5') {
+      return <FontAwesome5 name={icon.iconName} size={32} color="black" />;
+    } else if (icon.type === 'font-awesome') {
+      return <FontAwesome name={icon.iconName} size={32} color="black" />;
+    } else if (icon.type === 'evilicon') {
+      return <EvilIcons name={icon.iconName} size={32} color="black" />;
+    }
+    return null;
+  };
+
   return (
     <View style={styles.container}>
       <View style={[styles.container, { flexDirection: 'row', marginBottom: 2, paddingHorizontal: 0, paddingVertical: 0 },]}>
         <View style={[styles.deviceInfoIconContainer, { backgroundColor: 'white', },]}>
-          <Icon name={icon ? icon?.iconName : "devices"} type={icon ? icon?.type : "fontawesome"} size={32} />
+          <IconComponent />
         </View>
         <Text style={{ fontWeight: 'bold', fontSize: 30, alignSelf: 'center', marginLeft: 10 }}>
           {name}
