@@ -8,9 +8,18 @@ export type EnablerActionTypes =
   | 'filter/app_name/set/enabled'
   | 'filter/address/set/enabled'
   | 'filter/profile/set/enabled'
-  | 'filter/removeInactiveOutDevices/set/enabled';
+  | 'filter/removeInactiveOutDevices/set/enabled'
+  | 'filter/removeUnnamedDevices/set/enabled'
+  | 'filter/vendor/ti/set/enabled'
+  | 'filter/vendor/list/set/enabled';
 
-export type ValueActionTypes = 'filter/rssi/set/value' | 'filter/app_name/set/value' | 'filter/address/set/value' | 'filter/profile/set/value';
+
+export type ValueActionTypes =
+  | 'filter/rssi/set/value'
+  | 'filter/app_name/set/value'
+  | 'filter/address/set/value'
+  | 'filter/profile/set/value'
+  | 'filter/vendor/list/set/value';
 
 export type ActionType =
   | { type: 'sort/rssi/set/enabled'; payload: boolean }
@@ -24,7 +33,11 @@ export type ActionType =
   | { type: 'filter/app_name/set/value'; payload: string }
   | { type: 'filter/address/set/value'; payload: string }
   | { type: 'filter/profile/set/value'; payload: string }
-  | { type: 'filter/removeInactiveOutDevices/set/enabled'; payload: boolean };
+  | { type: 'filter/removeInactiveOutDevices/set/enabled'; payload: boolean }
+  | { type: 'filter/removeUnnamedDevices/set/enabled'; payload: boolean }
+  | { type: 'filter/vendor/ti/set/enabled'; payload: boolean }
+  | { type: 'filter/vendor/list/set/enabled'; payload: boolean }
+  | { type: 'filter/vendor/list/set/value'; payload: string[] };
 
 function filterSortReducer(state: IFilterSortState, action: ActionType): IFilterSortState {
   let { type, payload } = action;
@@ -159,6 +172,55 @@ function filterSortReducer(state: IFilterSortState, action: ActionType): IFilter
         filter: {
           ...state.filter,
           removeInactiveOutDevices: payload as boolean,
+        },
+      };
+    }
+    case 'filter/removeUnnamedDevices/set/enabled': {
+      return {
+        ...state,
+        filter: {
+          ...state.filter,
+          removeUnnamedDevices: payload as boolean,
+        },
+      };
+    }
+    case 'filter/vendor/ti/set/enabled': {
+      return {
+        ...state,
+        filter: {
+          ...state.filter,
+          showOnlyTI: payload as boolean,
+          // Mutual exclusion: disable vendor list when TI toggle enabled
+          vendorFilter: {
+            ...state.filter.vendorFilter,
+            enabled: (payload as boolean) ? false : state.filter.vendorFilter.enabled,
+          },
+        },
+      };
+    }
+    case 'filter/vendor/list/set/enabled': {
+      return {
+        ...state,
+        filter: {
+          ...state.filter,
+          vendorFilter: {
+            ...state.filter.vendorFilter,
+            enabled: payload as boolean,
+          },
+          // Mutual exclusion: disable TI toggle when vendor list enabled
+          showOnlyTI: (payload as boolean) ? false : state.filter.showOnlyTI,
+        },
+      };
+    }
+    case 'filter/vendor/list/set/value': {
+      return {
+        ...state,
+        filter: {
+          ...state.filter,
+          vendorFilter: {
+            ...state.filter.vendorFilter,
+            value: payload as string[],
+          },
         },
       };
     }

@@ -4,7 +4,7 @@ import { Text, TouchableOpacity, View } from '../../Themed';
 import { callMeshModuleFunction, meshStyles } from '../meshUtils';
 import Colors from '../../../constants/Colors';
 import { Divider } from 'react-native-paper';
-import { Icon } from '@rneui/base';
+import { FontAwesome } from '@expo/vector-icons';
 
 interface Response {
     response: string;
@@ -133,7 +133,7 @@ export const VendorModel: React.FC<{ nodeUnicastAddress: number, scrollViewRef: 
                 <View style={[meshStyles.item, { height: 50, flex: 1, justifyContent: 'center' }]}>
                     <TouchableOpacity onPress={sendCommand} style={[styles.sendButton, { opacity: boundApplicationsKeys.length == 0 ? 0.2 : 1 }]} disabled={boundApplicationsKeys.length == 0} accessibilityLabel="send">
                         <Text style={[meshStyles.textButton, { marginRight: 5 }]}>Send</Text>
-                        <Icon solid={true} name={'send-o'} size={16} color={Colors.blue} type="font-awesome" />
+                        <FontAwesome solid={true} name={'send-o'} size={16} color={Colors.blue} />
                     </TouchableOpacity>
                 </View>
             </View>

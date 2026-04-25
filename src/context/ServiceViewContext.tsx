@@ -1,9 +1,9 @@
-import React, { useContext, useState, createContext, useEffect } from 'react';
-import { Alert, NativeEventEmitter, NativeModules, PermissionsAndroid, Platform } from 'react-native';
-import { PeripheralInfo } from 'react-native-ble-manager';
-import BleManager from 'react-native-ble-manager';
+import React, { useContext, useState, createContext, useEffect, useRef } from 'react';
+import { Alert, PermissionsAndroid, Platform, EventSubscription } from 'react-native';
+import BleManager, { PeripheralInfo } from 'react-native-ble-manager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNRestart from 'react-native-restart';
+import { getServiceUuid } from '../hooks/uuidToName';
 
 interface ServiceViewContextProps {
     hasOadOption: boolean;
@@ -28,22 +28,21 @@ export const ServiceViewProvider = ({ children }) => {
     const OadResetServiceUuid = 'F000FFD0-0451-4000-B000-000000000000';
     const McuManagerServiceUuid = '8d53dc1d-1db7-4cd3-868b-8a527460aa84'
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const bondSubscription = useRef<EventSubscription | null>(null);
 
     useEffect(() => {
         const setupBle = async () => {
             await requestAndroidPermissions();
 
             if (Platform.OS === 'android') {
-                bleManagerEmitter.addListener('BleManagerPeripheralDidBond', handleNewDeviceBonded);
+                bondSubscription.current = BleManager.onPeripheralDidBond(handleNewDeviceBonded);
             }
         };
         setupBle();
 
         return () => {
             if (Platform.OS === 'android') {
-                bleManagerEmitter.removeAllListeners('BleManagerPeripheralDidBond');
+                bondSubscription.current?.remove();
             }
         };
     }, []);
@@ -51,17 +50,21 @@ export const ServiceViewProvider = ({ children }) => {
     useEffect(() => {
 
         const updateOptions = async () => {
-            let oadserviceUuidList = peripheralInfo?.services?.filter(
-                service =>
-                    service.uuid.toUpperCase() === OadServiceUuid ||
-                    service.uuid.toUpperCase() === OadResetServiceUuid
-            );
-            setHasOadOption(!!oadserviceUuidList?.length);
+            if (peripheralInfo && peripheralInfo.services) {
+                let oadserviceUuidList = peripheralInfo.services.filter(
+                    service =>
+                        getServiceUuid(service).toUpperCase() === OadServiceUuid.toUpperCase() ||
+                        getServiceUuid(service).toUpperCase() === OadResetServiceUuid.toUpperCase()
+                );
+                setHasOadOption(oadserviceUuidList.length > 0);
+            }
 
-            let dfuUUid = peripheralInfo?.services?.filter(
-                service => service.uuid.toLowerCase() === McuManagerServiceUuid
-            );
-            setHasDfuOption(!!dfuUUid?.length);
+            if (peripheralInfo?.services) {
+                let dfuUUid = peripheralInfo.services.filter(
+                    service => getServiceUuid(service).toLowerCase() === McuManagerServiceUuid
+                );
+                setHasDfuOption(!!dfuUUid?.length);
+            }
 
             if (Platform.OS == "android") {
                 const granted = await PermissionsAndroid.check(
@@ -100,7 +103,6 @@ export const ServiceViewProvider = ({ children }) => {
 
                     // First time asking for permission - need to reload the app
                     const hasAskedPermission = await AsyncStorage.getItem('hasAskedPermission');
-                    console.log("hasAsk!!!!!!!!!!!!!!", hasAskedPermission)
 
                     if (hasAskedPermission !== 'true') {
                         await AsyncStorage.setItem('hasAskedPermission', 'true');

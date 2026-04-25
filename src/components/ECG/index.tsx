@@ -2,26 +2,25 @@ import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 import {
     InteractionManager,
     KeyboardAvoidingView,
-    NativeEventEmitter,
-    NativeModules,
     Platform,
     ScrollView,
     StatusBar,
     TouchableOpacity,
     View,
     processColor,
-    useWindowDimensions
+    useWindowDimensions,
+    EventSubscription,
 } from 'react-native';
 import { Text } from '../Themed';
 import { StyleSheet } from 'react-native';
 import Colors from '../../constants/Colors';
 import BleManager from 'react-native-ble-manager';
 import { useFocusEffect } from '@react-navigation/native';
-import { LineChart } from 'react-native-charts-wrapper';
-import { Icon } from '@rneui/base';
+import { LineChart, LineData, xAxis } from 'react-native-charts-wrapper';
 import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
 import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 import Tooltip from 'react-native-walkthrough-tooltip';
+import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 
 
 interface Props {
@@ -110,8 +109,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
     const ECG_HOLTER_AI_UUID = 'f000bb03-0451-4000-b000-000000000000';
     const ECG_HOLTER_UUID = 'f000bb02-0451-4000-b000-000000000000';
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
     const { fontScale } = useWindowDimensions();
     const { specificScreenConfig } = useSpecificScreenConfigContext();
@@ -169,13 +167,12 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                     let mtu = await BleManager.requestMTU(peripheralId, 255);
                     console.log('MTU:', mtu)
                 }
-                bleManagerEmitter.addListener(
-                    'BleManagerDidUpdateValueForCharacteristic', handleNotifications);
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleNotifications);
             });
 
             return () => {
                 task.cancel();
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+                charValueSubscription.current?.remove();
                 try {
                     BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_PATCH_UUID);
                     BleManager.stopNotification(peripheralId, SERVICE_UUID, ECG_HOLTER_UUID);
@@ -659,7 +656,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
         setCollapsedSectionsState(updated)
     };
 
-    function getChartData(data: DataChart[]) {
+    function getChartData(data: DataChart[]): LineData {
         const formattedData = data.map((data, index) => ({
             x: index,
             y: data.y,
@@ -669,29 +666,35 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                 values: formattedData,
                 config: {
                     color: processColor(Colors.blue),
-                    drawCircles: false,
-                    lineWidth: 1,
-                    drawValues: false
+                    circleColor: processColor(Colors.blue),
+                    drawCircles: true,
+                    circleRadius: 3,
+                    circleHoleColor: processColor('white'),
+                    drawCircleHole: true,
                 }
             }],
         }
     };
 
-    function getLabelsXAxis(data: DataChart[]) {
+    function getLabelsXAxis(data: DataChart[]): xAxis {
         return {
             position: 'BOTTOM',
             valueFormatter: data.map(item => item.x),
-            granularityEnabled: false,
+            granularityEnabled: true,
             granularity: 1,
             drawLabels: true,
+            textColor: processColor('#000'),
         }
     };
 
     const chartConfig = {
         yAxis: {
             left: {
-                drawGridLines: true,
+                enabled: true,
                 drawLabels: true,
+                drawAxisLine: true,
+                drawGridLines: true,
+                textColor: processColor('#000'),
             },
             right: {
                 enabled: false,
@@ -806,7 +809,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                 <View style={styles.landscapeChartWrapper}>
                     <View style={[{ flexDirection: 'row', height: '10%', alignItems: 'flex-start' }]}>
                         <TouchableOpacity onPress={handleCollapse} style={{ alignSelf: 'flex-start', paddingRight: 15, }}>
-                            <Icon name={'compress-arrows-alt'} type='font-awesome-5' size={23} />
+                            <FontAwesome5 name={'compress-arrows-alt'} size={23} />
                         </TouchableOpacity>
                         <Text style={[styles.title, { fontSize: 18 }]}>{title}</Text>
                     </View>
@@ -998,11 +1001,11 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
             <View style={styles.chartContainer}>
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignContent: 'center', flex: 1 }}>
                     <TouchableOpacity onPress={() => handleExpand(sectionID)} style={{ alignSelf: 'center', paddingRight: 15, }}>
-                        <Icon name={'expand-arrows-alt'} type='font-awesome-5' size={18} />
+                        <FontAwesome5 name={'expand-arrows-alt'} size={18} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.subject} onPress={() => toggleCollapse(sectionID)}>
                         <Text style={[styles.title]}>{title}</Text>
-                        <Icon style={{ alignSelf: 'center' }} name={collapsed ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                        <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsed ? 'chevron-down' : 'chevron-up'} size={18} />
                     </TouchableOpacity>
                 </View>
                 {!collapsed && Chart(data, chartConfig)}
@@ -1016,11 +1019,11 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
             <View style={styles.chartContainer}>
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-start', alignContent: 'center', flex: 1 }}>
                     <TouchableOpacity onPress={() => handleExpand(sectionID)} style={{ alignSelf: 'center', paddingRight: 15, }}>
-                        <Icon name={'expand-arrows-alt'} type='font-awesome-5' size={18} />
+                        <FontAwesome5 name={'expand-arrows-alt'} size={18} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.subject} onPress={() => toggleCollapse(sectionID)}>
                         <Text style={[styles.title]}>{title}</Text>
-                        <Icon style={{ alignSelf: 'center' }} name={collapsed ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                        <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsed ? 'chevron-down' : 'chevron-up'} size={18} />
                     </TouchableOpacity>
                 </View>
                 {!collapsed && (
@@ -1125,7 +1128,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
             contentStyle={{ borderRadius: 8, height: '100%', width: '100%' }}
         >
             <TouchableOpacity onPress={() => setVisible(true)}>
-                <Icon style={{ alignSelf: 'center' }} name='help-outline' type="MaterialIcons" size={16} />
+                <MaterialIcons style={{ alignSelf: 'center' }} name='help-outline' size={16} />
             </TouchableOpacity >
         </Tooltip>)
 
@@ -1145,7 +1148,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                                     onPress={handleStartRecord}
                                     disabled={notificationSwitch.current}
                                 >
-                                    <Icon name="play" size={20} color="#fff" type='font-awesome-5' />
+                                    <FontAwesome5 name="play" size={20} color="#fff" />
                                 </TouchableOpacity>
                                 <Text style={[styles.buttonText, { opacity: notificationSwitch.current ? 0.2 : 1 }]}>Start Record</Text>
                             </View>
@@ -1156,7 +1159,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                                     onPress={handleStopRecord}
                                     disabled={!notificationSwitch.current}
                                 >
-                                    <Icon name="stop" size={20} color="#fff" type='font-awesome-5' />
+                                    <FontAwesome5 name="stop" size={20} color="#fff" />
                                 </TouchableOpacity>
                                 <Text style={[styles.buttonText, { opacity: !notificationSwitch.current ? 0.2 : 1 }]}>Stop Record</Text>
                             </View>
@@ -1184,7 +1187,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                                         onPress={handleStopRecord}
                                         disabled={!notificationSwitch.current}
                                     >
-                                        <Icon name="stop" size={18} color="#fff" type='font-awesome-5' />
+                                        <FontAwesome5 name="stop" size={18} color="#fff" />
                                     </TouchableOpacity>
                                     <Text style={[styles.buttonText, { opacity: !notificationSwitch.current ? 0.2 : 1 }]}>Stop </Text>
                                 </View>
@@ -1194,7 +1197,7 @@ const ECG: React.FC<Props> = ({ peripheralId }) => {
                                         onPress={handleStartRecord}
                                         disabled={notificationSwitch.current}
                                     >
-                                        <Icon name="play" size={18} color="#fff" type='font-awesome-5' />
+                                        <FontAwesome5 name="play" size={18} color="#fff" />
                                     </TouchableOpacity>
                                     <Text style={[styles.buttonText, { opacity: notificationSwitch.current ? 0.2 : 1 }]}>Start </Text>
                                 </View>

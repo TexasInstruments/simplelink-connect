@@ -1,8 +1,8 @@
-import { View, StyleSheet, NativeEventEmitter, NativeModules, PermissionsAndroid, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, PermissionsAndroid, Platform, ScrollView, EventSubscription } from 'react-native';
 import { Text } from '../../Themed';
 import React, { useEffect, useRef, useState } from 'react';
 import Colors from '../../../constants/Colors';
-import { TI_SIMPLE_PERIPHERAL_SERVICE, TI_DATA_STREAM_SERVICE } from '../../../constants/uuids';
+import { TI_SIMPLE_PERIPHERAL_SERVICE, TI_TERMINAL_SERVICE } from '../../../constants/uuids';
 import { useStressTestContext } from '../../../context/TestParamsContext';
 import { Buffer } from 'buffer';
 import BleManager, { Peripheral } from 'react-native-ble-manager';
@@ -10,7 +10,7 @@ import { EventRegister } from 'react-native-event-listeners'
 import TestStep from '../../StressTests/TestStep';
 import RNRestart from 'react-native-restart';
 import DeviceInfo from 'react-native-device-info';
-import { hold, getCurrentDateTimeString, generateRandomBytes, LogLevel, DeviceName, Step, StepsIDs, TestResult, TestData, increaseProgress, increaseRound, setMTUSize, write, read, getNumOfPassed, TestParams, TEST_CASE, data_stream, simple_peripheral, sendEmail, NOTIFICATION_TIMEOUT } from '../testsUtils';
+import { hold, getCurrentDateTimeString, generateRandomBytes, LogLevel, DeviceName, Step, StepsIDs, TestResult, TestData, increaseProgress, increaseRound, setMTUSize, write, read, getNumOfPassed, TestParams, TEST_CASE, data_stream, simple_peripheral, NOTIFICATION_TIMEOUT, custom_service } from '../testsUtils';
 import ActionButtons from '../ActionButtons';
 import IdleTimerManager from 'react-native-idle-timer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -53,8 +53,10 @@ const StressTestScenario: React.FC = ({ }) => {
 
     const notificationSize = useRef<number>(0);
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    // BLE event subscriptions
+    const stopScanSubscription = useRef<EventSubscription | null>(null);
+    const discoverSubscription = useRef<EventSubscription | null>(null);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
     const connectionPromises: Promise<void>[] = [];
 
@@ -104,8 +106,8 @@ const StressTestScenario: React.FC = ({ }) => {
 
         const trigger = async () => {
             if (loopFinished && currentMainLoopNumber.current != 0) {
-                bleManagerEmitter.removeAllListeners('BleManagerStopScan')
-                bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral')
+                stopScanSubscription.current?.remove();
+                discoverSubscription.current?.remove();
                 try {
                     increaseRound(steps.current, StepsIDs.disconnect);
                     increaseProgress(steps.current, StepsIDs.disconnect, 0.3);
@@ -174,10 +176,15 @@ const StressTestScenario: React.FC = ({ }) => {
                         notifChar.current = TI_SIMPLE_PERIPHERAL_SERVICE.simpleprofile_char4;
                         writeChar = TI_SIMPLE_PERIPHERAL_SERVICE.simpleprofile_char3;
                     }
+                    else if (testParameters.current.supported_service == custom_service) {
+                        serviceUUID.current = testParameters.current.custom_service_uuid;
+                        notifChar.current = testParameters.current.custom_notify_char_uuid;
+                        writeChar = testParameters.current.custom_write_char_uuid;
+                    }
                     else { //data_stream
-                        serviceUUID.current = TI_DATA_STREAM_SERVICE.uuid;
-                        notifChar.current = TI_DATA_STREAM_SERVICE.data_out_char;
-                        writeChar = TI_DATA_STREAM_SERVICE.data_in_char;
+                        serviceUUID.current = TI_TERMINAL_SERVICE.uuid;
+                        notifChar.current = TI_TERMINAL_SERVICE.data_out_char;
+                        writeChar = TI_TERMINAL_SERVICE.data_in_char;
                     }
 
                     const gattLoopListener = EventRegister.addEventListener('ExecuteGattLoop', (gattLoopNum: number) => {
@@ -190,11 +197,19 @@ const StressTestScenario: React.FC = ({ }) => {
                     if (testParameters.current.supported_service == simple_peripheral) {
                         serviceUUID.current = TI_SIMPLE_PERIPHERAL_SERVICE.uuid;
                         readWriteChar = TI_SIMPLE_PERIPHERAL_SERVICE.simpleprofile_char1;
-                        const gattLoopListener = EventRegister.addEventListener('ExecuteGattLoop', (gattLoopNum: number) => {
-                            executeWriteReadSimpleGatt(gattLoopNum, serviceUUID.current, readWriteChar)
-                        })
                     }
+
+                    else {
+                        serviceUUID.current = testParameters.current.custom_service_uuid;
+                        notifChar.current = testParameters.current.custom_notify_char_uuid;
+                        readWriteChar = testParameters.current.custom_write_char_uuid;
+                    }
+
+                    const gattLoopListener = EventRegister.addEventListener('ExecuteGattLoop', (gattLoopNum: number) => {
+                        executeWriteReadSimpleGatt(gattLoopNum, serviceUUID.current, readWriteChar)
+                    })
                 }
+
                 initiateSteps();
 
                 addLog('Start Running Test Scenario on ' + currentDevice.value + ' Peripheral ' + testParameters.current.main_loop_number + ' Times', LogLevel.INFO);
@@ -245,7 +260,10 @@ const StressTestScenario: React.FC = ({ }) => {
 
                 let writeChar;
                 if (testParameters.current.supported_service == data_stream) {
-                    writeChar = TI_DATA_STREAM_SERVICE.data_in_char;
+                    writeChar = TI_TERMINAL_SERVICE.data_in_char;
+                }
+                else if (testParameters.current.supported_service == custom_service) {
+                    writeChar = testParameters.current.custom_write_char_uuid
                 }
                 else { // simple_peripheral
                     if (testParameters.current.test_case == TEST_CASE.WRITE_NOTIFY) {
@@ -311,7 +329,6 @@ const StressTestScenario: React.FC = ({ }) => {
 
                     // First time asking for permission - need to reload the app
                     const hasAskedPermission = await AsyncStorage.getItem('hasAskedPermission');
-                    console.log("hasAsk!!!!!!!!!!!!!!", hasAskedPermission)
 
                     if (hasAskedPermission !== 'true') {
                         await AsyncStorage.setItem('hasAskedPermission', 'true');
@@ -389,7 +406,7 @@ const StressTestScenario: React.FC = ({ }) => {
                     console.log('Peripheral is connected!');
                 } else {
                     addLog('Peripheral connection timeout', LogLevel.ERROR);
-                    bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
+                    discoverSubscription.current?.remove();
 
                     testResult.current!.test_pass = false;
                     testResult.current!.connection = false;
@@ -503,24 +520,21 @@ const StressTestScenario: React.FC = ({ }) => {
         });
     }
 
-    function handleDiscoverPeripheral(peripheral: Peripheral) {
+    function handleDiscoverPeripheral(peripheral: Peripheral): void {
         console.log(peripheral.id)
-        return new Promise((resolve, reject) => {
-            // Founded the requested peripheral
-            if (peripheral.name?.toLocaleLowerCase() === currentDevice.value.toLocaleLowerCase() || peripheral.advertising.localName?.toLocaleLowerCase() === currentDevice.value.toLocaleLowerCase()) {
-                addLog('Found requested peripheral!', LogLevel.SUCCESS);
-                increaseProgress(steps.current, StepsIDs.scan, 1);
+        // Founded the requested peripheral
+        if (peripheral.name?.toLocaleLowerCase() === currentDevice.value.toLocaleLowerCase() || peripheral.advertising.localName?.toLocaleLowerCase() === currentDevice.value.toLocaleLowerCase()) {
+            addLog('Found requested peripheral!', LogLevel.SUCCESS);
+            increaseProgress(steps.current, StepsIDs.scan, 1);
 
-                peripheralInfo.current = peripheral;
-                clearTimeout(peripheralDiscoveredTimeout.current)
-                bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
-                addLog('Stop Scanning', LogLevel.INFO);
-                bleManagerEmitter.removeAllListeners('BleManagerStopScan');
-                scan(false);
-                connectPeripheral(peripheral);
-                resolve(peripheral);
-            }
-        });
+            peripheralInfo.current = peripheral;
+            clearTimeout(peripheralDiscoveredTimeout.current)
+            discoverSubscription.current?.remove();
+            addLog('Stop Scanning', LogLevel.INFO);
+            stopScanSubscription.current?.remove();
+            scan(false);
+            connectPeripheral(peripheral);
+        }
     }
 
     function handleStopScan(): void {
@@ -530,7 +544,7 @@ const StressTestScenario: React.FC = ({ }) => {
 
     async function scan(enabled: boolean): Promise<void> {
         if (enabled) {
-            BleManager.scan([], 5, true)
+            BleManager.scan({ serviceUUIDs: [], seconds: 10, allowDuplicates: true, legacy: false })
                 .then(() => {
                     addLog('Scanning... search for peripheral ' + currentDevice.value, LogLevel.INFO)
                 })
@@ -596,10 +610,9 @@ const StressTestScenario: React.FC = ({ }) => {
 
     async function stopTest() {
 
-        bleManagerEmitter.removeAllListeners('BleManagerStopScan');
-        bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
-        bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
-        bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
+        stopScanSubscription.current?.remove();
+        discoverSubscription.current?.remove();
+        charValueSubscription.current?.remove();
 
         clearTimeout(connectTimeout.current);
         clearTimeout(peripheralDiscoveredTimeout.current);
@@ -686,14 +699,14 @@ const StressTestScenario: React.FC = ({ }) => {
         setLoopFinished(false);
         addLog('Loop number: ' + loopNum, LogLevel.INFO);
 
-        bleManagerEmitter.addListener('BleManagerStopScan', handleStopScan);
-        bleManagerEmitter.addListener('BleManagerDiscoverPeripheral', handleDiscoverPeripheral);
+        stopScanSubscription.current = BleManager.onStopScan(handleStopScan);
+        discoverSubscription.current = BleManager.onDiscoverPeripheral(handleDiscoverPeripheral);
 
         // Set timeout for discovering the peripheral
         peripheralDiscoveredTimeout.current = setTimeout(async () => {
             addLog('Scanning Timeout after 12000 ms', LogLevel.ERROR);
-            bleManagerEmitter.removeAllListeners('BleManagerStopScan');
-            bleManagerEmitter.removeAllListeners('BleManagerDiscoverPeripheral');
+            stopScanSubscription.current?.remove();
+            discoverSubscription.current?.remove();
 
             // stop scanning and disconnect
             await BleManager.stopScan();
@@ -887,7 +900,7 @@ const StressTestScenario: React.FC = ({ }) => {
         if (currentGattLoopNumber.current >= testParameters.current.num_loops_gatt_test) {
             addLog('Finished GATT loops for ' + currentDevice.value, LogLevel.SUCCESS);
             currentGattLoopNumber.current = 0;
-            bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+            charValueSubscription.current?.remove();
             if (testParameters.current.test_case === TEST_CASE.WRITE_NOTIFY) { // Disable Notifications if needed
                 console.log("Disable Notification")
                 BleManager.stopNotification(peripheralInfo.current!.id, serviceUUID.current, notifChar.current);
@@ -946,9 +959,8 @@ const StressTestScenario: React.FC = ({ }) => {
                     if (testParameters.current.supported_service == simple_peripheral && currentGattLoopNumber.current == 0) {
                         await new Promise<void>((resolve, reject) => {
                             // Step 1: Add the listener for notifications
-                            const notificationListener = bleManagerEmitter.addListener(
-                                'BleManagerDidUpdateValueForCharacteristic',
-                                ({ value, peripheral, characteristic, service }) => {
+                            const notificationListener = BleManager.onDidUpdateValueForCharacteristic(
+                                ({ value, peripheral, characteristic, service }: { value: number[]; peripheral: string; characteristic: string; service: string }) => {
                                     if (characteristic.toLocaleLowerCase().includes(notifChar.current.toLocaleLowerCase())) {
                                         let hexString = Buffer.from(value).toString('hex');
                                         addLog(`First Notification Received: ${hexString}`, LogLevel.SUCCESS);
@@ -1004,9 +1016,8 @@ const StressTestScenario: React.FC = ({ }) => {
                 }
 
                 // Register to notifications
-                bleManagerEmitter.addListener(
-                    'BleManagerDidUpdateValueForCharacteristic',
-                    ({ value, peripheral, characteristic, service }) => {
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(
+                    ({ value, peripheral, characteristic, service }: { value: number[]; peripheral: string; characteristic: string; service: string }) => {
 
                         // Got the relevant notification
                         if (characteristic.toLocaleLowerCase().includes(notifChar.current.toLocaleLowerCase())) {
@@ -1020,14 +1031,14 @@ const StressTestScenario: React.FC = ({ }) => {
                             notificationSize.current += value.length;
                             // Check the notification is in the expected size
                             if (notificationSize.current == testParameters.current.expected_notifications_size) {
-                                testResult.current.got_expected_notification = true;
+                                if (testResult.current) testResult.current.got_expected_notification = true;
                                 increaseProgress(steps.current, StepsIDs.gattTesting, 1);
                                 setGattLoopFinished(true);
                             }
 
                             // Got bigger notification
                             else if (notificationSize.current > testParameters.current.expected_notifications_size) {
-                                testResult.current.got_expected_notification = false;
+                                if (testResult.current) testResult.current.got_expected_notification = false;
                                 testResult.current!.test_pass = false;
                                 testResult.current!.error_message = "Notification size does not match to expected size";
                                 increaseProgress(steps.current, StepsIDs.gattTesting, 1);

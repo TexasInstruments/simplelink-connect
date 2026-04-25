@@ -31,12 +31,12 @@
  */
 
 import { View } from 'react-native';
-import React, {Dispatch, SetStateAction} from 'react';
-import BleManager from 'react-native-ble-manager';
+import React, { Dispatch, SetStateAction } from 'react';
+import { Characteristic } from 'react-native-ble-manager';
 import CharacteristicService from '../CharacteristicService';
 
 interface Props {
-  characteristics: BleManager.Characteristic[];
+  characteristics: Characteristic[];
   serviceUuid: string;
   serviceName: string;
   peripheralId: string;

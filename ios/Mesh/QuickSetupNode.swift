@@ -59,7 +59,7 @@ class QuickSetupNode: NSObject {
       executeNext()
       return
     }
-    let manager = AppDelegate.shared.meshNetworkManager!
+    let manager = AppDelegateMesh.shared.meshNetworkManager!
 
     // Send the message.
     do {
@@ -111,7 +111,7 @@ class QuickSetupNode: NSObject {
     self.inProgress = true
     self.current = -1
     print("Starting binding process for \(models.count) models.")
-    let manager = AppDelegate.shared.meshNetworkManager!
+    let manager = AppDelegateMesh.shared.meshNetworkManager!
     manager.delegate = self
 
     executeNext()
@@ -141,7 +141,7 @@ class QuickSetupNode: NSObject {
     self.inProgress = true
     self.current = -1
     print("Starting subscribing process for \(models.count) models.")
-    let manager = AppDelegate.shared.meshNetworkManager!
+    let manager = AppDelegateMesh.shared.meshNetworkManager!
     manager.delegate = self
 
     executeNext()
@@ -187,7 +187,7 @@ class QuickSetupNode: NSObject {
     self.current = -1
 
     print("Starting set publication process for \(models.count) models.")
-    let manager = AppDelegate.shared.meshNetworkManager!
+    let manager = AppDelegateMesh.shared.meshNetworkManager!
     manager.delegate = self
 
     executeNext()

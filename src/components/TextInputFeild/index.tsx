@@ -9,10 +9,12 @@ interface Props {
     onChangeText: any;
     onSubmitEditing?: any;
     keyboardType?: 'default' | 'numeric';
+    multiline?: boolean;
+    numberOfLines?: number
 }
 
 const TextInputFeild: React.FC<Props> = ({
-    label, value, onChangeText, onSubmitEditing, keyboardType
+    label, value, onChangeText, onSubmitEditing, keyboardType, multiline, numberOfLines
 }: Props) => {
     if (!keyboardType) keyboardType = 'default';
     const { fontScale } = useWindowDimensions();
@@ -33,6 +35,8 @@ const TextInputFeild: React.FC<Props> = ({
             returnKeyType='send'
             onSubmitEditing={onSubmitEditing}
             allowFontScaling
+            multiline={multiline}
+            numberOfLines={numberOfLines}
         />
     );
 };

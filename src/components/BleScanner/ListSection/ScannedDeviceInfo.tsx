@@ -33,13 +33,13 @@
 import { StyleSheet } from 'react-native';
 import { Text } from '../../Themed';
 import React from 'react';
-import BleManager from 'react-native-ble-manager';
+import { Peripheral } from 'react-native-ble-manager';
 import { View } from '../../Themed';
 import Colors from '../../../constants/Colors';
 
 interface Props {
   isVisible: boolean;
-  peripheral: BleManager.Peripheral;
+  peripheral: Peripheral;
 }
 
 const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
@@ -66,6 +66,31 @@ const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
     return '';
   }
 
+  function formatManufacturerData(bytes: number[]): string {
+    if (!bytes || bytes.length < 2) return '';
+
+    // react-native-ble-manager bug: uses Integer (4 bytes) instead of Short (2 bytes) for company ID
+    // The library stores it as big-endian 4-byte integer: [0, 0, 0, 13] for company ID 13
+    // Skip first 2 bytes and read as big-endian
+    let offset = 0;
+    let companyId = 0;
+
+    if (bytes.length >= 4 && bytes[0] === 0 && bytes[1] === 0) {
+      offset = 2;
+      // Read as big-endian after skipping first 2 zeros
+      companyId = (bytes[offset] << 8) + bytes[offset + 1];
+    } else {
+      // Standard BLE format: little-endian
+      companyId = bytes[0] + (bytes[1] << 8);
+    }
+
+    // Remaining bytes are the actual manufacturer data
+    const dataBytes = bytes.slice(offset + 2);
+    const hexData = dataBytes.map(b => b.toString(16).padStart(2, '0').toUpperCase()).join('');
+
+    return `0x${companyId.toString(16).padStart(4, '0').toUpperCase()}: 0x${hexData}`;
+  }
+
   return (
     <View >
       <View style={[styles.container, {
@@ -89,9 +114,9 @@ const ScannedDeviceInfo: React.FC<Props> = ({ isVisible, peripheral }) => {
               Service UUIDs: {concatLists(peripheral.serviceUUIDs || [], peripheral.advertising?.serviceUUIDs || [])}
             </Text>
           )}
-          {peripheral.advertising?.manufacturerData && peripheral.advertising?.manufacturerData?.bytes.length > 0 && (
+          {peripheral.advertising?.manufacturerRawData?.bytes && peripheral.advertising.manufacturerRawData.bytes.length > 0 && (
             <Text style={[{ color: Colors.gray }]}>
-              Manufacturer Data: {peripheral.advertising.manufacturerData?.bytes}
+              Manufacturer Data: {formatManufacturerData(peripheral.advertising.manufacturerRawData.bytes)}
             </Text>
           )}
           <Text style={{ color: Colors.gray }}>

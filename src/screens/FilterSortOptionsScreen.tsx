@@ -1,8 +1,8 @@
-import { KeyboardAvoidingView, View, TextInput as Input, Platform, } from 'react-native';
+import { KeyboardAvoidingView, View, TextInput as Input, Platform, TouchableOpacity, } from 'react-native';
 import { Text } from '../components/Themed';
 import { StyleSheet } from 'react-native';
-import { Dropdown } from 'react-native-element-dropdown';
-import { useCallback, useContext, useEffect, useState } from 'react';
+import { Dropdown, MultiSelect } from 'react-native-element-dropdown';
+import { useCallback, useContext, useEffect, useState, useMemo } from 'react';
 import { Divider } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FilterSortScreenProps, } from '../../types';
@@ -10,9 +10,11 @@ import Colors from '../constants/Colors';
 import { FilterSortState, FilterSortDispatch } from '../context/FilterSortContext';
 import { useProfilesContext } from '../context/ProfileListContext';
 import { EnablerActionTypes, ValueActionTypes } from '../reducers/FilterSortReducer';
-import { MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
 import { Switch } from 'react-native-paper';
+import { brands } from '../assets/manufacturerData';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 interface Props extends FilterSortScreenProps { };
 
@@ -20,6 +22,34 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
   const [RSSIsort, setRSSISort] = useState<boolean>(true);
   const [AppNameSort, setAppNameSort] = useState<boolean>(true);
   const { profileList, loading } = useProfilesContext();
+
+  const vendorList = useMemo(() => {
+    const uniqueNames = new Set<string>();
+    const vendors: Array<{ label: string; value: string }> = [];
+
+    Object.entries(brands).forEach(([id, brand]) => {
+      if (!uniqueNames.has(brand.name)) {
+        uniqueNames.add(brand.name);
+        vendors.push({
+          label: brand.name,
+          value: brand.name,
+        });
+      }
+    });
+
+    // Sort alphabetically, but put numbers at the end
+    return vendors.sort((a, b) => {
+      const aStartsWithNumber = /^\d/.test(a.label);
+      const bStartsWithNumber = /^\d/.test(b.label);
+
+      // If one starts with number and other doesn't, number goes last
+      if (aStartsWithNumber && !bStartsWithNumber) return 1;
+      if (!aStartsWithNumber && bStartsWithNumber) return -1;
+
+      // Otherwise sort alphabetically
+      return a.label.localeCompare(b.label);
+    });
+  }, []);
 
   useEffect(() => {
 
@@ -45,7 +75,20 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
         setAppNameSort(false);
       }
     };
+
+    let loadFilterSettings = async () => {
+      try {
+        let removeUnnamed = await AsyncStorage.getItem('@removeUnnamedDevices');
+        if (removeUnnamed === 'true') {
+          switchDispatch(true, 'filter/removeUnnamedDevices/set/enabled');
+        }
+      } catch (error) {
+        console.error('Error loading filter settings:', error);
+      }
+    };
+
     checkSort();
+    loadFilterSettings();
   }, []);
 
   let fsContext = useContext(FilterSortState);
@@ -86,6 +129,32 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
     }
   };
 
+  const handleRemoveUnnamedDevicesChange = async (value: boolean) => {
+    switchDispatch(value, 'filter/removeUnnamedDevices/set/enabled');
+    try {
+      if (value) {
+        await AsyncStorage.setItem('@removeUnnamedDevices', 'true');
+      } else {
+        await AsyncStorage.removeItem('@removeUnnamedDevices');
+      }
+    } catch (error) {
+      console.error('Error saving removeUnnamedDevices setting:', error);
+    }
+  };
+
+  const handleRemoveInactiveDevicesChange = async (value: boolean) => {
+    switchDispatch(value, 'filter/removeInactiveOutDevices/set/enabled');
+    try {
+      if (value) {
+        await AsyncStorage.removeItem('@removeInactiveOutDevices');
+      } else {
+        await AsyncStorage.setItem('@removeInactiveOutDevices', 'false');
+      }
+    } catch (error) {
+      console.error('Error saving removeInactiveOutDevices setting:', error);
+    }
+  };
+
   const handleAddressChange = (text) => {
     if (!text) {
       inputDispatch('', 'filter/address/set/value')
@@ -104,8 +173,9 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
   };
 
   return (
-    <KeyboardAvoidingView style={[styles.container]}>
-      <ScrollView style={{ flex: 1, }}>
+    <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <KeyboardAwareScrollView style={{ flex: 1, }} contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps='handled'>
 
         {/* Sort */}
         <View style={styles.sectionHeader}>
@@ -117,6 +187,7 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
           <View style={[styles.item]}>
             <Text style={[styles.title]}>RSSI</Text>
             <Switch
+              style={{ alignSelf: 'center' }}
               color={Colors.active}
               value={RSSIsort}
               onValueChange={(value) => {
@@ -132,6 +203,7 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
           <View style={[styles.item]}>
             <Text style={[styles.title]}>App name</Text>
             <Switch
+              style={{ alignSelf: 'center' }}
               color={Colors.active}
               value={AppNameSort}
               onValueChange={(value) => {
@@ -164,7 +236,7 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
             />
             <Text style={{ opacity: fsContext.filter.rssi.enabled ? 1 : 0.5 }}>dBm</Text>
             <Switch
-              style={{ marginLeft: 'auto' }}
+              style={{ alignSelf: 'center', marginLeft: 'auto' }}
               value={fsContext.filter.rssi.enabled}
               color={Colors.active}
               onValueChange={(value) => switchDispatch(value, 'filter/rssi/set/enabled')}
@@ -183,6 +255,7 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
               accessibilityLabel='filterByAppNameInput'
             />
             <Switch
+              style={{ alignSelf: 'center' }}
               color={Colors.active}
               value={fsContext.filter.app_name.enabled}
               onValueChange={(value) => switchDispatch(value, 'filter/app_name/set/enabled')}
@@ -204,6 +277,7 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
                   onChangeText={handleAddressChange}
                 />
                 <Switch
+                  style={{ alignSelf: 'center' }}
                   color={Colors.active}
                   value={fsContext.filter.address.enabled}
                   onValueChange={(value) => switchDispatch(value, 'filter/address/set/enabled')}
@@ -214,7 +288,9 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
           <Divider />
           <View style={styles.item}>
             <Text style={styles.title}>Profile</Text>
+
             <Switch
+              style={{ alignSelf: 'center' }}
               color={Colors.active}
               value={fsContext.filter.profile.enabled}
               onValueChange={(value) => switchDispatch(value, 'filter/profile/set/enabled')}
@@ -227,6 +303,7 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
               selectedTextStyle={styles.selectedTextStyle}
               placeholderStyle={styles.placeholderStyle}
               itemTextStyle={styles.dropItem}
+              containerStyle={styles.dropdownContainer}
               data={profileList}
               value={fsContext.filter.profile.value}
               onChange={(v: any) => {
@@ -235,16 +312,21 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
               labelField="name"
               valueField="uuid"
               placeholder='Select Profile'
-              maxHeight={300}
+              key="uuid"
+              maxHeight={200}
+              dropdownPosition='auto'
               searchPlaceholder="Search..."
               search
               inputSearchStyle={styles.inputSearchStyle}
+              keyboardAvoiding
             />
           )}
+
           <Divider />
           <View style={styles.item}>
             <Text style={styles.title}>Connectable</Text>
             <Switch
+              style={{ alignSelf: 'center' }}
               color={Colors.active}
               value={fsContext.filter.connectable}
               onValueChange={(value) => switchDispatch(value, 'filter/connectable/set/enabled')}
@@ -254,14 +336,114 @@ const FilterSortOptionsScreen: React.FC<Props> = () => {
           <View style={styles.item}>
             <Text allowFontScaling adjustsFontSizeToFit style={[styles.title, { flex: 1 }]}>Remove inactive devices</Text>
             <Switch
+              style={{ alignSelf: 'center' }}
               color={Colors.active}
               value={fsContext.filter.removeInactiveOutDevices}
-              onValueChange={(value) => switchDispatch(value, 'filter/removeInactiveOutDevices/set/enabled')}
+              onValueChange={handleRemoveInactiveDevicesChange}
             />
           </View>
+          <Divider />
+          <View style={styles.item}>
+            <Text allowFontScaling adjustsFontSizeToFit style={[styles.title, { flex: 1 }]}>Remove unnamed devices</Text>
+            <Switch
+              style={{ alignSelf: 'center' }}
+              color={Colors.active}
+              value={fsContext.filter.removeUnnamedDevices}
+              onValueChange={handleRemoveUnnamedDevicesChange}
+            />
+          </View>
+          <Divider />
+          <View style={styles.item}>
+            <Text style={styles.title}>Show only TI devices</Text>
+            <Switch
+              style={{ alignSelf: 'center' }}
+              color={Colors.active}
+              value={fsContext.filter.showOnlyTI}
+              onValueChange={(value) => {
+                switchDispatch(value, 'filter/vendor/ti/set/enabled');
+              }}
+            />
+          </View>
+          <Divider />
+          <View style={styles.item}>
+            <Text style={styles.title}>
+              Filter by vendors
+            </Text>
+
+            <Switch
+              style={{ alignSelf: 'center' }}
+              color={Colors.active}
+              value={fsContext.filter.vendorFilter.enabled}
+              onValueChange={(value) => {
+                switchDispatch(value, 'filter/vendor/list/set/enabled');
+              }}
+            />
+          </View>
+
+          {/* MultiSelect dropdown */}
+          {fsContext.filter.vendorFilter.enabled && (
+            <MultiSelect
+              disable={!fsContext.filter.vendorFilter.enabled}
+              style={[styles.multiSelectDropdown]}
+              selectedTextStyle={styles.selectedTextStyle}
+              placeholderStyle={styles.placeholderStyle}
+              itemTextStyle={styles.dropItem}
+              containerStyle={styles.dropdownContainer}
+              visibleSelectedItem={false}
+              data={vendorList}
+              value={fsContext.filter.vendorFilter.value}
+              onChange={(selectedItems: string[]) => {
+                fsDispatch!({ type: 'filter/vendor/list/set/value', payload: selectedItems });
+              }}
+              labelField="label"
+              valueField="value"
+              placeholder='Select vendors to filter'
+              maxHeight={250}
+              dropdownPosition='top'
+              searchPlaceholder="Search vendors..."
+              search
+              inputSearchStyle={styles.inputSearchStyle}
+              keyboardAvoiding
+            />
+          )}
+          {/* Display selected vendors in styled container */}
+          {fsContext.filter.vendorFilter.enabled && fsContext.filter.vendorFilter.value.length > 0 && (
+            <View style={styles.selectedVendorsContainer}>
+              <Text style={styles.selectedVendorsLabel}>
+                Selected ({fsContext.filter.vendorFilter.value.length}):
+              </Text>
+              <ScrollView
+                horizontal={false}
+                style={styles.selectedVendorsScrollView}
+                contentContainerStyle={styles.selectedVendorsChipsContainer}
+                nestedScrollEnabled
+              >
+                {fsContext.filter.vendorFilter.value.map((vendorId) => {
+                  const vendor = vendorList.find(v => v.value === vendorId);
+                  if (!vendor) return null;
+                  return (
+                    <View key={vendorId} style={styles.selectedVendorChip}>
+                      <Text style={styles.selectedVendorText} numberOfLines={1}>
+                        {vendor.label}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          const newValues = fsContext.filter.vendorFilter.value.filter(id => id !== vendorId);
+                          fsDispatch!({ type: 'filter/vendor/list/set/value', payload: newValues });
+                        }}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                      >
+                        <AntDesign name="close-circle" size={16} color={Colors.gray} />
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
         </View>
 
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -283,13 +465,69 @@ const styles = StyleSheet.create({
   sectionDescription: {
     fontSize: 14,
     marginBottom: 10,
+
     color: Colors.gray,
+  },
+  selectedVendorText: {
+    fontSize: 13,
+    color: Colors.gray,
+    marginRight: 6,
+  },
+  selectedVendorChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderColor: Colors.gray,
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingLeft: 12,
+    paddingRight: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  selectedVendorsContainer: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 12,
+    marginHorizontal: 5,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: Colors.gray + '40',
+    maxHeight: 400,
+  },
+  selectedVendorsLabel: {
+    fontSize: 12,
+    color: Colors.gray,
+    marginBottom: 8,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  selectedVendorsScrollView: {
+    maxHeight: 300,
+  },
+  selectedVendorsChipsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  multiSelectDropdown: {
+    marginBottom: 15,
+    paddingHorizontal: 16,
+    width: '90%',
+    flex: 1,
+    height: 35,
+    borderColor: Colors.gray,
+    borderWidth: 1,
+    alignSelf: 'center',
+    marginLeft: 10,
+    borderRadius: 8,
   },
   container: {
     paddingHorizontal: 20,
-    paddingVertical: 30,
+    paddingTop: 30,
     alignContent: 'center',
     height: '100%',
+    flex: 1,
     backgroundColor: Colors.lightGray
   },
   dataBox: {
@@ -308,6 +546,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    alignContent: 'center',
     paddingHorizontal: 15,
     height: 50,
   },
@@ -326,18 +565,20 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: 'rgba(230, 230, 230, 0.3)',
     borderRadius: 5,
-    height: 30,
     marginRight: 10,
+    height: "90%"
   },
   dropdown: {
     marginBottom: 15,
     paddingHorizontal: 16,
     width: '90%',
+    flex: 1,
     height: 35,
     borderColor: Colors.gray,
     borderWidth: 1,
     alignSelf: 'center',
-    borderRadius: 4,
+    marginLeft: 10,
+    borderRadius: 8,
   },
   inputSearchStyle: {
     height: 40,
@@ -354,7 +595,10 @@ const styles = StyleSheet.create({
   dropItem: {
     fontSize: 14,
     // height: 20
-  }
+  },
+  dropdownContainer: {
+    borderRadius: 8,
+  },
 })
 
 export default FilterSortOptionsScreen;

@@ -11,7 +11,8 @@ export interface SpecificScreenConfig {
   medianEvery: number,
   applyRespFilter: boolean,
   disconnectInInterval: boolean,
-  showCgmData: boolean
+  showCgmData: boolean,
+  csRangingUpdateRate: number
 }
 
 interface SpecificScreenConfigContextProps {
@@ -36,7 +37,10 @@ const initialState: SpecificScreenConfig = {
 
   // CGM Test Profile & HT Profile
   disconnectInInterval: false,
-  showCgmData: true
+  showCgmData: true,
+
+  // Channel Sounding
+  csRangingUpdateRate: 2  // 1=Normal, 2=Infrequent, 3=Frequent
 
 }
 
@@ -92,8 +96,13 @@ export const SpecificScreenConfigProvider: React.FC<{ children: ReactNode }> = (
         showCgmData = 'true';
       }
 
+      let csRangingUpdateRate = await AsyncStorage.getItem('@csRangingUpdateRate');
+      if (!csRangingUpdateRate) {
+        csRangingUpdateRate = '2';
+      }
+
       let updatedConf: SpecificScreenConfig = {
-        wifiProvisioningConnectionTimeout: Number(connectionTimeout), temperatureSensorScaleLSB: temperatureSensorScaleLSB, tempUnits: tempUnits, pointsNumberToDisplay: Number(pointsNumberToDisplay), recordDuration: (recordDuration === 'no limit' ? recordDuration : Number(recordDuration)), medianEvery: Number(medianEvery), medianOn: Number(medianOn), applyRespFilter: applyRespFilter === 'true', disconnectInInterval: false, showCgmData: showCgmData === 'true'
+        wifiProvisioningConnectionTimeout: Number(connectionTimeout), temperatureSensorScaleLSB: temperatureSensorScaleLSB, tempUnits: tempUnits as 'C' | 'F', pointsNumberToDisplay: Number(pointsNumberToDisplay), recordDuration: (recordDuration === 'no limit' ? recordDuration : Number(recordDuration)), medianEvery: Number(medianEvery), medianOn: Number(medianOn), applyRespFilter: applyRespFilter === 'true', disconnectInInterval: false, showCgmData: showCgmData === 'true', csRangingUpdateRate: Number(csRangingUpdateRate)
       }
       console.log('updatedConf', updatedConf)
       setSpecificScreenConfig(updatedConf)
@@ -116,6 +125,7 @@ export const SpecificScreenConfigProvider: React.FC<{ children: ReactNode }> = (
     await AsyncStorage.setItem('@medianEvery', JSON.stringify(configurations.medianEvery));
     await AsyncStorage.setItem('@applyRespFilter', JSON.stringify(configurations.applyRespFilter));
     await AsyncStorage.setItem('@showCgmData', JSON.stringify(configurations.showCgmData));
+    await AsyncStorage.setItem('@csRangingUpdateRate', JSON.stringify(configurations.csRangingUpdateRate));
 
     console.log("screen config updated with", configurations)
 

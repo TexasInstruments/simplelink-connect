@@ -1,7 +1,33 @@
 import Colors from "../../constants/Colors";
-import { StyleSheet, NativeModules, Dimensions, View, Platform } from 'react-native';
+import { StyleSheet, NativeModules, View, Platform, NativeEventEmitter, EmitterSubscription } from 'react-native';
 import { Text, TouchableOpacity } from '../Themed';
 
+const { MeshModule } = NativeModules;
+
+// Mesh event emitter singleton
+const meshEventEmitter = new NativeEventEmitter(MeshModule);
+const meshSubscriptions: Map<string, EmitterSubscription> = new Map();
+
+export function addMeshListener(eventName: string, callback: (event: any) => void): EmitterSubscription {
+    // Remove existing listener if any
+    removeMeshListener(eventName);
+    const subscription = meshEventEmitter.addListener(eventName, callback);
+    meshSubscriptions.set(eventName, subscription);
+    return subscription;
+}
+
+export function removeMeshListener(eventName: string): void {
+    const subscription = meshSubscriptions.get(eventName);
+    if (subscription) {
+        subscription.remove();
+        meshSubscriptions.delete(eventName);
+    }
+}
+
+export function removeAllMeshListeners(eventName: string): void {
+    meshEventEmitter.removeAllListeners(eventName);
+    meshSubscriptions.delete(eventName);
+}
 
 export const CONFIGURATION_SERVER = 0x0000;
 export const CONFIGURATION_CLIENT = 0x0001;
@@ -400,7 +426,7 @@ export const meshStyles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        bottom: 60,
+        bottom: 40,
         right: 20,
         backgroundColor: Colors.blue,
         paddingVertical: 12,

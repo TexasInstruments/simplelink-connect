@@ -40,6 +40,7 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
     const [isConnected, setIsConnected] = useState<boolean>(false);
     const [isConnectingState, setIsConnectingState] = useState<boolean>(false);
     const [setupMenuVisible, setSetupMenuVisible] = useState(false);
+    const [setupMenuKey, setSetupMenuKey] = useState(0);
     const [proxyState, setProxyState] = useState<0 | 1>();
 
     const isConnectingRef = useRef<boolean>(false)
@@ -151,7 +152,7 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
                 text: "Yes",
                 onPress: async () => {
                     await callMeshModuleFunction('removeNodeFromNetwork', unicastAddr);
-                    navigation.navigate('BleMesh');
+                    navigation.navigate('BleMesh', { pop: true });
                 },
                 style: "destructive"
             },
@@ -237,12 +238,16 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
         console.log(res)
     }
 
-    const openMenu = () => setSetupMenuVisible(true);
+    const openMenu = () => {
+        setSetupMenuKey(prev => prev + 1);
+        setSetupMenuVisible(true);
+    };
     const closeMenu = () => setSetupMenuVisible(false);
 
     const QuickNodeSetupMenu = () => {
         return (
             <Menu
+                key={setupMenuKey}
                 contentStyle={{ backgroundColor: 'white' }}
                 visible={setupMenuVisible}
                 onDismiss={closeMenu}
@@ -383,7 +388,7 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
             </View>
 
             {/* Data */}
-            <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 10, marginBottom: 10 }}>
+            <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 10 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                     {/* state */}
                     <Text style={{ fontSize: 15 }} >
@@ -516,7 +521,7 @@ const BleMeshConfigureNode: React.FC<Props> = ({ route }) => {
                     </View>
                 }
 
-            </View >
+            </View>
 
             <AddNetKeyModal
                 setModalVisible={setIsNetKeyModalVisible}
@@ -572,7 +577,7 @@ const styles = StyleSheet.create({
     },
     actionButtons: {
         marginTop: 10,
-        marginBottom: 10
+        marginBottom: 20
     },
     proxyButton: {
         backgroundColor: 'white',

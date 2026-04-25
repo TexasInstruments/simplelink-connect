@@ -34,7 +34,7 @@ import BleDevice from '../components/BleDevice';
 import { RootTabScreenProps } from '../../types';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React from 'react';
-import { BackHandler, NativeModules, NativeEventEmitter } from 'react-native';
+import { BackHandler } from 'react-native';
 
 interface Props extends RootTabScreenProps<'DeviceTab'> { }
 
@@ -50,9 +50,6 @@ const DeviceDetailsScreen: React.FC<Props> = (props) => {
       const backHandler = BackHandler.addEventListener(
         'hardwareBackPress',
         () => {
-          const BleManagerModule = NativeModules.BleManager;
-          const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
-          bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
           navigation.goBack();
           return true;
         }

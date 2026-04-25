@@ -48,6 +48,7 @@ import { TutorialsProvider } from './src/context/TutorialContext';
 import { ServiceViewProvider } from './src/context/ServiceViewContext';
 import Colors from './src/constants/Colors';
 import { BleRangeProvider } from './src/context/RangeTestContext';
+import AdvertiserProvider from './src/context/AdvertiserContext';
 
 function AppContent({ colorScheme }: { colorScheme: string }) {
   return (
@@ -65,8 +66,10 @@ function AppContent({ colorScheme }: { colorScheme: string }) {
                 <ProfileListProvider>
                   <TutorialsProvider>
                     <BleRangeProvider>
-                      <Navigation colorScheme={colorScheme} />
-                      <StatusBar />
+                      <AdvertiserProvider>
+                        <Navigation colorScheme={colorScheme} />
+                        <StatusBar />
+                      </AdvertiserProvider>
                     </BleRangeProvider>
                   </TutorialsProvider>
                 </ProfileListProvider>
@@ -86,7 +89,7 @@ export default function App() {
   if (!isLoadingComplete) return null;
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.lightGray }}>
 
       <SafeAreaProvider>
         <PaperProvider theme={Colors.lightTheme}>

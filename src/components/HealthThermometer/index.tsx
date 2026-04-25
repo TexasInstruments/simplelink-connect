@@ -1,6 +1,6 @@
-import { InteractionManager, KeyboardAvoidingView, NativeEventEmitter, Switch, TouchableOpacity, View } from 'react-native';
+import { InteractionManager, KeyboardAvoidingView, Switch, TouchableOpacity, View, EventSubscription } from 'react-native';
 import { Text } from '../Themed';
-import { StyleSheet, NativeModules, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import Colors from '../../constants/Colors';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -48,8 +48,8 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
     const disconnectInInterval = useRef<boolean>(specificScreenConfig.disconnectInInterval);
     const logBuffer = useRef<string[]>([]);
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
+    const disconnectSubscription = useRef<EventSubscription | null>(null);
 
     // Update local variable when context is changing
     useEffect(() => {
@@ -74,11 +74,10 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(() => {
-                bleManagerEmitter.addListener(
-                    'BleManagerDidUpdateValueForCharacteristic', handleIndication);
-                bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', () => {
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleIndication);
+                disconnectSubscription.current = BleManager.onDisconnectPeripheral(() => {
                     addLog("device disconnected from phone")
-                })
+                });
 
             });
 
@@ -89,8 +88,8 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
                     setPollingInterval(null);
                     addLog("polling interval cleared")
                 }
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
-                bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
+                charValueSubscription.current?.remove();
+                disconnectSubscription.current?.remove();
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, CHAR_UUID); // Stop notifications
             };
         }, [pollingInterval])
@@ -443,6 +442,7 @@ const HealthThermometer: React.FC<Props> = ({ peripheralId }) => {
                     <View style={[styles.item]}>
                         <Text style={[styles.title]}>Enable Indications</Text>
                         <Switch
+                            style={{ alignSelf: 'center'}}
                             value={indicationsSwitch}
                             onChange={handleIndicationSwitch}
                         />

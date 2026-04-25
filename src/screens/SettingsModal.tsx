@@ -78,7 +78,7 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
   };
 
   const handleNavigation = (screen: string) => {
-    navigation.navigate(screen);
+    navigation.navigate(screen, { pop: true });
     navigation.closeDrawer();
   };
 
@@ -107,6 +107,16 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
             <Divider />
 
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => handleNavigation('ScanningOptions')}
+              accessibilityLabel="scanningOptions"
+              testID="scanningOptions">
+              <Ionicons name="bluetooth" size={25} color={Colors.blue} style={styles.icon} />
+              <Text style={[styles.menuText, { fontSize: 16 / fontScale, }]}>Scan / Connection Options</Text>
+            </TouchableOpacity>
+            <Divider />
+
             <TouchableOpacity style={styles.menuItem} onPress={() => handleNavigation('ConfigRepository')}>
               <Ionicons name="git-network-outline" size={25} color={Colors.blue} style={styles.icon} />
               <Text style={[styles.menuText, { fontSize: 16 / fontScale, }]}>Config OAD Repository</Text>
@@ -127,7 +137,7 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
           </View>
         </View>
         <View style={styles.footer}>
-          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.1.3</Text>
+          <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.2.0</Text>
           <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
         </View>
       </KeyboardAwareScrollView>

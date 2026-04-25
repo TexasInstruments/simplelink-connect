@@ -1,8 +1,8 @@
-import { InteractionManager, NativeEventEmitter, Platform, StatusBar, Switch, TouchableHighlight, View, processColor } from 'react-native';
+import { InteractionManager, Platform, StatusBar, Switch, TouchableHighlight, View, processColor, EventSubscription } from 'react-native';
 import { Text, TouchableOpacity } from '../Themed';
-import { StyleSheet, NativeModules } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Colors from '../../constants/Colors';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import BleManager from 'react-native-ble-manager';
 import { Divider, SegmentedButtons } from 'react-native-paper';
 import { useFocusEffect } from '@react-navigation/native';
@@ -11,11 +11,9 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { OP_CODES_ACCESS_CONTROL, RecordAccessControlDialog } from './RecordAccessControlDialog';
 import { CONTROL_POINT_RESP, OP_CODES_CONTROL_POINT, SpecificOpsControlPointDialog } from './SpecificOpsControlPointDialog';
 import { Buffer } from 'buffer';
-import { Icon } from '@rneui/base';
 import { CustomSnackBar } from '../CustomSnackBar';
-import { LineChart } from 'react-native-charts-wrapper';
-import { AntDesign } from '@expo/vector-icons';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { LineChart, LineData, xAxis } from 'react-native-charts-wrapper';
+import { FontAwesome5, FontAwesome, AntDesign, MaterialIcons } from '@expo/vector-icons';
 import Tooltip from 'react-native-walkthrough-tooltip';
 import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 
@@ -60,8 +58,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
     const [collapsedSections, setCollapsedSections] = useState<CollapsedSections>({ cgmMeaurment: true, cgmFeatures: true, cgmStatus: true, cgmSessionStartTime: true, cgmSessionRunTime: true, recordAccessControlPoint: true, cgmSpecificOpsControlPoint: true });
     const [sectionsTooltip, setSectionsTooltip] = useState<CollapsedSections>({ cgmMeaurment: false, cgmFeatures: false, cgmStatus: false, cgmSessionStartTime: false, cgmSessionRunTime: false, recordAccessControlPoint: false, cgmSpecificOpsControlPoint: false });
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
     const [visibleSnackBar, setVisibleSnackBar] = useState(false);
     const [snackBarData, setSnackBarData] = useState<{ message: string, success: boolean }>({ message: '', success: false });
@@ -72,8 +69,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(() => {
-                bleManagerEmitter.addListener(
-                    'BleManagerDidUpdateValueForCharacteristic', handleNotifications);
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleNotifications);
 
                 // BleManager.startNotification(peripheralId, CGM_PROFILE.uuid, CGM_PROFILE.record_access_cp);
                 setOpControlIndicationSwitch(true);
@@ -88,7 +84,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
 
             return () => {
                 task.cancel();
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+                charValueSubscription.current?.remove();
 
                 // Stop notifications
                 BleManager.stopNotification(peripheralId, CGM_PROFILE.uuid, CGM_PROFILE.cgm_measurement);
@@ -665,7 +661,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
         return (
             <TouchableOpacity style={[styles.button]} onPress={gettingDataFunc}>
                 <Text style={[styles.textButton]}>Refresh</Text>
-                <Icon solid={true} name={'refresh'} size={16} color={Colors.blue} type="font-awesome" style={{ alignSelf: 'center' }} />
+                <FontAwesome solid={true} name={'refresh'} size={16} color={Colors.blue} style={{ alignSelf: 'center' }} />
             </TouchableOpacity >
         )
     }
@@ -701,12 +697,14 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
         )
     }
 
-    const data = {
+    const data: LineData = {
         dataSets: [
             {
-                values: measurmentsDataSet.map(m => ({ y: m.data, x: Number(m.label) })),
+                values: measurmentsDataSet.map((m, index) => ({
+                    x: index,
+                    y: m.data,
+                })),
                 label: 'Glucose Concentration',
-                strokeWidth: 2,
                 config: {
                     color: processColor(Colors.blue),
                     circleColor: processColor(Colors.blue),
@@ -715,9 +713,9 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
                     circleHoleColor: processColor('white'),
                     drawCircleHole: true,
                 },
+
             }
         ],
-        legend: ["Glucose Concentration"]
     };
 
     function resetChart() {
@@ -725,16 +723,22 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
         setMeasurementsList([]);
     }
 
-    const xAxis = {
-        granularityEnabled: true,
-        granularity: 1,
+    const xAxis: xAxis = {
+        valueFormatter: measurmentsDataSet.map(m => m.label), // Array of time strings
         position: 'BOTTOM',
-        valueFormatter: measurmentsDataSet.map(m => m.label),
+        granularityEnabled: true,
+        drawLabels: true, // Explicitly ensure this is true
+        textColor: processColor('#000'),
+
     };
 
     const yAxis = {
         left: {
+            enabled: true,
+            drawLabels: true,
+            drawAxisLine: true,
             drawGridLines: true,
+            textColor: processColor('#000'),
         },
         right: {
             enabled: false,
@@ -762,7 +766,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
             displayInsets={{ top: 40, bottom: 40, left: 24, right: 24 }}
         >
             <TouchableOpacity onPress={() => setVisible(true)}>
-                <Icon style={{ alignSelf: 'center' }} name='help-outline' type="MaterialIcons" size={20} />
+                <MaterialIcons style={{ alignSelf: 'center' }} name='help-outline' size={20} />
             </TouchableOpacity >
         </Tooltip>)
 
@@ -778,7 +782,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
                             {toolTip(sectionsTooltip.cgmMeaurment, (isVisible: boolean) => { setSectionsTooltip({ ...sectionsTooltip, cgmMeaurment: isVisible }) }, 'The CGM Measurement characteristic is a variable length structure containing one or more CGM Measurement records')}
                             <TouchableOpacity style={[{ ...styles.subjectRaw, ...styles.itemRaw, flex: 1 }]} onPress={() => toggleCollapse(0)}>
                                 <Text style={[styles.subject]}>CGM Measurement</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.cgmMeaurment ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.cgmMeaurment ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {!collapsedSections.cgmMeaurment && (
@@ -797,12 +801,14 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
                                         {dataFormatting == 'List' && DataList(measurementsList, setMeasurementsList)}
                                         {dataFormatting == 'Chart' &&
                                             <LineChart
-                                                style={styles.chart}
+                                                style={[styles.chart]} // Ensure height is set
                                                 data={data}
-                                                xAxis={xAxis}
+                                                xAxis={xAxis} // Pass the config here
                                                 yAxis={yAxis}
                                                 chartDescription={{ text: '' }}
-                                                legend={{ enabled: true }}
+                                                legend={{ enabled: true, textColor: processColor("black"), }}
+                                                drawGridBackground={false}
+                                                touchEnabled={true}
                                                 {...zoommableChartConfig}
                                             />
                                         }
@@ -828,7 +834,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
 
                             <TouchableOpacity style={[{ ...styles.subjectRaw, ...styles.itemRaw, flex: 1 }]} onPress={() => toggleCollapse(1)}>
                                 <Text style={[styles.subject]}>CGM Feature</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.cgmFeatures ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.cgmFeatures ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {!collapsedSections.cgmFeatures && (
@@ -870,7 +876,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
 
                             <TouchableOpacity style={[{ ...styles.itemRaw, ...styles.subjectRaw, flex: 1 }]} onPress={() => toggleCollapse(2)}>
                                 <Text style={[styles.subject]}>CGM Status</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.cgmStatus ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.cgmStatus ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {!collapsedSections.cgmStatus && (
@@ -897,7 +903,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
 
                             <TouchableOpacity style={[{ ...styles.itemRaw, ...styles.subjectRaw, flex: 1 }]} onPress={() => toggleCollapse(3)}>
                                 <Text allowFontScaling adjustsFontSizeToFit numberOfLines={1} style={[styles.subject]}>CGM Session Start Time</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.cgmSessionStartTime ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.cgmSessionStartTime ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {(!collapsedSections.cgmSessionStartTime && (
@@ -935,7 +941,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
 
                             <TouchableOpacity style={[{ ...styles.itemRaw, ...styles.subjectRaw, flex: 1 }]} onPress={() => toggleCollapse(4)}>
                                 <Text allowFontScaling adjustsFontSizeToFit numberOfLines={1} style={[styles.subject]}>CGM Session Run Time</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.cgmSessionRunTime ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.cgmSessionRunTime ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {!collapsedSections.cgmSessionRunTime && (
@@ -958,7 +964,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
 
                             <TouchableOpacity style={[{ ...styles.itemRaw, ...styles.subjectRaw, flex: 1 }]} onPress={() => toggleCollapse(5)}>
                                 <Text style={[styles.subject]} adjustsFontSizeToFit numberOfLines={1} allowFontScaling >Record Access Control Point</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.recordAccessControlPoint ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.recordAccessControlPoint ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {!collapsedSections.recordAccessControlPoint && (
@@ -974,7 +980,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
                                 <View style={[{ ...styles.itemRaw, justifyContent: 'center' }]}>
                                     <TouchableOpacity onPress={showFetchDataDialog} style={[styles.button]} >
                                         <Text style={[styles.textButton]}>Send Command </Text>
-                                        <Icon solid={true} name={'send-o'} size={16} color={Colors.blue} type="font-awesome" />
+                                        <FontAwesome solid={true} name={'send-o'} size={16} color={Colors.blue} />
                                     </TouchableOpacity>
                                 </View>
                                 {recordAccessControlIndicationsList.length > 0 && (
@@ -992,7 +998,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
 
                             <TouchableOpacity style={[{ ...styles.itemRaw, ...styles.subjectRaw, flex: 1 }]} onPress={() => toggleCollapse(6)}>
                                 <Text style={[styles.subject]} adjustsFontSizeToFit numberOfLines={1} allowFontScaling >CGM Specific Ops Control Point</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.cgmSpecificOpsControlPoint ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.cgmSpecificOpsControlPoint ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {!collapsedSections.cgmSpecificOpsControlPoint && (
@@ -1010,7 +1016,7 @@ const CGM: React.FC<Props> = ({ peripheralId }) => {
                                 <View style={[{ ...styles.itemRaw, justifyContent: 'center' }]}>
                                     <TouchableOpacity onPress={showSendCommandDialog} style={[styles.button]}>
                                         <Text style={[styles.textButton]}>Send Command </Text>
-                                        <Icon solid={true} name={'send-o'} size={16} color={Colors.blue} type="font-awesome" />
+                                        <FontAwesome solid={true} name={'send-o'} size={16} color={Colors.blue} />
                                     </TouchableOpacity>
                                 </View>
                             </>

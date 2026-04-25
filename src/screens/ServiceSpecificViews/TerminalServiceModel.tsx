@@ -1,13 +1,12 @@
 import {
   KeyboardAvoidingView,
-  NativeEventEmitter,
-  NativeModules,
   Platform,
   StyleSheet,
   TextInput,
   InteractionManager,
   Keyboard,
   KeyboardEvent,
+  EventSubscription,
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { View } from '../../components/Themed';
@@ -32,8 +31,7 @@ const DATASTREAMSERVER_DATAOUT_UUID = 'F000C0C2-0451-4000-B000-000000000000';
 const TerminalItemSeparator = () => <View style={{ opacity: 0, paddingBottom: 5 }} />;
 
 const TerminalServiceModel: React.FC<{ peripheralId: string }> = ({ peripheralId }) => {
-  const BleManagerModule = NativeModules.BleManager;
-  const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+  const charValueSubscription = useRef<EventSubscription | null>(null);
   const { terminalConfig: config } = useTerminalConfigContext();
 
   const [terminalMessages, setTerminalMessages] = useState<
@@ -108,25 +106,23 @@ const TerminalServiceModel: React.FC<{ peripheralId: string }> = ({ peripheralId
   };
 
   // BLE Notifications
-  useFocusEffect(
-    useCallback(() => {
-      const task = InteractionManager.runAfterInteractions(async () => {
-        try {
-          await BleManager.startNotification(peripheralId, DATASTREAMSERVER_SERV_UUID, DATASTREAMSERVER_DATAOUT_UUID);
-          console.log('Notifications enabled');
-          bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleNotifications);
-        } catch (error) {
-          console.error('Notification setup failed:', error);
-        }
-      });
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(async () => {
+      try {
+        await BleManager.startNotification(peripheralId, DATASTREAMSERVER_SERV_UUID, DATASTREAMSERVER_DATAOUT_UUID);
+        console.log('Notifications enabled');
+        charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleNotifications);
+      } catch (error) {
+        console.error('Notification setup failed:', error);
+      }
+    });
 
-      return () => {
-        task.cancel();
-        bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
-        BleManager.stopNotification(peripheralId, DATASTREAMSERVER_SERV_UUID, DATASTREAMSERVER_DATAOUT_UUID);
-      };
-    }, [peripheralId])
-  );
+    return () => {
+      task.cancel();
+      charValueSubscription.current?.remove();
+      BleManager.stopNotification(peripheralId, DATASTREAMSERVER_SERV_UUID, DATASTREAMSERVER_DATAOUT_UUID);
+    };
+  }, [peripheralId])
 
   const handleNotifications = ({ value }: { value: number[] }) => {
     const buf = Buffer.from(value);

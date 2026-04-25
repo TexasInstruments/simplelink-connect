@@ -6,7 +6,7 @@ export const getIconByPeripheralInfo = (peripheral: any) => {
 
   let serviceDataUUIDs = peripheral.advertising?.serviceData;
   let serviceUUIDs: string[] | undefined = peripheral?.advertising?.serviceUUIDs;
-  let manufacturerData = peripheral?.advertising?.manufacturerData;
+  let manufacturerRawData = peripheral?.advertising?.manufacturerRawData;
 
   peripheral.serviceUUIDs = serviceUUIDs;
 
@@ -20,7 +20,7 @@ export const getIconByPeripheralInfo = (peripheral: any) => {
           name: brand.iconName!,
           type: 'brands',
         };
-        peripheral.brand = brand.iconName!;
+        peripheral.brand = brand.name!;
       }
     }
   }
@@ -34,14 +34,28 @@ export const getIconByPeripheralInfo = (peripheral: any) => {
           name: brand.iconName!,
           type: 'brands',
         };
-        peripheral.brand = brand.iconName!;
+        peripheral.brand = brand.name!;
       }
     }
   }
 
-  if (manufacturerData?.bytes?.length >= 2 && icon == null) {
-    let bytes = Buffer.from(manufacturerData.bytes);
-    let uuid = bytes.readUInt16LE(0).toString(16).padStart(4, '0').toUpperCase();
+  if (manufacturerRawData?.bytes?.length >= 2 && icon == null) {
+    let bytes = Buffer.from(manufacturerRawData.bytes);
+
+    // react-native-ble-manager bug: uses Integer (4 bytes) instead of Short (2 bytes) for company ID
+    // The library stores it as big-endian 4-byte integer: [0, 0, 0, 13] for company ID 13
+    // Skip first 2 bytes and read as big-endian
+    let offset = 0;
+    let useBigEndian = false;
+    if (bytes.length >= 4 && bytes[0] === 0 && bytes[1] === 0) {
+      offset = 2;
+      useBigEndian = true; // Read as big-endian after skipping
+    }
+
+    let uuid = useBigEndian
+      ? bytes.readUInt16BE(offset).toString(16).padStart(4, '0').toUpperCase()
+      : bytes.readUInt16LE(offset).toString(16).padStart(4, '0').toUpperCase();
+    // let uuid = bytes.readUInt16LE(0).toString(16).padStart(4, '0').toUpperCase();
 
     let brandByBytes = getBrand(uuid);
 
@@ -50,7 +64,7 @@ export const getIconByPeripheralInfo = (peripheral: any) => {
         name: brandByBytes.iconName!,
         type: 'brands',
       };
-      peripheral.brand = brandByBytes.iconName!;
+      peripheral.brand = brandByBytes.name!;
     }
   }
 

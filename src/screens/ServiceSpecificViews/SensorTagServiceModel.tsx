@@ -32,12 +32,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from '../../components/Themed';
-import { InteractionManager, NativeEventEmitter, NativeModules, StyleSheet } from 'react-native';
+import { InteractionManager, StyleSheet, EventSubscription } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MovementSensorState, } from '../../../types';
 import { Buffer } from 'buffer';
 import { ScrollView } from 'react-native-gesture-handler';
 import Colors from '../../constants/Colors';
+import BleManager from 'react-native-ble-manager';
 import {
   ACCELEROMETER_SERVICE,
   BAROMETRIC_SENSOR,
@@ -65,8 +66,7 @@ import AccelerometerSensor from '../../components/SensorViews/AccelerometerSenso
 
 const SensorTagServiceModel: React.FC<{ peripheralId: string, serviceName: string | undefined }> = ({ peripheralId, serviceName }) => {
 
-  const BleManagerModule = NativeModules.BleManager;
-  const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+  const charValueSubscription = useRef<EventSubscription | null>(null);
 
   //IR Temperature Sensor
   const [irTemperatureData, setIRTemperatureData] = useState<{ obj: number[]; amb: number[] }>({
@@ -155,9 +155,7 @@ const SensorTagServiceModel: React.FC<{ peripheralId: string, serviceName: strin
         }
 
         console.log('SensorTagServiceModel: addListener')
-        bleManagerEmitter.addListener(
-          'BleManagerDidUpdateValueForCharacteristic',
-          ({
+        charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(({
             value,
             peripheral,
             characteristic,
@@ -286,7 +284,7 @@ const SensorTagServiceModel: React.FC<{ peripheralId: string, serviceName: strin
 
       return () => {
         console.log('SensorTagServiceModel: removeAllListeners')
-        bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+        charValueSubscription.current?.remove();
         clearInterval(keysInterval.current);
         keysInterval.current = null;
       };

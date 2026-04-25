@@ -188,7 +188,7 @@ export const GenericModelView: React.FC<Props> = ({ route }: any) => {
     }
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: Colors.lightGray }} edges={['left', 'right', 'bottom']}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: Colors.lightGray }} edges={Platform.OS == "ios" ? ['left', 'right', 'bottom'] : ['left', 'right']}>
             <View style={styles.container}>
                 {/* Header */}
                 <View style={[meshStyles.infoContainer, { backgroundColor: Colors.lightGray }]}>

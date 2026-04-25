@@ -1,0 +1,35 @@
+Release 2.2.0 of TI Simplelink Connect
+This commit consolidates work done for Release 2.2.0 of the TI
+Simplelink Connect iOS and Android application
+
+Changes:
+    1. Scanner:
+        - Dedicated screen for scan and connection parameters.
+        - Extended Advertisement Support: BLE 5.0 extended advertisements and 1M PHY detection.
+        - Dedicated Continuous Glucose Monitoring Test service.
+        - AI Holter Integration: Split ECG characteristics between regular and AI Holter.
+        - Filter scan list by common vendors.
+
+    2. Channel Sounding Support (Android Only)
+
+    3. Multistep OAD Support.
+
+    4. Zephyr FOTA:
+        - Send device reset command after successful BLE FOTA on Zephyr
+
+    5. Advertiser:
+        - Add advertiser functionality where the phone can act as a peripheral.
+        - Configure advertisement name, services UUID, manufacture data, TX power, connectable mode and advertising extensions.
+
+    6. Mesh:
+        - Fixed inconsistent addresses when reconnecting.
+        - Add option to input JSON network configuration.
+
+    7. Stress Tests:
+        - Custom Profile Testing: Support for custom services with custom characteristics.
+
+    8. General:
+        - Improve and clarify readme build instructions
+        
+        
+Signed-off-by: Texas Instruments

@@ -1,9 +1,9 @@
 package com.ti.connectivity.simplelinkconnect;
 
-import static io.runtime.mcumgr.dfu.FirmwareUpgradeManager.Mode.CONFIRM_ONLY;
-import static io.runtime.mcumgr.dfu.FirmwareUpgradeManager.Mode.NONE;
-import static io.runtime.mcumgr.dfu.FirmwareUpgradeManager.Mode.TEST_AND_CONFIRM;
-import static io.runtime.mcumgr.dfu.FirmwareUpgradeManager.Mode.TEST_ONLY;
+import static io.runtime.mcumgr.dfu.mcuboot.FirmwareUpgradeManager.Mode.CONFIRM_ONLY;
+import static io.runtime.mcumgr.dfu.mcuboot.FirmwareUpgradeManager.Mode.NONE;
+import static io.runtime.mcumgr.dfu.mcuboot.FirmwareUpgradeManager.Mode.TEST_AND_CONFIRM;
+import static io.runtime.mcumgr.dfu.mcuboot.FirmwareUpgradeManager.Mode.TEST_ONLY;
 
 import android.util.Log;
 
@@ -34,14 +34,15 @@ import io.runtime.mcumgr.McuMgrTransport;
 import io.runtime.mcumgr.ble.McuMgrBleTransport;
 import io.runtime.mcumgr.dfu.FirmwareUpgradeCallback;
 import io.runtime.mcumgr.dfu.FirmwareUpgradeController;
-import io.runtime.mcumgr.dfu.FirmwareUpgradeManager;
-import io.runtime.mcumgr.dfu.model.McuMgrImageSet;
+import io.runtime.mcumgr.dfu.mcuboot.FirmwareUpgradeManager;
+import io.runtime.mcumgr.dfu.mcuboot.model.ImageSet;
 import io.runtime.mcumgr.exception.McuMgrException;
 import io.runtime.mcumgr.managers.DefaultManager;
 import io.runtime.mcumgr.managers.ImageManager;
 import io.runtime.mcumgr.response.McuMgrResponse;
 import io.runtime.mcumgr.response.dflt.McuMgrAppInfoResponse;
 import io.runtime.mcumgr.response.dflt.McuMgrBootloaderInfoResponse;
+import io.runtime.mcumgr.response.dflt.McuMgrOsResponse;
 import io.runtime.mcumgr.response.dflt.McuMgrParamsResponse;
 import io.runtime.mcumgr.response.img.McuMgrImageResponse;
 import io.runtime.mcumgr.response.img.McuMgrImageStateResponse;
@@ -54,7 +55,7 @@ public class DFUModule extends ReactContextBaseJavaModule {
     private ImageManager imageManager;
     private final ReactApplicationContext reactContext;
 
-    FirmwareUpgradeCallback firmwareUpgradeCallback = new FirmwareUpgradeCallback() {
+    FirmwareUpgradeCallback<FirmwareUpgradeManager.State> firmwareUpgradeCallback = new FirmwareUpgradeCallback<FirmwareUpgradeManager.State>() {
         @Override
         public void onUploadProgressChanged(int byteSent, int imageSize, long timeStamp) {
             double percent = ((double) byteSent / imageSize) * 100;
@@ -289,9 +290,6 @@ public class DFUModule extends ReactContextBaseJavaModule {
         }
 
         this.firmwareUpgradeManager.setFirmwareUpgradeCallback(firmwareUpgradeCallback);
-        this.firmwareUpgradeManager.setMemoryAlignment(memoryAlignment);
-        this.firmwareUpgradeManager.setEstimatedSwapTime(swapTimeSeconds * 1000);
-        this.firmwareUpgradeManager.setWindowUploadCapacity(numMcuMgrBuffers);
 
         switch (upgradeMode) {
             case "Test and Confirm":
@@ -308,11 +306,19 @@ public class DFUModule extends ReactContextBaseJavaModule {
                 break;
         }
 
+        // Build settings using the new Settings.Builder API
+        FirmwareUpgradeManager.Settings settings = new FirmwareUpgradeManager.Settings.Builder()
+                .setEstimatedSwapTime(swapTimeSeconds * 1000)
+                .setMemoryAlignment(memoryAlignment)
+                .setWindowCapacity(numMcuMgrBuffers)
+                .setEraseAppSettings(eraseStorage)
+                .build();
+
         try {
             byte[] data = readFileToByteArray(firmwareFile);
-            McuMgrImageSet set = new McuMgrImageSet();
-            set.add(data);
-            this.firmwareUpgradeManager.start(set, eraseStorage);
+            ImageSet imageSet = new ImageSet();
+            imageSet.add(data);
+            this.firmwareUpgradeManager.start(imageSet, settings);
 
             promise.resolve("DFU started");
         } catch (Exception e) {
@@ -556,5 +562,46 @@ public class DFUModule extends ReactContextBaseJavaModule {
     private void sendEvent(String eventName, Object params) {
         getReactApplicationContext().getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(eventName, params);
+    }
+
+    @ReactMethod
+    public void resetDevice(Promise promise) {
+        Log.i(TAG, "resetDevice");
+
+        if (this.defaultManager == null) {
+            promise.reject("RESET_ERROR", "DefaultManager not initialized");
+            return;
+        }
+
+        this.defaultManager.reset(new McuMgrCallback<McuMgrOsResponse>() {
+            @Override
+            public void onResponse(@NotNull McuMgrOsResponse response) {
+                if (response.isSuccess()) {
+                  Log.i(TAG, "Reset command sent successfully");
+                  WritableMap map = Arguments.createMap();
+                  map.putString("status", "success");
+                  map.putString("message", "Device reset command sent");
+                  sendEvent("DFUDeviceReset", map);
+                  promise.resolve("success");
+                } else {
+                    Log.e(TAG, "Reset failed with response code: " + response.getReturnCode());
+                    WritableMap map = Arguments.createMap();
+                    map.putString("status", "error");
+                    map.putString("message", "Reset failed with code: " + response.getReturnCode());
+                    sendEvent("DFUDeviceReset", map);
+                    promise.reject("RESET_ERROR", "Reset failed with code: " + response.getReturnCode());
+                }
+            }
+
+            @Override
+            public void onError(@NotNull McuMgrException error) {
+                Log.e(TAG, "Reset error: " + error.getMessage());
+                WritableMap map = Arguments.createMap();
+                map.putString("status", "error");
+                map.putString("message", "Reset failed: " + error.getMessage());
+                sendEvent("DFUDeviceReset", map);
+                promise.reject("RESET_ERROR", error.getMessage());
+            }
+        });
     }
 }

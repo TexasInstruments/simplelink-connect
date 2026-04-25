@@ -45,6 +45,7 @@ import { SpecificScreenConfig, useSpecificScreenConfigContext } from '../context
 import { Dropdown } from 'react-native-element-dropdown';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const NUMBER_OF_POINTS_OPTIONS = [
   { value: 1000, label: '1000 points' },
@@ -86,6 +87,12 @@ export const MEDIAN_EVERY_OPTIONS = [
   { value: 40, label: '40 points' },
 ]
 
+export const CS_UPDATE_RATE_OPTIONS = [
+  { value: 3, label: 'Frequent (100 milliseconds)' },
+  { value: 1, label: 'Normal (200 milliseconds)' },
+  { value: 2, label: 'Infrequent (5 seconds)' },
+]
+
 interface Props extends DrawerContentComponentProps { }
 
 const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
@@ -125,6 +132,10 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
   // CGM Test
   const [showCgmData, setShowCgmData] = useState<boolean>(specificScreenConfig.showCgmData);
 
+  // Channel Sounding
+  const [csRangingUpdateRate, setCsRangingUpdateRate] = useState<number>(specificScreenConfig.csRangingUpdateRate);
+  const [isCsUpdateRateFocus, setIsCsUpdateRateFocus] = useState<boolean>(false);
+
   const { fontScale } = useWindowDimensions();
 
   const TI_Terminal_uuid = 'f000c0c0-0451-4000-b000-000000000000';
@@ -141,7 +152,8 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
   const EcgUUID = 'f000bb00-0451-4000-b000-000000000000';
   const TemperatureServiceUUID = 'aa00';
   const HTServiceUUID = '1809';
-  const CgmTestServiceUUID = '1100'
+  const CgmTestServiceUUID = '1100';
+  const ChannelSoundingServiceUUID = '185b';
 
   useFocusEffect(
     useCallback(() => {
@@ -162,6 +174,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
       setMedianEvery(specificScreenConfig.medianEvery);
       setApplyRespFilter(specificScreenConfig.applyRespFilter);
       setDisconnectInInterval(specificScreenConfig.disconnectInInterval);
+      setCsRangingUpdateRate(specificScreenConfig.csRangingUpdateRate);
     }, [specificScreenConfig])
 
   );
@@ -264,6 +277,12 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
     updateConfig({ showCgmData: value })
   };
 
+  const onChangeCsRangingUpdateRate = async (value: number) => {
+    setIsCsUpdateRateFocus(false);
+    setCsRangingUpdateRate(value);
+    updateConfig({ csRangingUpdateRate: value })
+  };
+
   const onChangeTempUnits = async (value: 'C' | 'F') => {
 
     setTempUnitsFocus(false);
@@ -294,6 +313,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
       medianEvery: medianEvery,
       medianOn: medianOn,
       showCgmData: showCgmData,
+      csRangingUpdateRate: csRangingUpdateRate,
       ...overrides,
     };
     updateConfigurations(newConfig);
@@ -305,13 +325,13 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
       return;
     }
     navigation.closeDrawer(); // Close the drawer
-    navigation.navigate('TestParameters', { testService: serviceName, peripheralId: periNameId.peripheralId, peripheralName: periNameId.peripheralName });
+    navigation.navigate('TestParameters', { testService: serviceName, peripheralId: periNameId.peripheralId, peripheralName: periNameId.peripheralName }, { pop: true });
   }
 
   // OAD configuration
   function handleSetRepoURL() {
     navigation.closeDrawer(); // Close the drawer
-    navigation.navigate('ConfigRepository');
+    navigation.navigate('ConfigRepository', { pop: true });
   }
 
 
@@ -376,9 +396,9 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ height: '100%', paddingTop: 10 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <SafeAreaView
+      style={{ height: '100%' }}
+    // behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={{ flexGrow: 1, marginHorizontal: 15 }}>
         {serviceUUID?.toLocaleLowerCase() === TI_Terminal_uuid && characteristicView === 'specific' && (
@@ -639,6 +659,33 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
 
         )}
 
+        {serviceUUID?.toLocaleLowerCase().includes(ChannelSoundingServiceUUID) && characteristicView === 'specific' && (
+          <>
+            <Separator text="Channel Sounding Settings" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
+            <View style={[styles.dropdownContainer, { marginBottom: 20 }]}>
+              <Text allowFontScaling={false} style={[styles.label, isCsUpdateRateFocus && { color: Colors.active }]}>
+                Ranging Interval
+              </Text>
+              <Dropdown
+                style={[styles.dropdown, isCsUpdateRateFocus && { borderColor: Colors.active }]}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                itemTextStyle={styles.item}
+                data={CS_UPDATE_RATE_OPTIONS}
+                placeholder={!isCsUpdateRateFocus ? 'Select Update Rate' : '...'}
+                value={csRangingUpdateRate}
+                onChange={(v: any) => {
+                  onChangeCsRangingUpdateRate(v.value)
+                }}
+                labelField="label"
+                valueField="value"
+                onFocus={() => setIsCsUpdateRateFocus(true)}
+                onBlur={() => setIsCsUpdateRateFocus(false)}
+              />
+            </View>
+          </>
+        )}
+
         {hasSpecificScreen && (
           <>
             <Separator text="View" textStyles={{ fontWeight: 'bold' }} textProps={{ h4: true }} />
@@ -683,7 +730,7 @@ const CharacteristicsSettingsDrawer: React.FC<Props> = ({ navigation }) => {
           </View>
         )}
       </ScrollView >
-    </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 

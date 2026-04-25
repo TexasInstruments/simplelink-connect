@@ -72,6 +72,8 @@ export const brands: BrandList = {
   '00C4': { name: 'LG Electronics', iconName: 'lg' },
   '0601': { name: 'Schrader Electronics', iconName: 'lg' },
   '000D': { name: 'Texas Instruments Inc.', iconName: 'TI' },
+  '0075': { name: 'Samsung Electronics Co. Ltd.', iconName: 'samsung' },
+  '004C': { name: 'Apple Inc.', iconName: 'apple' },
   FFF0: { name: 'Texas Instruments Inc.', iconName: 'TI' },
   FFC0: { name: 'Texas Instruments Inc.', iconName: 'TI' },
   FCAA: { name: 'Spintly, Inc.' },

@@ -1,8 +1,8 @@
-import { StyleSheet, NativeEventEmitter, NativeModules, Platform, View } from 'react-native';
+import { StyleSheet, Platform, View, EventSubscription } from 'react-native';
 import { Text } from '../../Themed';
 import React, { useEffect, useRef, useState } from 'react';
 import Colors from '../../../constants/Colors';
-import { TI_SIMPLE_PERIPHERAL_SERVICE, TI_DATA_STREAM_SERVICE } from '../../../constants/uuids';
+import { TI_SIMPLE_PERIPHERAL_SERVICE, TI_TERMINAL_SERVICE } from '../../../constants/uuids';
 import { useStressTestContext } from '../../../context/TestParamsContext';
 import { hold, getCurrentDateTimeString, generateRandomBytes, NOTIFICATION_TIMEOUT } from '../testsUtils';
 import { Buffer } from 'buffer';
@@ -12,7 +12,6 @@ import DeviceInfo from 'react-native-device-info';
 import { LogLevel, DeviceName, Step, StepsIDs, TestResult, TestData, increaseProgress, increaseRound, setMTUSize, write, read, getNumOfPassed, TestParams, data_stream, TEST_CASE, simple_peripheral } from '../testsUtils';
 import TestStep from '../TestStep';
 import ActionButtons from '../ActionButtons';
-import LoaderKit from 'react-native-loader-kit'
 import IdleTimerManager from 'react-native-idle-timer';
 import { ScrollView } from 'react-native-gesture-handler';
 
@@ -31,7 +30,6 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
     }
     const [logs, setLogs] = useState<{ message: string, sevirity: string }[]>([{ message: 'Click on the button to start testing', sevirity: LogLevel.INFO }]);
     const [status, setStatus] = useState<string>('');
-    const [loading, setLoading] = useState<boolean>(false);
     const [currentDevice, setCurrentDevice] = useState<DeviceName>({ value: "", timestamp: 0 });
 
     const [isRunning, updateRunning] = useState<boolean>(false);
@@ -54,15 +52,14 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
     const notifTimeout = useRef<any>(null);
     const firstNotifTimeout = useRef<any>(null);
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    // BLE event subscriptions
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
 
     useEffect(() => {
         /* component mounting, disable lock screen sleep */
         IdleTimerManager.setIdleTimerDisabled(true, 'gatt-test-screen');
 
-        setLoading(true);
         setStatus('Fetching test parameters...')
 
         return () => {
@@ -105,7 +102,7 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
     }
 
     function finishTest() {
-        bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+        charValueSubscription.current?.remove();
         EventRegister.removeAllListeners();
         clearTimeout(notifTimeout.current);
 
@@ -135,7 +132,7 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
 
         let writeChar;
         if (testService == data_stream) {
-            writeChar = TI_DATA_STREAM_SERVICE.data_in_char;
+            writeChar = TI_TERMINAL_SERVICE.data_in_char;
         }
         else { // simple_peripheral
             if (testParameters.current.test_case == TEST_CASE.WRITE_NOTIFY) {
@@ -245,9 +242,9 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
                     writeChar = TI_SIMPLE_PERIPHERAL_SERVICE.simpleprofile_char3;
                 }
                 else { //data_stream
-                    serviceUUID.current = TI_DATA_STREAM_SERVICE.uuid;
-                    notifChar.current = TI_DATA_STREAM_SERVICE.data_out_char;
-                    writeChar = TI_DATA_STREAM_SERVICE.data_in_char;
+                    serviceUUID.current = TI_TERMINAL_SERVICE.uuid;
+                    notifChar.current = TI_TERMINAL_SERVICE.data_out_char;
+                    writeChar = TI_TERMINAL_SERVICE.data_in_char;
                 }
 
                 const gattLoopListener = EventRegister.addEventListener('ExecuteGattLoop', (gattLoopNum: number) => {
@@ -267,8 +264,6 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
             }
 
             initiateSteps();
-
-            setLoading(false);
 
             addLog('Start Running Test Scenario on ' + currentDevice.value + ' Peripheral ' + testParameters.current.main_loop_number + ' Times', LogLevel.INFO);
             // Create new result object
@@ -432,9 +427,8 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
                 if (testParameters.current.supported_service == simple_peripheral && currentGattLoopNumber.current == 0) {
                     await new Promise<void>((resolve, reject) => {
                         // Step 1: Add the listener for notifications
-                        const notificationListener = bleManagerEmitter.addListener(
-                            'BleManagerDidUpdateValueForCharacteristic',
-                            ({ value, peripheral, characteristic, service }) => {
+                        const notificationListener = BleManager.onDidUpdateValueForCharacteristic(
+                            ({ value, peripheral, characteristic, service }: { value: number[]; peripheral: string; characteristic: string; service: string }) => {
                                 if (characteristic.toLocaleLowerCase().includes(notifChar.current.toLocaleLowerCase())) {
                                     let hexString = Buffer.from(value).toString('hex');
                                     addLog(`First Notification Received: ${hexString}`, LogLevel.SUCCESS);
@@ -488,9 +482,8 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
                 return;
             }
             // Register to notifications
-            bleManagerEmitter.addListener(
-                'BleManagerDidUpdateValueForCharacteristic',
-                ({ value, peripheral, characteristic, service }) => {
+            charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(
+                ({ value, peripheral, characteristic, service }: { value: number[]; peripheral: string; characteristic: string; service: string }) => {
                     // Got the relevant notification
                     if (characteristic.toLocaleLowerCase().includes(notifChar.current.toLocaleLowerCase())) {
 
@@ -587,15 +580,6 @@ const GattTestScenario: React.FC<Props> = ({ testService, peripheralId, peripher
             }
 
             <View style={[styles.stepsContainer]}>
-                {loading && (
-                    <View style={{ alignSelf: 'center', marginTop: 30 }}>
-                        <LoaderKit
-                            style={{ width: 50, height: 50 }}
-                            name={'BallBeat'}
-                            color={'black'}
-                        />
-                    </View>
-                )}
                 <ScrollView>
                     {
                         steps.current.map(step => {

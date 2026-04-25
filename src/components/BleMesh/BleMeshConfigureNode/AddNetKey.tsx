@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { callMeshModuleFunction, meshStyles } from '../meshUtils';
 import { NetworkKey } from '..';
 import CheckBox from '@react-native-community/checkbox';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
     setModalVisible: any;
@@ -20,6 +21,7 @@ export const AddNetKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
 
     const { MeshModule } = NativeModules;
     const bleMeshEmitter = new NativeEventEmitter(MeshModule);
+    const insets = useSafeAreaInsets();
 
     const [primaryNetKey, setPrimaryNetKey] = useState<ExtendedNetworkKey>();
     const [subNetworkKeys, setSubNetKeys] = useState<ExtendedNetworkKey[]>([]);
@@ -140,7 +142,7 @@ export const AddNetKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
                 setModalVisible(!visible);
             }}>
             <View style={[styles.centeredView]}>
-                <View style={styles.modalView}>
+                <View style={[styles.modalView, { paddingBottom: 10 + insets.bottom }]}>
                     <Text style={meshStyles.title}>Node Network Keys </Text>
                     {primaryNetKey && <DisplayPrimaryNetKey netKey={primaryNetKey} />}
                     {

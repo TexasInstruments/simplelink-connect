@@ -4,6 +4,7 @@ import Colors from '../../../constants/Colors';
 import { TextInput } from 'react-native-paper';
 import { useEffect, useState } from 'react';
 import { callMeshModuleFunction, Group, meshStyles } from '../meshUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
     setModalVisible: any;
@@ -13,6 +14,7 @@ interface Props {
 
 export const CreateGroupDialog: React.FC<Props> = ({ visible, groups, setModalVisible }) => {
 
+    const insets = useSafeAreaInsets();
     const [groupName, setGroupName] = useState<string>('My Group ' + (groups.length + 1));
     const [groupAddress, setGroupAddress] = useState<string>('');
 
@@ -65,7 +67,7 @@ export const CreateGroupDialog: React.FC<Props> = ({ visible, groups, setModalVi
                 style={styles.centeredView}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Adjust behavior for iOS and Android
             >
-                <View style={styles.modalContainer}>
+                <View style={[styles.modalContainer, { paddingBottom: 10 + insets.bottom }]}>
                     <ScrollView contentContainerStyle={styles.modalView}>
                         <Text style={meshStyles.modalTitle}>Create New Group</Text>
                         <TextInput
@@ -117,7 +119,6 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 35,
-        paddingBottom: 50,
     },
     modalView: {
         flexGrow: 1,

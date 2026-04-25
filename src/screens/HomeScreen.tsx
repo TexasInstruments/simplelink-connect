@@ -30,12 +30,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { StyleSheet, TouchableOpacity, View, Image, InteractionManager, NativeModules, NativeEventEmitter } from 'react-native';
+import { StyleSheet, TouchableOpacity, View, Image, InteractionManager } from 'react-native';
 import { Text } from '../components/Themed';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Colors from '../constants/Colors';
 import { useCallback, useState } from 'react';
-import { callMeshModuleFunction } from '../components/BleMesh/meshUtils';
+import { callMeshModuleFunction, addMeshListener, removeMeshListener } from '../components/BleMesh/meshUtils';
 import { useTutorialsContext } from '../context/TutorialContext';
 
 const HomeScreen: React.FC = () => {
@@ -44,14 +44,11 @@ const HomeScreen: React.FC = () => {
     const [showScannerTutorial, setShowScannerTutorial] = useState(false);
     let navigation = useNavigation();
 
-    const { MeshModule } = NativeModules;
-    const bleMeshEmitter = new NativeEventEmitter(MeshModule);
-
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(async () => {
                 try {
-                    bleMeshEmitter.addListener('onNetworkLoaded', (response) => { console.log('onNetworkLoaded', response) })
+                    addMeshListener('onNetworkLoaded', (response: any) => { console.log('onNetworkLoaded', response) })
                     callMeshModuleFunction('meshInit');
                     setShowMeshTutorial(await meshTutorial());
                     setShowScannerTutorial(await scannerTutorial());
@@ -62,6 +59,7 @@ const HomeScreen: React.FC = () => {
 
             return async () => {
                 console.log('unfocused');
+                removeMeshListener('onNetworkLoaded');
                 task.cancel();
             };
         }, [])
@@ -70,7 +68,7 @@ const HomeScreen: React.FC = () => {
     const MenuItem = ({ imgPath, subject, navigationPath, navigationParams }: any) => {
         return (
             <View style={[styles.menuItemContainer]}>
-                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate(navigationPath, navigationParams)} accessibilityLabel={`${subject.toLowerCase()}`}>
+                <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate(navigationPath, navigationParams, { pop: true })} accessibilityLabel={`${subject.toLowerCase()}`}>
                     <Image style={[styles.image]} source={imgPath} />
                 </TouchableOpacity >
                 <Text style={styles.subject}>{subject}</Text>
@@ -81,19 +79,21 @@ const HomeScreen: React.FC = () => {
 
     return (
         <View style={[styles.container]}>
-
-            <View style={[styles.menuContainer, { flex: 1, }]}>
-                <View style={[styles.row, { marginBottom: 30 }]}>
+            <View style={styles.menuContainer}>
+                <View style={[styles.row, { marginBottom: 20 }]}>
                     <MenuItem imgPath={require('../assets/images/menu_icons/scanner.png')} subject={'Scanner'} navigationPath={!showScannerTutorial ? 'Scanner' : 'ScannerTutorial'} />
-                    <MenuItem imgPath={require('../assets/images/menu_icons/mesh_network.png')} subject={'Mesh Network'} navigationPath={!showMeshTutorial ? 'BleMesh' : 'MeshTutorial'} />
+                    <MenuItem imgPath={require('../assets/images/menu_icons/advertiser.png')} subject={'Advertiser'} navigationPath='Advertiser' />
                 </View>
-                <View style={[styles.row, { flex: 1 }]}>
+                <View style={[styles.row, { marginBottom: 20 }]}>
+                    <MenuItem imgPath={require('../assets/images/menu_icons/mesh_network.png')} subject={'Mesh Network'} navigationPath={!showMeshTutorial ? 'BleMesh' : 'MeshTutorial'} />
                     <MenuItem imgPath={require('../assets/images/menu_icons/stress_tests.png')} subject={'Stress Tests'} navigationPath='TestParameters' navigationParams={{ testService: null, peripheralId: null, peripheralName: null }} />
-                    <MenuItem imgPath={require('../assets/images/menu_icons/about.png')} subject={'About'} navigationPath='AboutScreen' />
                 </View>
             </View>
             <View style={styles.footer}>
-                <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.1.3</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('AboutScreen')}>
+                    <Text style={[styles.footerText, { color: Colors.blue, textDecorationLine: 'underline', marginBottom: 30 }]}>Learn More</Text>
+                </TouchableOpacity>
+                <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Version: </Text>2.2.0</Text>
                 <Text style={styles.footerText}><Text style={{ color: Colors.blue }}>Developed by: </Text>Texas Instruments</Text>
             </View>
         </View>
@@ -152,7 +152,6 @@ const styles = StyleSheet.create({
     },
     footer: {
         alignItems: 'center',
-        paddingBottom: 40,
     },
     footerText: {
         textAlign: 'center',

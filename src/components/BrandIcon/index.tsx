@@ -1,11 +1,9 @@
-import { createIconSetFromFontello } from '@expo/vector-icons';
+import createIconSetFromFontello from '@react-native-vector-icons/fontello';
 import fontelloConfig from '../../assets/fonts/brands_font_config.json';
 import { BrandIconName } from '../../../types';
 
 const Icon = createIconSetFromFontello(
-  fontelloConfig,
-  'brands', // The font family name you chose
-  'brands.ttf' // Path to your .ttf file
+  fontelloConfig, { fontSource: 'brands.ttf' }
 );
 
 interface Props {

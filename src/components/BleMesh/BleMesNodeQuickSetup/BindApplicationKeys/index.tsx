@@ -57,7 +57,7 @@ const BleMeshBindAppKeysScreen: React.FC = ({ route }) => {
             let isConnected = await callMeshModuleFunction('isDeviceConnected', unicastAddr) as boolean;
             if (!isConnected) {
                 Alert.alert("Device disconnected")
-                navigation.navigate('BleMesh')
+                navigation.navigate('BleMesh', { pop: true })
             }
 
         } catch (e) {

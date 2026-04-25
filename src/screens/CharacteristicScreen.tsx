@@ -53,10 +53,11 @@ import ClassificationModeServiceScreen from '../components/ClassificationModeSer
 import DataAcquisitionServiceScreen from '../components/DataAcquisitionService';
 import ZephyrDFUModal from '../components/Zephyr/ZephyrDFUModal';
 import CgmTestService from '../components/CgmTestService';
+import ChannelSoundingRangingScreen from '../components/ChannelSounding/ChannelSoundingRangingScreen';
 
 interface Props extends RootStackScreenProps<'Characteristics'> { }
 
-export const SUPPORTED_SPECIFIC_SCREEN = ["cgm test service", "sub-1 range test config", "sub-1 range statistics", "battery level", "classification mode", "data acquisition mode", "matter light profile", "light sensor service", "wi-fi provisioning over ble", "ti ecg service", "ecg service", "glucose", "continuous glucose monitoring", "health thermometer", "ti terminal", "ti oad", "temp", "humidity", "barometer", "optical", "movement", "simple keys", "battery", "i/o", "control", "battery service", "ti accelerometer service", , "zephyr mcu manager service"] as const;
+export const SUPPORTED_SPECIFIC_SCREEN = ["channel sounding", "cgm test service", "sub-1 range test config", "sub-1 range statistics", "battery level", "classification mode", "data acquisition mode", "matter light profile", "light sensor service", "wi-fi provisioning over ble", "ti ecg service", "ecg service", "glucose", "continuous glucose monitoring", "health thermometer", "ti terminal", "ti oad", "temp", "humidity", "barometer", "optical", "movement", "simple keys", "battery", "i/o", "control", "battery service", "ti accelerometer service", , "zephyr mcu manager service"] as const;
 
 const CharacteristicScreen: React.FC<Props> = ({ route }) => {
   let peripheralInfo = route.params.peripheralInfo!;
@@ -77,7 +78,7 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
     (async () => {
       try {
         let checkForScreenSpecificScreen = await uuidToServiceSpecificScreen({ uuid: serviceUuid, peripheralName: peripheralInfo.name });
-        if (!checkForScreenSpecificScreen || !isServiceSupportSensor()) throw Error('Service Specific Screen not implemented!');
+        if (!checkForScreenSpecificScreen || !isServiceSupported()) throw Error('Service Specific Screen not implemented!');
 
         setScreenSpecific(
           checkForScreenSpecificScreen.serviceSpecificScreen as keyof RootStackParamList
@@ -93,7 +94,7 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
 
   }, [serviceUuid]);
 
-  let isServiceSupportSensor = () => {
+  let isServiceSupported = () => {
     return SUPPORTED_SPECIFIC_SCREEN.find(sensor => serviceName.toLowerCase().includes(sensor))
   }
 
@@ -150,7 +151,10 @@ const CharacteristicScreen: React.FC<Props> = ({ route }) => {
         return <DataAcquisitionServiceScreen peripheralId={peripheralInfo.id} />
 
       case 'CGMTestServiceModel':
-        return <CgmTestService peripheralId={peripheralInfo.id} />
+        return <CgmTestService peripheralId={peripheralInfo.id} />   
+      
+        case 'ChannelSoundingService':
+        return <ChannelSoundingRangingScreen peripheralId={peripheralInfo.id} peripheralName={peripheralInfo.name}/>
 
     }
   }

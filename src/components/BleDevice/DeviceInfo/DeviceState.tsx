@@ -30,13 +30,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { View, StyleSheet, Platform, useWindowDimensions, NativeModules, NativeEventEmitter } from 'react-native';
+import { View, StyleSheet, Platform, useWindowDimensions, EventSubscription } from 'react-native';
 import { Text } from '../../Themed';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { TouchableOpacity } from '../../Themed';
 import { useFocusEffect } from '@react-navigation/native';
-import BleManager from 'react-native-ble-manager';
-import { PeripheralInfo } from 'react-native-ble-manager';
+import BleManager, { PeripheralInfo } from 'react-native-ble-manager';
 import { useServiceViewContext } from '../../../context/ServiceViewContext';
 
 interface Props {
@@ -56,25 +55,29 @@ const DeviceState: React.FC<Props> = ({
   peripheralInfo,
   peripheralId,
   connect,
-  ...props
+  discover
 }) => {
-  const BleManagerModule = NativeModules.BleManager;
-  const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
   const { updatePeripheral } = useServiceViewContext();
+  const bondSubscription = useRef<EventSubscription | null>(null);
 
   const { fontScale } = useWindowDimensions();
   const [isBonded, setIsBonded] = useState<boolean>(false);
 
   useEffect(() => {
     if (Platform.OS === 'android') {
-      bleManagerEmitter.addListener('BleManagerPeripheralDidBond', handleNewDeviceBonded);
+      bondSubscription.current = BleManager.onPeripheralDidBond(handleNewDeviceBonded);
     }
+
+    return () => {
+      bondSubscription.current?.remove();
+    };
   }, [])
 
   const handleNewDeviceBonded = (e: any) => {
     console.log('New device bonded', e)
     if (e.id === peripheralId) {
       setIsBonded(true);
+      discover(peripheralId)
       if (peripheralInfo?.id) {
         updatePeripheral({ ...peripheralInfo, isBonded: true });
       }

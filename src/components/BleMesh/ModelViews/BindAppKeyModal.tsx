@@ -3,8 +3,9 @@ import { StyleSheet, NativeModules, View, Alert, Modal, NativeEventEmitter } fro
 import Colors from '../../../constants/Colors';
 import { useEffect, useState } from 'react';
 import { callMeshModuleFunction, meshStyles } from '../meshUtils';
-import { ApplicationKey } from '../BleMeshApplicationKeys';
+import { ApplicationKey } from '../meshUtils';
 import CheckBox from '@react-native-community/checkbox';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
     setModalVisible: any;
@@ -20,6 +21,7 @@ export const BindAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, uni
 
     const { MeshModule } = NativeModules;
     const bleMeshEmitter = new NativeEventEmitter(MeshModule);
+    const insets = useSafeAreaInsets();
 
     const [appKeys, setAppKeys] = useState<ExtendedAppKey[]>();
     const [boundedKeys, setBoundedKeys] = useState<number[]>([]);
@@ -130,7 +132,7 @@ export const BindAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, uni
                 setModalVisible(!visible);
             }}>
             <View style={[styles.centeredView]}>
-                <View style={styles.modalView}>
+                <View style={[styles.modalView, { paddingBottom: 10 + insets.bottom }]}>
                     <Text style={[meshStyles.title]}>Bind Application Key</Text>
                     {
                         appKeys && appKeys.map((appKey, index) => {
@@ -143,7 +145,7 @@ export const BindAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, uni
                         )
                     }
                     <TouchableOpacity onPress={() => setModalVisible(!visible)} style={{ alignSelf: 'flex-end', marginTop: 20 }} accessibilityLabel="close">
-                        <Text style={{ textAlign: 'center', color: Colors.blue }}>Close</Text>
+                        <Text style={[meshStyles.modalTextButton]}>Close</Text>
                     </TouchableOpacity>
                 </View>
             </View>

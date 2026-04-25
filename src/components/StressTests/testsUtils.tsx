@@ -1,12 +1,14 @@
 import BleManager from 'react-native-ble-manager';
-import { TI_DATA_STREAM_SERVICE, TI_SIMPLE_PERIPHERAL_SERVICE } from "../../constants/uuids";
+import { TI_TERMINAL_SERVICE, TI_SIMPLE_PERIPHERAL_SERVICE } from "../../constants/uuids";
 import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 export const data_stream = 'TI Terminal';
 export const simple_peripheral = 'TI Simple Peripheral Service';
+export const custom_service = 'Custom Service';
 
 export const GATT_SERVICES = [
     { value: simple_peripheral, label: 'Simple GATT Profiles' },
-    { value: data_stream, label: 'Data Stream' }
+    { value: data_stream, label: 'Data Stream' },
+    { value: custom_service, label: 'Custom' }
 ]
 
 export const TEST_CASE: { [key: string]: string } = {
@@ -57,6 +59,9 @@ export interface TestParams {
     gatt_data_testing: boolean,
     mtu_size: number,
     supported_service: string,
+    custom_service_uuid: string,
+    custom_write_char_uuid: string,
+    custom_notify_char_uuid: string,
     test_case: string,
     delay_between_gatt_tests: number,
     connection_duration: number,
@@ -240,5 +245,26 @@ export function getCurrentDateTimeString() {
 };
 
 export function checkIfTestingSupported(serviceUUID: string) {
-    return (serviceUUID.toLocaleLowerCase() == TI_DATA_STREAM_SERVICE.uuid.toLocaleLowerCase() || serviceUUID.toLocaleLowerCase() == TI_SIMPLE_PERIPHERAL_SERVICE.uuid.toLocaleLowerCase())
+    return (serviceUUID.toLocaleLowerCase() == TI_TERMINAL_SERVICE.uuid.toLocaleLowerCase() || serviceUUID.toLocaleLowerCase() == TI_SIMPLE_PERIPHERAL_SERVICE.uuid.toLocaleLowerCase())
 }
+
+export const isValidUUID = (uuid: string): boolean => {
+    if (!uuid) return false;
+
+    const value = uuid.trim();
+
+    // 16-bit UUID (e.g. 0x180D)
+    const uuid16 = /^0x[0-9a-fA-F]{4}$/;
+
+    // 32-bit UUID (e.g. 0000180D)
+    const uuid32 = /^[0-9a-fA-F]{8}$/;
+
+    // 128-bit UUID (standard)
+    const uuid128 =
+        /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+    return uuid16.test(value) || uuid32.test(value) || uuid128.test(value);
+};
+
+export const normalizeUUID = (uuid: string): string =>
+    uuid.trim().toUpperCase();

@@ -48,6 +48,7 @@ const tintColorDark = lightGray;
 export default {
   active: teal,
   primary: red,
+  red,
   blue,
   lightBlue,
   gray,

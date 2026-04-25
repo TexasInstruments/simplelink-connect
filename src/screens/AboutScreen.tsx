@@ -10,13 +10,20 @@ const AboutScreen: React.FC = () => {
                 <Image source={require('../assets/images/ti_main_logo.png')} style={styles.logo} />
 
                 <Text style={styles.paragraph}>
-                    This BLE (Bluetooth Low Energy) app includes three main features:
+                    This BLE (Bluetooth Low Energy) app includes four main features:
                 </Text>
 
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Scanner</Text>
                     <Text style={styles.sectionText}>
                         Discover and connect to nearby BLE devices, explore device's services, read/write characteristics, and perform GATT operations directly through the interface.
+                    </Text>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Advertiser</Text>
+                    <Text style={styles.sectionText}>
+                        Create and manage BLE advertisements to broadcast custom data packets. Configure advertisement name, service UUIDs, manufacturer data, TX power, connectable mode, and advertising extensions. Perfect for testing BLE central devices and performing interoperability tests.
                     </Text>
                 </View>
 
@@ -35,19 +42,20 @@ const AboutScreen: React.FC = () => {
                         Create and manage a BLE Mesh network with support for provisioning new nodes and configuring models.
                     </Text>
                 </View>
+
+                <View style={styles.footer}>
+                    <Text style={styles.versionText}>Version: 2.2.0</Text>
+                    <View style={styles.sourceRow}>
+                        <Text style={styles.versionText}>Source Code:</Text>
+                        <Text
+                            style={[styles.versionText, styles.linkText]}
+                            onPress={() => Linking.openURL('https://github.com/TexasInstruments/simplelink-connect')}>
+                            GitHub
+                        </Text>
+                    </View>
+                </View>
             </ScrollView>
 
-            <View style={styles.footer}>
-                <Text style={styles.versionText}>Version: 2.1.3</Text>
-                <View style={styles.sourceRow}>
-                    <Text style={styles.versionText}>Source Code:</Text>
-                    <Text
-                        style={[styles.versionText, styles.linkText]}
-                        onPress={() => Linking.openURL('https://github.com/TexasInstruments/simplelink-connect')}>
-                        GitHub
-                    </Text>
-                </View>
-            </View>
         </View>
     );
 };

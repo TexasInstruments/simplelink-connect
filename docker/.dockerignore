@@ -1,0 +1,43 @@
+# Git
+.git
+.gitignore
+
+# Node modules (installed fresh in container)
+node_modules
+
+# Build outputs (generated during build)
+android/app/build
+android/build
+android/.gradle
+ios/build
+ios/Pods
+
+# Expo
+.expo
+.expo-shared
+dist
+web-build
+
+# IDE
+.idea
+.vscode
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Tests
+tests/
+__tests__
+
+# Local config
+local.properties
+
+# Temp files
+*.tmp
+*.temp

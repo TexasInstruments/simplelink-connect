@@ -32,10 +32,11 @@
 
 import { View, StyleSheet } from 'react-native';
 import React from 'react';
-import BleManager, { PeripheralInfo } from 'react-native-ble-manager';
+import { PeripheralInfo } from 'react-native-ble-manager';
 import DeviceService from './DeviceService';
 import Spacing from '../../Spacing';
 import Separator from '../../Separator';
+import { getServiceUuid } from '../../../hooks/uuidToName';
 
 interface Props {
   peripheralInfo?: PeripheralInfo;
@@ -56,7 +57,7 @@ const DeviceServices: React.FC<Props> = ({ peripheralInfo }) => {
           <DeviceService
             service={service as any}
             peripheralInfo={peripheralInfo as any}
-            key={service.uuid + 'ble-device-service' + i}
+            key={(getServiceUuid(service) || i) + 'ble-device-service' + i}
           />
         );
       })}

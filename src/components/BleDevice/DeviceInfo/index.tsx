@@ -36,6 +36,7 @@ import { View } from '../../Themed';
 import DevicePresentation from './DevicePresentation';
 import DeviceState from './DeviceState';
 import Colors from '../../../constants/Colors';
+import { getServiceUuid } from '../../../hooks/uuidToName';
 
 interface Props {
   peripheralInfo?: PeripheralInfo | undefined;
@@ -59,8 +60,8 @@ const DeviceInfo: React.FC<Props> = ({
 
   let oadserviceUuidList = peripheralInfo?.services?.filter(
     (service) =>
-      service.uuid.toUpperCase() === OadServiceUuid ||
-      service.uuid.toUpperCase() === OadResetServiceUuid
+      getServiceUuid(service).toUpperCase() === OadServiceUuid ||
+      getServiceUuid(service).toUpperCase() === OadResetServiceUuid
   );
 
   //@ts-ignore

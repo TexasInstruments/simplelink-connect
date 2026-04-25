@@ -89,6 +89,10 @@ const Characteristic: React.FC<Props> = ({
 
   return (
     <KeyboardAwareScrollView
+      enableOnAndroid={true}
+      enableAutomaticScroll={true}
+      extraScrollHeight={100}
+      keyboardShouldPersistTaps="handled"
     >
       <GenericService
         serviceName={serviceName}

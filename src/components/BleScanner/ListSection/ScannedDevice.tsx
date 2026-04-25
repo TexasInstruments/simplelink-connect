@@ -112,7 +112,7 @@ const ScannedDevice: React.FC<Device> = ({
           isBonded: peripheral.isBonded,
           isConnected: peripheral.isConnected,
         },
-      })
+      }, { pop: true })
     );
   };
 
@@ -132,7 +132,7 @@ const ScannedDevice: React.FC<Device> = ({
                   adjustsFontSizeToFit={true}
                   numberOfLines={1}
                 >
-                  {peripheral?.name || 'Unknown'}
+                  {peripheral?.advertising?.localName || peripheral?.name || 'Unknown'}
                 </Text>
                 <Text allowFontScaling adjustsFontSizeToFit numberOfLines={1} style={{ color: peripheral.filter ? Colors.gray : peripheral.advertismentInActive ? Colors.gray : 'black' }}>
                   ID: {peripheral.id || 'unknown'}

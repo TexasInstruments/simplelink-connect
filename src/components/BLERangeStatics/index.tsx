@@ -1,10 +1,10 @@
-import { StyleSheet, Platform, SafeAreaView, KeyboardAvoidingView, ScrollView, InteractionManager, NativeModules, NativeEventEmitter, processColor } from 'react-native';
+import { StyleSheet, Platform, KeyboardAvoidingView, ScrollView, InteractionManager, processColor, EventSubscription } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '../../constants/Colors';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity } from '../Themed';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
-import { Icon } from '@rneui/base';
-import { Divider } from 'react-native-paper';
+import { Divider, Snackbar } from 'react-native-paper';
 import BleManager from 'react-native-ble-manager';
 import { Buffer } from 'buffer';
 import { LatLng } from 'react-native-maps';
@@ -13,18 +13,26 @@ import { getDistance } from 'geolib';
 import { useBleRangeContext } from '../../context/RangeTestContext';
 import { LineChart } from 'react-native-charts-wrapper';
 import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
+import { EvilIcons, FontAwesome5 } from '@expo/vector-icons';
 
 interface Props {
     peripheralId: string;
 }
 
+interface RssiEntry {
+    x: number;
+    y: number;
+    timestamp: string;
+    latitude?: number;
+    longitude?: number;
+    altitude?: number;
+}
 
 const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
 
     const navigation = useNavigation();
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
     const { targetLocationContext, updateTargetLocation } = useBleRangeContext();
 
     const [packetReceived, setPacketReceived] = useState<string | number>('N/A');
@@ -34,14 +42,16 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
     const [avgRssi, setAvgRssi] = useState<string | number>('N/A');
     const [minRssi, setMinRssi] = useState<string | number>('N/A');
     const [maxRssi, setMaxRssi] = useState<string | number>('N/A');
-    const [rssiEntries, setRssiEntries] = useState<{ x: number; y: number; timestamp: string }[]>([]);
+    const [rssiEntries, setRssiEntries] = useState<RssiEntry[]>([]);
 
     const [isRunning, setIsRunning] = useState(false);
 
     const [targetLocation, setTargetLocation] = useState<LatLng | null>(null);
     const [currentLocation, setCurrentLocation] = useState<LatLng | null>(null);
+    const currentLocationRef = useRef<LatLng | null>(null);
     const [distance, setDistance] = useState<number | null>(null);
-
+    const [visibleSnackBar, setVisibleSnackBar] = useState(false);
+    const [snackBarData, setSnackBarData] = useState<{ message: string, color: string }>({ message: '', color: "white" });
 
     const StartTestUUID = 'f409'
     const DataRefreshUUID = 'f401'
@@ -57,11 +67,13 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
     const SERVICE_UUID = 'f400'
 
     const ENTRIES_LIMIT = 1500
+    const successColor = "#00FF91"
+    const failureColor = "#FF5F5F"
 
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(async () => {
-                bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleNotifications);
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleNotifications);
 
                 /* Set the MTU Size - Android only API 21+, iOS initiates an MTU exchange automatically upon connection */
                 if (Platform.OS === 'android') {
@@ -97,7 +109,7 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
 
             return () => {
                 clearInterval(interval)
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic')
+                charValueSubscription.current?.remove();
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, CrcOkUUID)
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, SyncOkUUID)
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, PacketReceivedUUID)
@@ -120,34 +132,40 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
             try {
                 const dist = getDistance(currentLocation, targetLocation);
                 setDistance(dist);
+                console.log('Distance updated:', dist, 'meters');
             } catch (e) {
-                console.log("Error:", e)
+                console.log("Error calculating distance:", e)
             }
         }
     }, [currentLocation, targetLocation]);
 
     const fetchCurrentLocation = async () => {
         try {
-
             Geolocation.getCurrentPosition(
                 (pos) => {
-                    const { latitude, longitude } = pos.coords
-                    setCurrentLocation({ latitude, longitude });
+                    const { latitude, longitude, altitude } = pos.coords;
+                    const location = { latitude, longitude, altitude };
+                    setCurrentLocation(location);
+                    currentLocationRef.current = location;
+                    console.log('Current location updated:', latitude, longitude);
                 },
-                (err) => console.error(err),
-                { enableHighAccuracy: true }
+                (err) => {
+                    console.error('Geolocation error:', err);
+                    showSnackBar(`Location error: ${err.message}`, failureColor);
+                },
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
             );
         } catch (e) {
-            console.log("ERROR:", e)
+            console.log("ERROR fetching location:", e)
         }
     }
-
 
     const chartConfig = {
         yAxis: {
             left: {
                 drawGridLines: true,
                 drawLabels: true,
+                textColor: processColor('#000'),
             },
             right: {
                 enabled: false,
@@ -211,11 +229,14 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
                         x: newIndex,
                         y: decimalValue,
                         timestamp: new Date().toTimeString().split(' ')[0],
+                        latitude: currentLocationRef.current?.latitude,
+                        longitude: currentLocationRef.current?.longitude,
+                        altitude: currentLocationRef.current?.altitude,
                     };
 
                     const updated = [...prev, newEntry];
 
-                    // Keep only the last 50 entries
+                    // Keep only the last ENTRIES_LIMIT entries
                     if (updated.length > ENTRIES_LIMIT) {
                         updated.shift(); // remove oldest
                     }
@@ -267,31 +288,52 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
 
     const sightSurveyPressed = async () => {
         try {
-            let writeBytes = [0x01]; // Explicit hex notation
+            let writeBytes = [0x01];
             await BleManager.write(peripheralId, SERVICE_UUID, SightSurveyUUID, writeBytes, writeBytes.length);
-
-            console.log('sightSurveyPressed')
+            showSnackBar("Site survey command sent", successColor)
         } catch (e) {
+            showSnackBar("Site survey command failed", failureColor)
             alert(e)
         }
     }
 
     const handleExportCSV = () => {
-        // Convert to CSV string
-        const header = "Index,RSSI,Timestamp\n";
-        const rows = rssiEntries
-            .map((entry, i) => `${entry.x},${entry.y},${entry.timestamp}`)
-            .join("\n");
-        const csv = header + rows;
+        if (rssiEntries.length === 0) {
+            showSnackBar("No data to export", failureColor);
+            return;
+        }
 
+        try {
+            // Convert to CSV string
+            const header = "Index,RSSI,Timestamp,Latitude,Longitude,Elevation\n";
+            const rows = rssiEntries
+                .map((entry) =>
+                    `${entry.x},${entry.y},${entry.timestamp},${entry.latitude ?? ''},${entry.longitude ?? ''},${entry.altitude ?? ''}`
+                )
+                .join("\n");
+            const csv = header + rows;
 
-        downloadDataToLocalStorage(csv, "rssi.csv", 'text/csv');
+            downloadDataToLocalStorage(csv, "rssi.csv", 'text/csv');
+        } catch (error) {
+            console.error('Error exporting CSV:', error);
+            showSnackBar("Failed to export CSV", failureColor);
+        }
     }
 
+    const showSnackBar = (message: string, color: string) => {
+        setVisibleSnackBar(true);
+        setSnackBarData({
+            message: message,
+            color: color
+        })
+    };
+
+    const closeSnackBar = () => setVisibleSnackBar(false);
+
     return (
-        <SafeAreaView style={{ backgroundColor: Colors.lightGray, flex: 1, }}>
-            <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <ScrollView style={{ flex: 1 }}>
+        <View style={{ backgroundColor: Colors.lightGray, flex: 1, }}>
+            <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 20 }}>
                     <View style={[styles.buttonContainer, { marginVertical: 15 }]}>
 
                         <View style={[styles.buttonWrapper]}>
@@ -300,7 +342,7 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
                                 onPress={handleStartTest}
                                 disabled={isRunning}
                             >
-                                <Icon name="play" size={20} color="#fff" type='font-awesome-5' />
+                                <FontAwesome5 name="play" size={20} color="#fff" />
                             </TouchableOpacity>
                             <Text style={[styles.buttonText, { opacity: isRunning ? 0.2 : 1 }]}>Start Test</Text>
                         </View>
@@ -311,7 +353,7 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
                                 onPress={handleStopTest}
                                 disabled={!isRunning}
                             >
-                                <Icon name="stop" size={20} color="#fff" type='font-awesome-5' />
+                                <FontAwesome5 name="stop" size={20} color="#fff" />
                             </TouchableOpacity>
                             <Text style={[styles.buttonText, { opacity: !isRunning ? 0.2 : 1 }]}>Stop Test</Text>
                         </View>
@@ -333,7 +375,7 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
                                             color: processColor(Colors.blue),
                                             drawCircles: false,
                                             lineWidth: 1,
-                                            drawValues: true
+                                            drawValues: true,
                                         },
                                     },
                                 ],
@@ -344,6 +386,7 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
                                 granularityEnabled: false,
                                 granularity: 1,
                                 drawLabels: true,
+                                textColor: processColor('#000'),
                             }}
                             yAxis={chartConfig.yAxis}
                             legend={chartConfig.legend}
@@ -414,7 +457,24 @@ const BLERangeStatics: React.FC<Props> = ({ peripheralId }) => {
                 </ScrollView>
 
             </KeyboardAvoidingView>
-        </SafeAreaView >
+            <Snackbar
+                visible={visibleSnackBar}
+                onDismiss={closeSnackBar}
+                duration={5000}
+                style={{ backgroundColor: 'black' }}
+                elevation={5}
+            >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'black' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'black' }}>
+                        <FontAwesome5 name={"info-circle"} size={20} color={snackBarData.color} />
+                        <Text allowFontScaling adjustsFontSizeToFit numberOfLines={3} style={{ marginLeft: 8, color: snackBarData.color, fontWeight: 'bold' }}>{snackBarData.message}</Text>
+                    </View>
+                    <TouchableOpacity onPress={closeSnackBar}>
+                        <EvilIcons name="close" size={20} color="white" />
+                    </TouchableOpacity>
+                </View>
+            </Snackbar>
+        </View >
     );
 };
 

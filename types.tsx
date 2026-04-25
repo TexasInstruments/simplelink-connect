@@ -55,9 +55,12 @@ declare global {
 
 export type RootStackParamList = {
   Scanner: NavigatorScreenParams<RootTabParamList> | undefined;
+  Advertiser: undefined;
+  AdvertisementEditor: { advertisementId?: string } | undefined;
   ScannerTutorial: undefined;
   MeshTutorial: undefined;
   AboutScreen: undefined;
+  ChannelSoundingRanging: { deviceId: string; deviceName: string };
   TestParameters: { testService: string | null, peripheralId: string | null, peripheralName: string | null };
   StressTest: undefined;
   GattTesting: { testService: string | null, peripheralId: string | null, peripheralName: string | null };
@@ -76,6 +79,7 @@ export type RootStackParamList = {
   DataAcquisitionServiceModel: { peripheralId: string };
   HealthThermometerServiceModel: { peripheralId: string };
   CGMTestServiceModel: { peripheralId: string };
+  ChannelSoundingService: { peripheralId: string, peripheralName: string };
   CgmServiceModel: { peripheralId: string };
   MatterLightServiceModel: { peripheralId: string };
   TerminalServiceModel: { peripheralId: string };
@@ -90,6 +94,7 @@ export type RootStackParamList = {
   CharacteristicsScreen: undefined;
   NotFound: undefined;
   FilterSortOptions: undefined;
+  ScanningOptions: undefined;
   ConfigRepository: undefined;
   BleMesh: undefined;
   BleMeshNetworkKeys: undefined;
@@ -157,6 +162,7 @@ export type GattScreenProps = RootScreenprops<'GattTesting'>;
 export type TestResultsProps = RootScreenprops<'TestResultsScreen'>;
 export type StressTestScreenProps = RootScreenprops<'StressTest'>;
 export type FilterSortScreenProps = RootScreenprops<'FilterSortOptions'>;
+export type ScanningOptionsScreenProps = RootScreenprops<'ScanningOptions'>;
 export type ConfigRepositoryScreenProps = RootScreenprops<'ConfigRepository'>;
 
 export type RootTabScreenProps<Screen extends keyof RootTabParamList> = CompositeScreenProps<
@@ -228,15 +234,29 @@ export interface IFilterSortState {
     };
     connectable: boolean;
     removeInactiveOutDevices: boolean;
+    removeUnnamedDevices: boolean;
     profile: {
       enabled: boolean;
       value: string;
+    };
+    showOnlyTI: boolean;
+    vendorFilter: {
+      enabled: boolean;
+      value: string[]; // Array of brands names
     };
   };
   sort: {
     rssi: boolean;
     app_name: boolean;
   };
+}
+
+export interface IScanOptionsState {
+  scanDuration: number;
+  legacyMode: boolean;
+  scanPhy: number;
+  connectionTimeout: number;
+  connectionPhy: number;
 }
 
 export type Icon = {
@@ -340,5 +360,38 @@ export const companyNameToBrandIcon = (companyName: string | undefined) => {
     name: companyNameToBrandIconName(companyName),
     type: 'brands'
   }
+}
+
+// BLE Advertiser types
+export interface IAdvertisement {
+  id: string;
+  name: string;
+  localName?: string;
+  advertisingExtension: boolean;
+  connectable: boolean;
+  scannable?: boolean;                      // Scannable mode (for extended advertising - mutually exclusive with connectable)
+  serviceUUIDs: string[];
+  manufacturerData?: {
+    companyId: number;
+    data: number[];
+  };
+  txPower?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+
+  // BLE 5.0 Extended Advertising Fields (Android API 26+)
+  primaryPhy?: 'LE_1M' | 'LE_CODED';       // Primary PHY (1M standard or Coded for long range)
+  secondaryPhy?: 'LE_1M' | 'LE_2M' | 'LE_CODED'; // Secondary PHY
+  advertisingInterval?: number;             // Interval in units of 0.625ms (160 = 100ms)
+  periodicAdvertising?: boolean;            // Enable periodic advertising
+  periodicInterval?: number;                // Periodic interval in units of 1.25ms (80 = 100ms)
+}
+
+export interface IAdvertiserState {
+  advertisements: IAdvertisement[];
+  activeAdvertisementIds: string[];
+  bluetoothSupported: boolean;
+  bluetoothEnabled: boolean;
 }
 

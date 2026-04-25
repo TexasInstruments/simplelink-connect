@@ -1,4 +1,4 @@
-import { KeyboardAvoidingView, Platform, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, Modal, TouchableWithoutFeedback, Keyboard, } from 'react-native';
+import { KeyboardAvoidingView, Platform, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, Modal, TouchableWithoutFeedback, Keyboard, Alert, } from 'react-native';
 import 'react-native-get-random-values';
 import React, { useEffect, useMemo, useState } from 'react';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -7,16 +7,17 @@ import Colors from '../../../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { Dropdown } from 'react-native-element-dropdown';
-import DocumentPicker from 'react-native-document-picker';
 import RNFS from 'react-native-fs';
 import { Switch, TextInput } from 'react-native-paper';
 import { ProgressSteps, ProgressStep } from 'react-native-progress-steps';
 import TextInputFeild from '../../TextInputFeild';
 import { useStressTestContext } from '../../../context/TestParamsContext';
-import { getCurrentDateTimeString, TestParams, GATT_SERVICES, PHY_OPTIONS, TEST_CASE, TEST_CASES_OPTIONS, data_stream } from '../testsUtils';
+import { getCurrentDateTimeString, TestParams, GATT_SERVICES, PHY_OPTIONS, TEST_CASE, TEST_CASES_OPTIONS, data_stream, custom_service, isValidUUID, normalizeUUID } from '../testsUtils';
 import { downloadDataToLocalStorage } from '../../../services/DownloadFileUtils';
 import { MaterialIcons } from '@expo/vector-icons';
 import { meshStyles } from '../../BleMesh/meshUtils';
+import * as DocumentPicker from 'expo-document-picker';
+import { CUSTOM_SERVICE_UUID, CUSTOM_WRITE_CHAR_UUID, CUSTOM_NOTIFY_CHAR_UUID } from '../../../constants/uuids';
 
 interface Props {
     testService: string | null;
@@ -35,6 +36,11 @@ const TestForm: React.FC<Props> = (
     const [gattDataTesting, setGattDataTesting] = useState<boolean>(true);
     const [mtuSize, setMtuSize] = useState<number | undefined>();
     const [supportedService, setSupportedService] = useState<string | undefined>();
+    const [customServiceUUID, setCustomServiceUUID] = useState(CUSTOM_SERVICE_UUID);
+    const [customWriteCharUUID, setCustomWriteCharUUID] = useState(CUSTOM_WRITE_CHAR_UUID);
+    const [customNotifyCharUUID, setCustomNotifyCharUUID] = useState(CUSTOM_NOTIFY_CHAR_UUID);
+    const [isCustomServiceUUIDValid, setIsCustomServiceUUIDValid] = useState(true);
+
     const [testCase, setTestCase] = useState<string | undefined>()
     const [numLoopsGattTest, setNumLoopsGattTest] = useState<number | undefined>();
     const [holdBetweenGattTests, setHoldTime] = useState<number | undefined>()
@@ -73,6 +79,9 @@ const TestForm: React.FC<Props> = (
         setNewDevice('');
         setMtuSize(data?.mtu_size);
         setTestCase(data?.test_case);
+        setCustomServiceUUID(data?.custom_service_uuid || '');
+        setCustomWriteCharUUID(data?.custom_write_char_uuid || '');
+        setCustomNotifyCharUUID(data?.custom_notify_char_uuid || '');
         setNumLoopsGattTest(data?.num_loops_gatt_test);
         setHoldTime(data?.delay_between_gatt_tests);
         setWriteDataSize(data?.write_data_size);
@@ -129,25 +138,33 @@ const TestForm: React.FC<Props> = (
 
     async function handleImportParams() {
         try {
-            const result = await DocumentPicker.pickSingle({
-                type: DocumentPicker.types.allFiles,
+            const result = await DocumentPicker.getDocumentAsync({
+                copyToCacheDirectory: true,
+                multiple: false,
             });
-
-            if (result.uri) {
-                const content = await RNFS.readFile(result.uri, 'utf8');
-                const jsonData = JSON.parse(content);
-
-                try {
-                    if (testService && !jsonData.gatt_data_testing) { jsonData.gatt_data_testing = true }
-                    initiateDataForm(jsonData);
-                    setChanged(true);
-                }
-                catch (e) {
-                    alert('Invalid Json File ' + e)
-                    initiateDataForm(testParametersContext);
-                }
-
+            if (result.canceled) {
+                return;
             }
+
+            const file = result.assets[0];
+            if (!file?.uri) {
+                throw new Error('File URI is undefined');
+            }
+
+            const content = await RNFS.readFile(file.uri, 'utf8');
+            const jsonData = JSON.parse(content);
+
+            try {
+                if (testService && !jsonData.gatt_data_testing) { jsonData.gatt_data_testing = true }
+                initiateDataForm(jsonData);
+                setChanged(true);
+            }
+            catch (e) {
+                alert('Invalid Json File ' + e)
+                initiateDataForm(testParametersContext);
+            }
+
+
 
         } catch (error) {
             alert('Error Loading Json File ' + error)
@@ -163,6 +180,9 @@ const TestForm: React.FC<Props> = (
             gatt_data_testing: gattDataTesting,
             mtu_size: mtuSize,
             supported_service: supportedService,
+            custom_service_uuid: normalizeUUID(customServiceUUID),
+            custom_write_char_uuid: normalizeUUID(customWriteCharUUID),
+            custom_notify_char_uuid: normalizeUUID(customNotifyCharUUID),
             test_case: testCase,
             delay_between_gatt_tests: holdBetweenGattTests,
             num_loops_gatt_test: numLoopsGattTest,
@@ -218,6 +238,11 @@ const TestForm: React.FC<Props> = (
             return
         }
 
+        if (supportedService == custom_service && (!isValidUUID(customServiceUUID) || !isValidUUID(customWriteCharUUID) || !isValidUUID(customNotifyCharUUID))) {
+            Alert.alert('Invalid UUID', 'Some of the uuids you entered are not valid');
+            return;
+        }
+
         if (mtuSize && (mtuSize > 251 || mtuSize < 27)) {
             alert('MTU size must be between 27 and 251');
             return
@@ -237,6 +262,9 @@ const TestForm: React.FC<Props> = (
             gatt_data_testing: gattDataTesting,
             mtu_size: mtuSize,
             supported_service: supportedService,
+            custom_service_uuid: normalizeUUID(customServiceUUID),
+            custom_write_char_uuid: normalizeUUID(customWriteCharUUID),
+            custom_notify_char_uuid: normalizeUUID(customNotifyCharUUID),
             test_case: testCase,
             delay_between_gatt_tests: holdBetweenGattTests,
             num_loops_gatt_test: numLoopsGattTest,
@@ -250,10 +278,10 @@ const TestForm: React.FC<Props> = (
         updateTestParams(testParams);
 
         if (peripheralId) {
-            navigation.navigate('GattTesting', { testService: testService, peripheralId: peripheralId, peripheralName: peripheralName });
+            navigation.navigate('GattTesting', { testService: testService, peripheralId: peripheralId, peripheralName: peripheralName }, { pop: true });
         }
         else {
-            navigation.navigate('StressTest',);
+            navigation.navigate('StressTest', { pop: true });
         }
     }
 
@@ -348,7 +376,10 @@ const TestForm: React.FC<Props> = (
                                     value={supportedService}
                                     onChange={(v: any) => {
                                         setSupportedService(v.value);
-                                        if (v.value === 'Simple GATT Profiles') {
+                                        if (v.value === 'Custom Service') {
+                                            console.log('Custom Service selected');
+                                        }
+                                        else if (v.value === 'Simple GATT Profiles') {
                                             setTestCase('write & read')
                                         }
                                         else {
@@ -368,7 +399,60 @@ const TestForm: React.FC<Props> = (
                                 />
                             </View>
                         )}
+                        {/* Custom GATT Service */}
+                        {supportedService === 'Custom Service' && (
+                            <>
+                                {(testCase === TEST_CASE.WRITE || testCase === TEST_CASE.WRITE_READ || testCase === TEST_CASE.WRITE_NOTIFY) && (
+                                    <>
+                                        <TextInputFeild
+                                            label="Write Service UUID"
+                                            value={customServiceUUID}
+                                            onChangeText={(text: any) => {
+                                                setCustomServiceUUID(text);
+                                                setIsCustomServiceUUIDValid(isValidUUID(text));
+                                            }}
+                                            multiline={true}
+                                        />
+                                    </>
+                                )}
+                                {(testCase === TEST_CASE.WRITE_READ) && (
+                                    <>
+                                        <TextInputFeild
+                                            label="Read / Write Characteristic UUID"
+                                            value={customWriteCharUUID}
+                                            onChangeText={(text: any) => {
+                                                setCustomWriteCharUUID(text);
+                                                setIsCustomServiceUUIDValid(isValidUUID(text));
+                                            }}
+                                            multiline={true}
+                                        />
+                                    </>
+                                )}
 
+                                {(testCase === TEST_CASE.WRITE_NOTIFY) && (
+                                    <>
+                                        <TextInputFeild
+                                            label="Write Characteristic UUID"
+                                            value={customWriteCharUUID}
+                                            onChangeText={(text: any) => {
+                                                setCustomWriteCharUUID(text);
+                                                setIsCustomServiceUUIDValid(isValidUUID(text));
+                                            }}
+                                            multiline={true}
+                                        />
+                                        <TextInputFeild
+                                            label="Notify Characteristic UUID"
+                                            value={customNotifyCharUUID}
+                                            onChangeText={(text: any) => {
+                                                setCustomNotifyCharUUID(text);
+                                                setIsCustomServiceUUIDValid(isValidUUID(text));
+                                            }}
+                                            multiline={true}
+                                        />
+                                    </>
+                                )}
+                            </>
+                        )}
                         {/* GATT Test to Run */}
                         <View>
                             {renderLabel('gattTest')}

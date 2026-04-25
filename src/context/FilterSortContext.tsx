@@ -30,9 +30,10 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { createContext, useReducer } from 'react';
+import { createContext, useReducer, useEffect } from 'react';
 import filterSortReducer, { ActionType } from '../reducers/FilterSortReducer';
 import { IFilterSortState } from '../../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const initialState: IFilterSortState = {
   filter: {
@@ -50,10 +51,16 @@ const initialState: IFilterSortState = {
       value: '-80',
     },
     removeInactiveOutDevices: true,
+    removeUnnamedDevices: false,
     profile: {
       enabled: false,
       value: ''
-    }
+    },
+    showOnlyTI: false,
+    vendorFilter: {
+      enabled: false,
+      value: [],
+    },
   },
   sort: {
     app_name: false,
@@ -69,6 +76,22 @@ type Props = {
 };
 const FilterSortProvider: React.FC<Props> = ({ children }) => {
   const [state, dispatch] = useReducer(filterSortReducer, initialState);
+
+  // Load persisted filter settings on mount
+  useEffect(() => {
+    const loadPersistedSettings = async () => {
+      try {
+        const removeUnnamed = await AsyncStorage.getItem('@removeUnnamedDevices');
+        if (removeUnnamed === 'true') {
+          dispatch({ type: 'filter/removeUnnamedDevices/set/enabled', payload: true });
+        }
+      } catch (error) {
+        console.error('Error loading filter settings:', error);
+      }
+    };
+
+    loadPersistedSettings();
+  }, []);
 
   return (
     <FilterSortState.Provider value={state}>

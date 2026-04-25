@@ -1,4 +1,4 @@
-package com.ti.connectivity.simplelinkconnect;
+package com.ti.simplelinkconnect;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;

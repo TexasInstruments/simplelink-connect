@@ -90,7 +90,7 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
 
         if (status == 'disconnected') {
             Alert.alert('Connection Timed Out')
-            navigation.navigate('BleMesh');
+            navigation.navigate('BleMesh', { pop: true });
             return;
         }
         connectionListener.remove();
@@ -103,7 +103,7 @@ const BleMeshProvisionNode: React.FC<{ icon: string }> = ({ icon }) => {
 
     const handleProvisionCompleted = (status: string) => {
         if (status == 'success') {
-            navigation.navigate('BleMeshConfigureNode', { unicastAddr: identifiedNodeRef.current!.unicastAddress, isConnecting: false });
+            navigation.navigate('BleMeshConfigureNode', { unicastAddr: identifiedNodeRef.current!.unicastAddress, isConnecting: false }, { pop: true });
         }
         else {
             Alert.alert('Error', status)

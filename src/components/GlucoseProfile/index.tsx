@@ -1,6 +1,6 @@
-import { InteractionManager, NativeEventEmitter, Platform, StatusBar, Switch, View, processColor } from 'react-native';
+import { InteractionManager, Platform, StatusBar, Switch, View, processColor, EventSubscription } from 'react-native';
 import { Text, TouchableOpacity } from '../Themed';
-import { StyleSheet, NativeModules } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import BleManager from 'react-native-ble-manager';
@@ -10,11 +10,9 @@ import { GLUCOSE_PROFILE } from '../../constants/uuids';
 import { ScrollView } from 'react-native-gesture-handler';
 import { OP_CODES_ACCESS_CONTROL, RecordAccessControlDialog } from '../ContiniousGlucoseMonitoring/RecordAccessControlDialog';
 import { Buffer } from 'buffer';
-import { Icon } from '@rneui/base';
 import { CustomSnackBar } from '../CustomSnackBar';
-import { LineChart } from 'react-native-charts-wrapper';
-import { AntDesign } from '@expo/vector-icons';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { LineChart, LineData, xAxis } from 'react-native-charts-wrapper';
+import { AntDesign, FontAwesome, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import Tooltip from 'react-native-walkthrough-tooltip';
 import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 
@@ -48,8 +46,7 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
     const [collapsedSections, setCollapsedSections] = useState<CollapsedSections>({ glucoseMeaurment: false, glucoseFeatures: false, recordAccessControlPoint: false });
     const [sectionsTooltip, setSectionsTooltip] = useState<CollapsedSections>({ glucoseMeaurment: false, glucoseFeatures: false, recordAccessControlPoint: false });
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
     const [visibleSnackBar, setVisibleSnackBar] = useState(false);
     const [snackBarData, setSnackBarData] = useState<{ message: string, success: boolean }>({ message: '', success: false });
@@ -62,8 +59,7 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(() => {
-                bleManagerEmitter.addListener(
-                    'BleManagerDidUpdateValueForCharacteristic', handleNotifications);
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleNotifications);
 
                 setNotificationSwitch(true);
                 setRecordAcceessIndicationSwitch(true);
@@ -73,7 +69,7 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
 
             return () => {
                 task.cancel();
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+                charValueSubscription.current?.remove();
 
                 // Stop notifications
                 BleManager.stopNotification(peripheralId, GLUCOSE_PROFILE.uuid, GLUCOSE_PROFILE.glucose_measurement);
@@ -371,7 +367,7 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
         return (
             <TouchableOpacity style={[styles.button]} onPress={gettingDataFunc}>
                 <Text style={[styles.textButton]}>Refresh</Text>
-                <Icon solid={true} name={'refresh'} size={16} color={Colors.blue} type="font-awesome" style={{ alignSelf: 'center' }} />
+                <FontAwesome solid={true} name={'refresh'} size={16} color={Colors.blue} style={{ alignSelf: 'center' }} />
             </TouchableOpacity >
         )
     }
@@ -436,11 +432,16 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
         granularity: 1,
         position: 'BOTTOM',
         valueFormatter: measurmentsDataSet.map(m => m.label),
+        textColor: processColor('#000'),
     };
 
     const yAxis = {
         left: {
+            enabled: true,
+            drawLabels: true,
+            drawAxisLine: true,
             drawGridLines: true,
+            textColor: processColor('#000'),
         },
         right: {
             enabled: false,
@@ -468,7 +469,7 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
             displayInsets={{ top: 40, bottom: 40, left: 24, right: 24 }}
         >
             <TouchableOpacity onPress={() => setVisible(true)}>
-                <Icon style={{ alignSelf: 'center' }} name='help-outline' type="MaterialIcons" size={20} />
+                <MaterialIcons style={{ alignSelf: 'center' }} name='help-outline' size={20} />
             </TouchableOpacity >
         </Tooltip>)
 
@@ -478,13 +479,13 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
         <>
             <View style={{ height: "100%", }}>
                 <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 150 }} style={[styles.container]}>
-                    {/* Glucose measurment */}
+                    {/* Glucose measurement */}
                     <View style={[styles.boxContainer]}>
                         <View style={[{ width: '100%', flexDirection: 'row', alignItems: 'center' }]}>
                             {toolTip(sectionsTooltip.glucoseMeaurment, (isVisible: boolean) => { setSectionsTooltip({ ...sectionsTooltip, glucoseMeaurment: isVisible }) }, 'The Glucose Measurement characteristic is a variable length structure containing Glucose Measurement records')}
                             <TouchableOpacity style={[{ ...styles.subjectRaw, ...styles.itemRaw, flex: 1 }]} onPress={() => toggleCollapse(0)}>
                                 <Text style={[styles.subject]}>Glucose Measurement</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.glucoseMeaurment ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.glucoseMeaurment ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {!collapsedSections.glucoseMeaurment && (
@@ -502,15 +503,15 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
 
                                         {dataFormatting == 'List' && DataList(measurementsList, setMeasurementsList)}
                                         {dataFormatting == 'Chart' &&
-                                            <LineChart
-                                                style={styles.chart}
-                                                data={data}
-                                                xAxis={xAxis}
-                                                yAxis={yAxis}
-                                                chartDescription={{ text: '' }}
-                                                legend={{ enabled: true }}
-                                                {...zoommableChartConfig}
-                                            />
+                                                <LineChart
+                                                    style={styles.chart}
+                                                    data={data}
+                                                    xAxis={xAxis}
+                                                    yAxis={yAxis}
+                                                    chartDescription={{ text: '' }}
+                                                    legend={{ enabled: true }}
+                                                    {...zoommableChartConfig}
+                                                />
                                         }
 
                                         <SegmentedButtons
@@ -539,7 +540,7 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
 
                             <TouchableOpacity style={[{ ...styles.subjectRaw, ...styles.itemRaw, flex: 1 }]} onPress={() => toggleCollapse(1)}>
                                 <Text style={[styles.subject]}>Glucose Feature</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.glucoseFeatures ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.glucoseFeatures ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {!collapsedSections.glucoseFeatures && (
@@ -571,7 +572,7 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
 
                             <TouchableOpacity style={[{ ...styles.itemRaw, ...styles.subjectRaw, flex: 1 }]} onPress={() => toggleCollapse(2)}>
                                 <Text style={[styles.subject]} adjustsFontSizeToFit numberOfLines={1} allowFontScaling >Record Access Control Point</Text>
-                                <Icon style={{ alignSelf: 'center' }} name={collapsedSections.recordAccessControlPoint ? 'chevron-down' : 'chevron-up'} type='font-awesome-5' size={18} />
+                                <FontAwesome5 style={{ alignSelf: 'center' }} name={collapsedSections.recordAccessControlPoint ? 'chevron-down' : 'chevron-up'} size={18} />
                             </TouchableOpacity>
                         </View>
                         {!collapsedSections.recordAccessControlPoint && (
@@ -587,7 +588,7 @@ const GlucoseProfile: React.FC<Props> = ({ peripheralId }) => {
                                 <View style={[{ ...styles.itemRaw, justifyContent: 'center' }]}>
                                     <TouchableOpacity onPress={showFetchDataDialog} style={[styles.button]} >
                                         <Text style={[styles.textButton]}>Send Command </Text>
-                                        <Icon solid={true} name={'send-o'} size={16} color={Colors.blue} type="font-awesome" />
+                                        <FontAwesome solid={true} name={'send-o'} size={16} color={Colors.blue} />
                                     </TouchableOpacity>
                                 </View>
                                 {recordAccessControlIndicationsList.length > 0 && (

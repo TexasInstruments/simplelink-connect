@@ -4,6 +4,7 @@ import Colors from '../../../constants/Colors';
 import { TextInput } from 'react-native-paper';
 import { useEffect, useState } from 'react';
 import { callMeshModuleFunction, meshStyles } from '../meshUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
     setModalVisible: any;
@@ -14,6 +15,7 @@ interface Props {
 
 export const AddNetworkKeyDialog: React.FC<Props> = ({ visible, setNetKeys, netKeys, setModalVisible }) => {
 
+    const insets = useSafeAreaInsets();
     const [newKeyName, setNewKeyName] = useState<string>('');
     const [newKeyVal, setNewKeyVal] = useState<string>('');
 
@@ -74,7 +76,7 @@ export const AddNetworkKeyDialog: React.FC<Props> = ({ visible, setNetKeys, netK
                 style={styles.centeredView}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Adjust behavior for iOS and Android
             >
-                <View style={styles.modalContainer}>
+                <View style={[styles.modalContainer, { paddingBottom: 10 + insets.bottom }]}>
                     <ScrollView contentContainerStyle={styles.modalView}>
                         <Text style={meshStyles.modalTitle}>Add Network Key</Text>
                         <TextInput
@@ -103,10 +105,10 @@ export const AddNetworkKeyDialog: React.FC<Props> = ({ visible, setNetKeys, netK
                         />
                         <View style={styles.row}>
                             <TouchableOpacity onPress={() => setModalVisible(!visible)}>
-                                <Text style={styles.closeText}>Close</Text>
+                                <Text style={[meshStyles.modalTextButton]}>Close</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={() => { addNewKey(); setModalVisible(false); }} accessibilityLabel="save">
-                                <Text style={styles.saveText}>Save</Text>
+                                <Text style={[meshStyles.modalTextButton]}>Save</Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>
@@ -128,7 +130,6 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 35,
-        paddingBottom: 50,
     },
     modalView: {
         flexGrow: 1,

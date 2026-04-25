@@ -1,21 +1,19 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
     InteractionManager,
     KeyboardAvoidingView,
-    NativeEventEmitter,
-    NativeModules,
     Platform,
     View,
     Text,
     TouchableOpacity,
     StyleSheet,
     Switch,
-    useWindowDimensions
+    EventSubscription,
 } from 'react-native';
 import BleManager from 'react-native-ble-manager';
 import { useFocusEffect } from '@react-navigation/native';
 import Colors from '../../constants/Colors';
-import { Icon } from '@rneui/base';
+import { FontAwesome } from '@expo/vector-icons';
 
 interface Props {
     peripheralId: string;
@@ -25,8 +23,7 @@ const BatteryLevelService: React.FC<Props> = ({ peripheralId }) => {
     const SERVICE_UUID = '180f';
     const BATTERY_CHAR_UUID = '2a19';
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
     const [batteryLevel, setBatteryLevel] = useState<number>(0);
     const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false);
@@ -44,7 +41,7 @@ const BatteryLevelService: React.FC<Props> = ({ peripheralId }) => {
                 readValue();
 
                 if (notificationsEnabled) {
-                    bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleNotifications);
+                    charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleNotifications);
                     BleManager.startNotification(peripheralId, SERVICE_UUID, BATTERY_CHAR_UUID)
                         .then(() => console.log('Notifications started'))
                         .catch(console.error);
@@ -53,7 +50,7 @@ const BatteryLevelService: React.FC<Props> = ({ peripheralId }) => {
 
             return () => {
                 task.cancel();
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+                charValueSubscription.current?.remove();
                 if (notificationsEnabled) {
                     try {
                         BleManager.stopNotification(peripheralId, SERVICE_UUID, BATTERY_CHAR_UUID);
@@ -130,7 +127,7 @@ const BatteryLevelService: React.FC<Props> = ({ peripheralId }) => {
             {/* Refresh Button */}
             <TouchableOpacity style={[styles.button]} onPress={readValue}>
                 <Text style={[styles.buttonText]}>Refresh</Text>
-                <Icon solid={true} name={'refresh'} size={16} color={Colors.blue} type="font-awesome" style={{ alignSelf: 'center' }} />
+                <FontAwesome solid={true} name={'refresh'} size={16} color={Colors.blue} style={{ alignSelf: 'center' }} />
             </TouchableOpacity >
 
         </KeyboardAvoidingView>

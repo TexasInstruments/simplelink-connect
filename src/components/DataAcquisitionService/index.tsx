@@ -1,13 +1,13 @@
-import { StyleSheet, Platform, InteractionManager, NativeModules, NativeEventEmitter, processColor, useWindowDimensions, Alert } from 'react-native';
+import { StyleSheet, Platform, InteractionManager, processColor, useWindowDimensions, Alert, EventSubscription } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity } from '../../components/Themed';
 import { useFocusEffect } from '@react-navigation/native';
 import BleManager from 'react-native-ble-manager';
-import { Icon } from '@rneui/base';
-import { LineChart } from 'react-native-charts-wrapper';
+import { LineChart, xAxis } from 'react-native-charts-wrapper';
 import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 interface Props {
     peripheralId: string;
@@ -20,8 +20,7 @@ interface DataChart {
 
 const DataAcquisitionServiceScreen: React.FC<Props> = ({ peripheralId }) => {
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
     const { fontScale } = useWindowDimensions();
 
@@ -49,7 +48,7 @@ const DataAcquisitionServiceScreen: React.FC<Props> = ({ peripheralId }) => {
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(async () => {
-                bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleDataAcquisitionNotifications);
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleDataAcquisitionNotifications);
 
                 /* Set the MTU Size - Android only API 21+, iOS initiates an MTU exchange automatically upon connection */
                 if (Platform.OS === 'android') {
@@ -66,7 +65,7 @@ const DataAcquisitionServiceScreen: React.FC<Props> = ({ peripheralId }) => {
             setDisplaySamples([]);
 
             return () => {
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic')
+                charValueSubscription.current?.remove();
                 task.cancel();
             };
         }, [])
@@ -116,8 +115,11 @@ const DataAcquisitionServiceScreen: React.FC<Props> = ({ peripheralId }) => {
     const chartConfig = {
         yAxis: {
             left: {
-                drawGridLines: true,
+                enabled: true,
                 drawLabels: true,
+                drawAxisLine: true,
+                drawGridLines: true,
+                textColor: processColor('#000'),
             },
             right: {
                 enabled: false,
@@ -221,13 +223,14 @@ const DataAcquisitionServiceScreen: React.FC<Props> = ({ peripheralId }) => {
         }
     };
 
-    function getLabelsXAxis(data: DataChart[]) {
+    function getLabelsXAxis(data: DataChart[]): xAxis {
         return {
             position: 'BOTTOM',
             valueFormatter: data.map(item => item.x),
             granularityEnabled: false,
             granularity: 1,
             drawLabels: true,
+            textColor: processColor('#000'),
         }
     };
 
@@ -243,7 +246,7 @@ const DataAcquisitionServiceScreen: React.FC<Props> = ({ peripheralId }) => {
                             onPress={handleStartGettingData}
                             disabled={isRunning}
                         >
-                            <Icon name="play" size={18} color="#fff" type='font-awesome-5' />
+                            <FontAwesome5 name="play" size={18} color="#fff" />
 
                         </TouchableOpacity>
                         <Text style={[styles.startStopButtonText, { opacity: isRunning ? 0.3 : 1 }]}>Start</Text>
@@ -257,7 +260,7 @@ const DataAcquisitionServiceScreen: React.FC<Props> = ({ peripheralId }) => {
                             disabled={!isRunning}
 
                         >
-                            <Icon name="stop" size={18} color="#fff" type='font-awesome-5' />
+                            <FontAwesome5 name="stop" size={18} color="#fff" />
 
                         </TouchableOpacity>
                         <Text style={[styles.startStopButtonText, { opacity: !isRunning ? 0.3 : 1 }]}>Stop</Text>

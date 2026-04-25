@@ -346,6 +346,24 @@ export default [
     serviceSpecificScreen: 'HealthThermometerServiceModel'
   },
   {
+    serviceName: 'Channel Sounding',
+    serviceUuid: '185b',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'ruler',
+    },
+    serviceSpecificScreen: 'ChannelSoundingService'
+  },
+   {
+    serviceName: 'Channel Sounding',
+    serviceUuid: 'f000185b-0451-4000-b000-000000000000',
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'ruler',
+    },
+    serviceSpecificScreen: 'ChannelSoundingService'
+  },
+    {
     serviceName: 'CGM Test Service',
     serviceUuid: '1100',
     icon: {

@@ -30,14 +30,14 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { createIconSetFromFontello } from '@expo/vector-icons';
+import createIconSetFromFontello from '@react-native-vector-icons/fontello';
 import config from '../../assets/fonts/config.json';
 
 const TI_Icon_Names = ['terminal-solid'] as const;
 
 type TI_Icons = typeof TI_Icon_Names[number];
 
-let Icon = createIconSetFromFontello(config, 'ti', 'ti.ttf');
+let Icon = createIconSetFromFontello(config, { fontSource: 'ti.ttf' });
 
 interface Props {
   name: TI_Icons | string;

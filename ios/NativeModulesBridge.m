@@ -91,6 +91,9 @@ RCT_EXTERN_METHOD(startScan : (RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(stopScan : (RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(identifyNode : (RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(exportNetwork : (RCTResponseSenderBlock)callback)
+RCT_EXTERN_METHOD(importNetwork
+                  : (NSString *) networkJson callback
+                  : (RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(resetNetwork : (RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(getMeshApplicationsKeys : (RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(startProvisioningNode : (RCTResponseSenderBlock)callback)
@@ -249,7 +252,7 @@ RCT_EXTERN_METHOD(updateAutomaticConnection:(BOOL)autoConnect callback:(RCTRespo
 @end
 
 @interface RCT_EXTERN_MODULE (DFUModule, RCTEventEmitter)
-  
+
 RCT_EXTERN_METHOD(startDfu: (NSString *)filePath eraseStorage:(BOOL)eraseStorage swapTimeSeconds:(NSInteger)swapTimeSeconds memoryAlignment:(NSInteger)memoryAlignment numMcuMgrBuffers:(NSInteger)numMcuMgrBuffers upgradeMode:(NSString *)upgradeMode  callback:(RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(dfuInit : (NSString *)deviceId callback:(RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(cancelDfu : (RCTResponseSenderBlock)callback)
@@ -258,4 +261,12 @@ RCT_EXTERN_METHOD(readMcuMgrInfo : (RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(eraseImage : (NSInteger)imagePosition callback:(RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(confirmImage : (NSString *)imageHash  imagePosition:(NSInteger)imagePosition callback:(RCTResponseSenderBlock)callback)
 RCT_EXTERN_METHOD(testImage : (NSString *)imageHash  imagePosition:(NSInteger)imagePosition callback:(RCTResponseSenderBlock)callback)
+RCT_EXTERN_METHOD(resetDevice : (RCTResponseSenderBlock)callback)
+@end
+
+@interface RCT_EXTERN_MODULE (BleAdvertiserModule, RCTEventEmitter)
+
+RCT_EXTERN_METHOD(startAdvertising:(NSString *)advertisementId config:(NSDictionary *)config callback:(RCTResponseSenderBlock)callback)
+RCT_EXTERN_METHOD(stopAdvertising:(NSString *)advertisementId callback:(RCTResponseSenderBlock)callback)
+
 @end

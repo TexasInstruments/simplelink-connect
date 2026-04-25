@@ -1,5 +1,6 @@
 import axios from 'axios';
 import yaml from 'js-yaml';
+import mappedServices from '../assets/services';
 
 const TI_CHAR = [
     { name: 'Characteristic 1', uuid: 'FFF1', },
@@ -67,9 +68,17 @@ const TI_CHAR = [
 ]
 
 
-const TI_PROFILES = [
-    { name: 'Data Stream', uuid: 'F000C0C0-0451-4000-B000-000000000000', },
-]
+// Dynamically derive TI profiles from mapped services
+// Filter to keep only short (4-char) UUIDs and remove duplicates by service name
+const TI_PROFILES = mappedServices
+    .filter(service => service.serviceUuid.length === 4)
+    .filter((service, index, self) =>
+        self.findIndex(s => s.serviceName === service.serviceName) === index
+    )
+    .map(service => ({
+        name: service.serviceName,
+        uuid: service.serviceUuid
+    }))
 
 const YAML_FILE_URL_CHAR =
     'https://bitbucket.org/bluetooth-SIG/public/raw/main/assigned_numbers/uuids/characteristic_uuids.yaml';
@@ -142,13 +151,7 @@ export const fetchProfileList = async () => {
 
     } catch (error) {
         console.log('Error fetching YAML file:', error);
-        let data = [
-            { name: 'Continuous Glucose', uuid: '181F' },
-            { name: 'Data Stream', uuid: 'F000C0C0-0451-4000-B000-000000000000' },
-            { name: 'Glucose', uuid: '1808' },
-            { name: 'Health Thermometer', uuid: '1809' },
-        ]
-        PROFILE_LIST = sortByName(data);
+        PROFILE_LIST = sortByName(TI_PROFILES);
         return PROFILE_LIST;
     }
 };

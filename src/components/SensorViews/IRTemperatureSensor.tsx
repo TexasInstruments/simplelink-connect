@@ -36,7 +36,7 @@ import SensorPresentation from './SensorPresentation';
 import { IR_TEMPERATURE_SENSOR } from '../../constants/SensorTag';
 import { Text } from '@rneui/themed';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LineChart } from 'react-native-charts-wrapper';
+import { LineChart, LineData, xAxis } from 'react-native-charts-wrapper';
 import bleManager from 'react-native-ble-manager';
 import { getBytes } from '../../hooks/convert';
 import Legend from './Legend';
@@ -158,8 +158,11 @@ const IRTemperatureSensor: React.FC<Props> = ({ irTemperatureData, peripheralId,
   const chartConfig = {
     yAxis: {
       left: {
-        drawGridLines: true,
+        enabled: true,
         drawLabels: true,
+        drawAxisLine: true,
+        drawGridLines: true,
+        textColor: processColor('#000'),
       },
       right: {
         enabled: false,
@@ -200,9 +203,9 @@ const IRTemperatureSensor: React.FC<Props> = ({ irTemperatureData, peripheralId,
           chartDescription={{ text: '' }}
           xAxis={{
             granularityEnabled: true,
-            granularity: 1,
             drawLabels: true,
             position: 'BOTTOM',
+            textColor: processColor('#000'),
           }}
           yAxis={chartConfig.yAxis}
           legend={chartConfig.legend}

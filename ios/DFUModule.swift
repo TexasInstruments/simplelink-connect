@@ -32,7 +32,7 @@ class DFUModule: RCTEventEmitter {
   }
   
   override func supportedEvents() -> [String]! {
-    return ["DFUProgress", "DFUStateChanged", "DFUDeviceParams", "DFUDeviceImagesInfo", "DFUImagesUpdated"]
+    return ["DFUProgress", "DFUStateChanged", "DFUDeviceParams", "DFUDeviceImagesInfo", "DFUImagesUpdated", "DFUDeviceReset"]
   }
   
   @objc
@@ -353,7 +353,28 @@ class DFUModule: RCTEventEmitter {
       callback([NSNull(),error.localizedDescription])
     }
   }
-  
+
+  @objc
+  func resetDevice(_ callback: @escaping RCTResponseSenderBlock) {
+    guard let defaultManager = self.defaultManager else {
+      print("defaultManager not found")
+      callback(["DefaultManager not initialized", NSNull()])
+      return
+    }
+
+    defaultManager.reset { [weak self] response, error in
+      if let error = error {
+        print("Reset error: \(error.localizedDescription)")
+        self?.sendEvent(withName: "DFUDeviceReset", body: ["status": "error", "message": "Reset failed: \(error.localizedDescription)"])
+        callback([error.localizedDescription, NSNull()])
+      } else {
+        print("Reset command sent successfully")
+        self?.sendEvent(withName: "DFUDeviceReset", body: ["status": "success", "message": "Device reset command sent"])
+        callback([NSNull(), "success"])
+      }
+    }
+  }
+
 }
 
 // MARK: - FirmwareUpgradeManagerDelegate

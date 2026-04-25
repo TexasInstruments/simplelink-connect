@@ -703,6 +703,29 @@ class MeshModule: RCTEventEmitter {
   }
   
   @objc
+  func importNetwork(_ networkJson: String, callback: RCTResponseSenderBlock) {
+
+      do {
+          guard let jsonData = networkJson.data(using: .utf8) else {
+              callback(["Invalid JSON string encoding"])
+              return
+          }
+
+          let meshNetwork = try self
+              .meshRepository
+              .getMeshManager()
+              .import(from: jsonData)
+
+          self.sendEvent(withName: "onNetworkLoaded", body: meshNetwork)
+          callback([NSNull(), meshNetwork])
+
+      } catch {
+          callback(["Error processing JSON: \(error.localizedDescription)"])
+      }
+  }
+
+  
+  @objc
   func startProvisioningNode(_ callback: RCTResponseSenderBlock) {
     self.meshRepository.startProvisioning()
   }
@@ -762,7 +785,7 @@ class MeshModule: RCTEventEmitter {
   ) {
     
     guard
-      let node = AppDelegate.shared.meshNetworkManager.meshNetwork?.node(
+      let node = AppDelegateMesh.shared.meshNetworkManager.meshNetwork?.node(
         withAddress: Address(unicastAddress))
     else {
       print("Node with unicast address \(unicastAddress) not found.")
@@ -1087,7 +1110,7 @@ class MeshModule: RCTEventEmitter {
   ) {
     do {
       
-      guard let meshNetwork = AppDelegate.shared.meshNetworkManager.meshNetwork
+      guard let meshNetwork = AppDelegateMesh.shared.meshNetworkManager.meshNetwork
       else {
         throw NSError(
           domain: "MeshError", code: 404,
@@ -1243,7 +1266,7 @@ class MeshModule: RCTEventEmitter {
     _ unicastAddress: Int, callback: @escaping RCTResponseSenderBlock
   ) {
     // Ensure the mesh network is available
-    guard let meshNetwork = AppDelegate.shared.meshNetworkManager.meshNetwork
+    guard let meshNetwork = AppDelegateMesh.shared.meshNetworkManager.meshNetwork
     else {
       print("No mesh network")
       let error = NSError(
@@ -1380,7 +1403,7 @@ class MeshModule: RCTEventEmitter {
     _ newGroupName: String, callback: @escaping RCTResponseSenderBlock
   ) {
     let address: MeshAddress
-    if let network = AppDelegate.shared.meshNetworkManager.meshNetwork,
+    if let network = AppDelegateMesh.shared.meshNetworkManager.meshNetwork,
        let localProvisioner = network.localProvisioner
     {
       // Try assigning next available Group Address.
@@ -1399,7 +1422,7 @@ class MeshModule: RCTEventEmitter {
   
   @objc
   func getGroups(_ callback: @escaping RCTResponseSenderBlock) {
-    guard let meshNetwork = AppDelegate.shared.meshNetworkManager.meshNetwork
+    guard let meshNetwork = AppDelegateMesh.shared.meshNetworkManager.meshNetwork
     else {
       callback([
         NSError(
@@ -1428,7 +1451,7 @@ class MeshModule: RCTEventEmitter {
     _ groupName: String, groupAddress: Int,
     callback: @escaping RCTResponseSenderBlock
   ) {
-    guard let meshNetwork = AppDelegate.shared.meshNetworkManager.meshNetwork
+    guard let meshNetwork = AppDelegateMesh.shared.meshNetworkManager.meshNetwork
     else {
       callback([
         NSError(
@@ -1466,7 +1489,7 @@ class MeshModule: RCTEventEmitter {
     _ groupAddress: Int, groupName: String,
     callback: @escaping RCTResponseSenderBlock
   ) {
-    guard let meshNetwork = AppDelegate.shared.meshNetworkManager.meshNetwork
+    guard let meshNetwork = AppDelegateMesh.shared.meshNetworkManager.meshNetwork
     else {
       callback([
         NSError(
@@ -1487,7 +1510,7 @@ class MeshModule: RCTEventEmitter {
   func removeGroup(
     _ groupAddress: Int, callback: @escaping RCTResponseSenderBlock
   ) {
-    guard let meshNetwork = AppDelegate.shared.meshNetworkManager.meshNetwork
+    guard let meshNetwork = AppDelegateMesh.shared.meshNetworkManager.meshNetwork
     else {
       callback([
         NSError(
@@ -1641,7 +1664,7 @@ class MeshModule: RCTEventEmitter {
         // Emit the event to React Native
         self.sendEvent(
           withName: "onNetworkLoaded", body: ["networkName": network.meshName])
-        AppDelegate.shared.updateLocalElements()
+        AppDelegateMesh.shared.updateLocalElements()
         // Return success via callback
         callback([
           NSNull(), ["success": true, "networkName": network.meshName],
@@ -1738,10 +1761,10 @@ class MeshModule: RCTEventEmitter {
   
   @objc
   func getProxyStatus(_ callback: @escaping RCTResponseSenderBlock) {
-    let isConnected = AppDelegate.shared.connection.isConnected
+    let isConnected = AppDelegateMesh.shared.connection.isConnected
     var proxyName = ""
     if isConnected {
-      let proxyNode = AppDelegate.shared.meshNetworkManager.proxyFilter.proxy
+      let proxyNode = AppDelegateMesh.shared.meshNetworkManager.proxyFilter.proxy
       if proxyNode != nil {
         proxyName = proxyNode?.name ?? "Unknown Node"
       }
@@ -1919,7 +1942,7 @@ class MeshModule: RCTEventEmitter {
     if provisionerToEdit != nil {
       provisionerToEdit!.name = newName
     }
-    AppDelegate.shared.meshNetworkManager.save()
+    AppDelegateMesh.shared.meshNetworkManager.save()
     callback([NSNull(), "success"])
     
   }
@@ -1963,8 +1986,8 @@ class MeshModule: RCTEventEmitter {
       
       do {
           try network.assign(unicastAddress: newAddr, for: provisionerToEdit)
-          AppDelegate.shared.meshNetworkManager.proxyFilter.add(address: newAddr)
-          AppDelegate.shared.meshNetworkManager.save()
+        AppDelegateMesh.shared.meshNetworkManager.proxyFilter.add(address: newAddr)
+        AppDelegateMesh.shared.meshNetworkManager.save()
           callback([NSNull(), "success"])
       } catch {
           let errorMessage: String
@@ -1997,7 +2020,7 @@ class MeshModule: RCTEventEmitter {
     if provisionerToEdit != nil {
       provisionerToEdit?.node?.defaultTTL = UInt8(ttl)
     }
-    AppDelegate.shared.meshNetworkManager.save()
+    AppDelegateMesh.shared.meshNetworkManager.save()
     callback([NSNull(), "success"])
     
   }
@@ -2062,7 +2085,7 @@ class MeshModule: RCTEventEmitter {
         try provisionerToEdit.allocateUnicastAddressRanges(addressesRange)
       }
       
-      AppDelegate.shared.meshNetworkManager.save()
+      AppDelegateMesh.shared.meshNetworkManager.save()
       callback([NSNull(), "success"])
       
     } catch {
@@ -2120,7 +2143,7 @@ class MeshModule: RCTEventEmitter {
         try provisionerToEdit.allocateGroupAddressRanges(addressesRange)
       }
       
-      AppDelegate.shared.meshNetworkManager.save()
+      AppDelegateMesh.shared.meshNetworkManager.save()
       callback([NSNull(), "success"])
       
     } catch {
@@ -2202,7 +2225,7 @@ class MeshModule: RCTEventEmitter {
         try provisionerToEdit.allocateSceneRanges(sceneRange)
       }
       
-      AppDelegate.shared.meshNetworkManager.save()
+      AppDelegateMesh.shared.meshNetworkManager.save()
       callback([NSNull(), "success"])
       
     } catch {
@@ -2258,8 +2281,8 @@ class MeshModule: RCTEventEmitter {
   
   @objc
   func updateAutomaticConnection(_ autoConnect: Bool, callback: @escaping RCTResponseSenderBlock){
-    AppDelegate.shared.connection.delegate = self.meshRepository
-    AppDelegate.shared.connection.isConnectionModeAutomatic = autoConnect
+    AppDelegateMesh.shared.connection.delegate = self.meshRepository
+    AppDelegateMesh.shared.connection.isConnectionModeAutomatic = autoConnect
   }
   
   

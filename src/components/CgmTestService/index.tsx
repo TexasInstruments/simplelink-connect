@@ -1,6 +1,6 @@
-import { InteractionManager, KeyboardAvoidingView, NativeEventEmitter, Platform, StatusBar, Switch, TouchableOpacity, View } from 'react-native';
+import { InteractionManager, KeyboardAvoidingView, Platform, StatusBar, Switch, TouchableOpacity, View, EventSubscription } from 'react-native';
 import { Text } from '../Themed';
-import { StyleSheet, NativeModules, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import Colors from '../../constants/Colors';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -9,14 +9,13 @@ import { Divider } from 'react-native-paper';
 import { LineChart } from 'react-native-chart-kit';
 import { chartConfig } from '../../constants/Charts';
 import { useFocusEffect } from '@react-navigation/native';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { ScrollView } from 'react-native-gesture-handler';
 import { downloadDataToLocalStorage } from '../../services/DownloadFileUtils';
 import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
-import DocumentPicker from 'react-native-document-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Tooltip from 'react-native-walkthrough-tooltip';
-import { Icon } from '@rneui/base';
 import { Modal } from 'react-native';
 import RNFS from 'react-native-fs';
 import IdleTimerManager from 'react-native-idle-timer';
@@ -73,8 +72,8 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
     const [tempFullScreen, setTempFullScreen] = useState(false);
 
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
+    const disconnectSubscription = useRef<EventSubscription | null>(null);
 
     const isConnecting = useRef<boolean>(false);
     const logBuffer = useRef<string[]>([]);
@@ -89,12 +88,11 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(() => {
-                bleManagerEmitter.addListener(
-                    'BleManagerDidUpdateValueForCharacteristic', handleIndication);
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleIndication);
 
-                bleManagerEmitter.addListener('BleManagerDisconnectPeripheral', () => {
+                disconnectSubscription.current = BleManager.onDisconnectPeripheral(() => {
                     addLog("device disconnected from phone")
-                })
+                });
             });
 
             return () => {
@@ -103,8 +101,8 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                     clearInterval(pollingInterval);
                     setPollingInterval(null);
                 }
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
-                bleManagerEmitter.removeAllListeners('BleManagerDisconnectPeripheral');
+                charValueSubscription.current?.remove();
+                disconnectSubscription.current?.remove();
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, CHAR_UUID); // Stop notifications
 
 
@@ -552,14 +550,22 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
     }
 
     const handleFileUpload = async () => {
-        const result = await DocumentPicker.pickSingle({
-            type: DocumentPicker.types.allFiles,
+        const result = await DocumentPicker.getDocumentAsync({
+            copyToCacheDirectory: true,
+            multiple: false,
         });
-
-        if (result.uri) {
-            const content = await RNFS.readFile(result.uri, 'utf8');
-            console.log("uploaded content:", content)
+        if (result.canceled) {
+            return;
         }
+
+        const file = result.assets[0];
+        if (!file?.uri) {
+            throw new Error('File URI is undefined');
+        }
+
+        const content = await RNFS.readFile(file.uri, 'utf8');
+        console.log("uploaded content:", content)
+
     };
 
     function toolTip(visible: boolean, setVisible: any, text: string, title: string) {
@@ -581,7 +587,7 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                 contentStyle={{ borderRadius: 8, height: '100%', width: '100%' }}
             >
                 <TouchableOpacity onPress={() => setVisible(true)} style={{ marginLeft: 5 }}>
-                    <Icon style={{ alignSelf: 'center' }} name='help-outline' type="MaterialIcons" size={16} />
+                    <MaterialIcons style={{ alignSelf: 'center' }} name='help-outline' size={16} />
                 </TouchableOpacity >
             </Tooltip>
         )
@@ -676,6 +682,7 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                     <View style={[styles.item]}>
                         <Text style={[styles.title]}>Enable Indications</Text>
                         <Switch
+                            style={{ alignSelf: 'center' }}
                             value={indicationsSwitch}
                             onValueChange={handleIndicationSwitch}
                         />
@@ -713,7 +720,7 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
 
                                 {/* Expand / fullscreen icon */}
                                 <TouchableOpacity onPress={() => setChannel1FullScreen(true)} style={{ marginRight: 10 }}>
-                                    <Icon name={'expand-arrows-alt'} type='font-awesome-5' size={18} />
+                                    <FontAwesome5 name={'expand-arrows-alt'} size={18} />
                                 </TouchableOpacity>
 
                                 <Text style={[styles.title]}>Channel 1</Text>
@@ -722,9 +729,8 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                                 onPress={() => setChannel1Visible(!channel1Visible)}
                                 style={{ flexDirection: 'row', alignItems: 'center' }}
                             >
-                                <Icon
+                                <FontAwesome5
                                     name={!channel1Visible ? 'chevron-down' : 'chevron-up'}
-                                    type='font-awesome-5'
                                     size={18}
                                     style={{ marginLeft: 8 }}
                                 />
@@ -758,7 +764,7 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                                 <TouchableOpacity
                                     // onPress={() => setChannel2FullScreen(true)}
                                     style={{ marginRight: 10 }}>
-                                    <Icon name={'expand-arrows-alt'} type='font-awesome-5' size={18} />
+                                    <FontAwesome5 name={'expand-arrows-alt'} size={18} />
                                 </TouchableOpacity>
 
                                 <Text style={[styles.title]}>Channel 2</Text>
@@ -767,9 +773,8 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                                 // onPress={() => setChannel2Visible(!channel2Visible)}
                                 style={{ flexDirection: 'row', alignItems: 'center' }}
                             >
-                                <Icon
+                                <FontAwesome5
                                     name={!channel2Visible ? 'chevron-down' : 'chevron-up'}
-                                    type='font-awesome-5'
                                     size={18}
                                     style={{ marginLeft: 8 }}
                                 />
@@ -802,7 +807,7 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
 
                                 {/* Expand / fullscreen icon */}
                                 <TouchableOpacity onPress={() => setTempFullScreen(true)} style={{ marginRight: 10 }}>
-                                    <Icon name={'expand-arrows-alt'} type='font-awesome-5' size={18} />
+                                    <FontAwesome5 name={'expand-arrows-alt'} size={18} />
                                 </TouchableOpacity>
 
                                 <Text style={[styles.title]}>Temperature</Text>
@@ -811,9 +816,8 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                                 onPress={() => setTempVisible(!tempChartVisible)}
                                 style={{ flexDirection: 'row', alignItems: 'center' }}
                             >
-                                <Icon
+                                <FontAwesome5
                                     name={!tempChartVisible ? 'chevron-down' : 'chevron-up'}
-                                    type='font-awesome-5'
                                     size={18}
                                     style={{ marginLeft: 8 }}
                                 />
@@ -857,7 +861,7 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                         onPress={() => setChannel1FullScreen(false)}
                         style={[styles.fullScreenCloseButton]}
                     >
-                        <Icon name="close" type="antdesign" color="white" size={26} />
+                        <AntDesign name="close" color="white" size={26} />
                     </TouchableOpacity>
 
                     {/* Fullscreen chart */}
@@ -879,7 +883,7 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                         onPress={() => setChannel2FullScreen(false)}
                         style={[styles.fullScreenCloseButton]}
                     >
-                        <Icon name="close" type="antdesign" color="white" size={26} />
+                        <AntDesign name="close" color="white" size={26} />
                     </TouchableOpacity>
 
                     {/* Fullscreen chart */}
@@ -901,7 +905,7 @@ const CgmTestService: React.FC<Props> = ({ peripheralId }) => {
                         onPress={() => setTempFullScreen(false)}
                         style={[styles.fullScreenCloseButton]}
                     >
-                        <Icon name="close" type="antdesign" color="white" size={26} />
+                        <AntDesign name="close" color="white" size={26} />
                     </TouchableOpacity>
 
                     {/* Fullscreen chart */}

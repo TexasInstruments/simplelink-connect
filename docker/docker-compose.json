@@ -1,0 +1,44 @@
+{
+  "services": {
+    "build-apk": {
+      "image": "artifactory.itg.ti.com/docker-simplelink-connect-local/simplelink-connect-build-apk:latest",
+      "platform": "linux/amd64",
+      "build": {
+        "context": "..",
+        "dockerfile": "docker/Dockerfile",
+        "platforms": ["linux/amd64"],
+        "provenance": false,
+        "sbom": false,
+        "args": {
+          "HTTP_PROXY": "http://webproxy.ext.ti.com:80",
+          "HTTPS_PROXY": "http://webproxy.ext.ti.com:80",
+          "NO_PROXY": "localhost,127.0.0.1"
+        }
+      },
+      "environment": [
+        "HTTP_PROXY=http://webproxy.ext.ti.com:80",
+        "HTTPS_PROXY=http://webproxy.ext.ti.com:80",
+        "http_proxy=http://webproxy.ext.ti.com:80",
+        "https_proxy=http://webproxy.ext.ti.com:80",
+        "NO_PROXY=localhost,127.0.0.1",
+        "no_proxy=localhost,127.0.0.1",
+        "GRADLE_OPTS=-Dorg.gradle.daemon=false"
+      ],
+      "volumes": [
+        "..:/app",
+        "gradle-cache:/root/.gradle",
+        "npm-cache:/root/.npm"
+      ],
+      "working_dir": "/app",
+      "shm_size": "2gb"
+    }
+  },
+  "volumes": {
+    "gradle-cache": {
+      "name": "simplelink-connect-gradle-cache"
+    },
+    "npm-cache": {
+      "name": "simplelink-connect-npm-cache"
+    }
+  }
+}

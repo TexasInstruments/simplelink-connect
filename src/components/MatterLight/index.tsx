@@ -1,7 +1,7 @@
-import { KeyboardAvoidingView, Image, View, useWindowDimensions, Pressable, Platform, Text, InteractionManager, NativeEventEmitter, NativeModules } from 'react-native';
+import { KeyboardAvoidingView, Image, View, useWindowDimensions, Pressable, Platform, Text, InteractionManager, EventSubscription } from 'react-native';
 import { StyleSheet } from 'react-native';
 import Colors from '../../constants/Colors';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import BleManager from 'react-native-ble-manager';
 import { Buffer } from 'buffer';
 import { TouchableOpacity } from '../Themed';
@@ -35,8 +35,7 @@ const MatterLight: React.FC<Props> = ({ peripheralId }: any) => {
 
     let { width } = useWindowDimensions();
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
     useFocusEffect(
         useCallback(() => {
@@ -49,20 +48,19 @@ const MatterLight: React.FC<Props> = ({ peripheralId }: any) => {
                 );
 
                 console.log('addListener for BleManagerDidUpdateValueForCharacteristic');
-                bleManagerEmitter.addListener(
-                    'BleManagerDidUpdateValueForCharacteristic',
-                    ({ value, peripheral, characteristic, service }) => {
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(
+                    ({ value, peripheral, characteristic, service }: { value: number[]; peripheral: string; characteristic: string; service: string }) => {
                         let buf = Buffer.from(value);
                         let lightState = buf.readUInt8(0);
                         console.log('Got Notifications:', characteristic, lightState)
                         setLightOn(lightState === 1 ? true : false)
-                    })
+                    });
             });
 
             return () => {
                 task.cancel();
                 console.log('remove all listeners');
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+                charValueSubscription.current?.remove();
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, LIGHT_STATE_CHAR);
             }
         }, [])

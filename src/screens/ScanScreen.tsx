@@ -30,9 +30,6 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* See README Design Notes section for more information regarding the SimpleBleScanner
-import BleScanner from '../src/components/SimpleBleScanner';
-*/
 import BleScanner from '../components/BleScanner';
 import { useEffect } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';

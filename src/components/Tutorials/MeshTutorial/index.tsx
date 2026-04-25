@@ -91,7 +91,7 @@ const MeshTutorial: React.FC<Props> = () => {
 
   const skipTutorial = async () => {
     await AsyncStorage.setItem('@mesh_tutorial', JSON.stringify(true));
-    navigation.navigate('BleMesh');
+    navigation.navigate('BleMesh', { pop: true });
   }
 
   return (

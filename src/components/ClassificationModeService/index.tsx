@@ -1,11 +1,11 @@
-import { StyleSheet, Platform, InteractionManager, NativeModules, NativeEventEmitter, FlatList } from 'react-native';
+import { StyleSheet, Platform, InteractionManager, FlatList, EventSubscription } from 'react-native';
 import Colors from '../../constants/Colors';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity } from '../../components/Themed';
 import { useFocusEffect } from '@react-navigation/native';
 import BleManager from 'react-native-ble-manager';
 import { Buffer } from 'buffer';
-import { Icon } from '@rneui/base';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 interface Props {
     peripheralId: string;
@@ -13,8 +13,7 @@ interface Props {
 
 const ClassificationModeServiceScreen: React.FC<Props> = ({ peripheralId }) => {
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
     const [labels, setLabels] = useState<string[]>([]);
     const [confidenceScore, setConfidenceScore] = useState<string>("");
@@ -37,7 +36,7 @@ const ClassificationModeServiceScreen: React.FC<Props> = ({ peripheralId }) => {
     useFocusEffect(
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(async () => {
-                bleManagerEmitter.addListener('BleManagerDidUpdateValueForCharacteristic', handleClassificationNotifications);
+                charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleClassificationNotifications);
 
                 /* Set the MTU Size - Android only API 21+, iOS initiates an MTU exchange automatically upon connection */
                 if (Platform.OS === 'android') {
@@ -54,7 +53,7 @@ const ClassificationModeServiceScreen: React.FC<Props> = ({ peripheralId }) => {
             // handleGetClassificationLabels();
 
             return () => {
-                bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+                charValueSubscription.current?.remove();
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, CLASSIFICATION_CHAR);
                 BleManager.stopNotification(peripheralId, SERVICE_UUID, RESULT_CHAR);
                 task.cancel();
@@ -72,12 +71,12 @@ const ClassificationModeServiceScreen: React.FC<Props> = ({ peripheralId }) => {
     }, [confidenceScoreRef.current, detectedLabelRef.current]);
 
     const handleClassificationNotifications =
-        ({ value, peripheral, characteristic, service }: any) => {
+        ({ value, peripheral, characteristic, service }: { value: number[]; peripheral: string; characteristic: string; service: string }) => {
 
             if (characteristic.toLocaleLowerCase() === CLASSIFICATION_CHAR.toLocaleLowerCase() && value) {
 
                 // Ignore unexpected extra notification
-                if (value == 0x1) { return }
+                if (value.length === 1 && value[0] === 0x1) { return }
 
                 // Convert the value to string
                 let chunk = Buffer.from(value).toString('utf8');
@@ -126,9 +125,9 @@ const ClassificationModeServiceScreen: React.FC<Props> = ({ peripheralId }) => {
 
                 console.log("Inference Result", `Detected: ${detectedClass}\nConfidence: ${confidenceScore}%`);
                 detectedLabelRef.current = detectedClass;
-                confidenceScoreRef.current = confidenceScore;
+                confidenceScoreRef.current = String(confidenceScore);
                 setDetectedLabel(detectedClass);
-                setConfidenceScore(confidenceScore);
+                setConfidenceScore(String(confidenceScore));
             }
 
             else {
@@ -206,7 +205,7 @@ const ClassificationModeServiceScreen: React.FC<Props> = ({ peripheralId }) => {
                             onPress={handleGetInferenceResults}
                             disabled={isRunning}
                         >
-                            <Icon name="play" size={18} color="#fff" type='font-awesome-5' />
+                            <FontAwesome5 name="play" size={18} color="#fff" />
 
                         </TouchableOpacity>
                         <Text style={[styles.startStopButtonText, { opacity: isRunning || labels.length == 0 ? 0.3 : 1 }]}>Get Results</Text>
@@ -220,7 +219,7 @@ const ClassificationModeServiceScreen: React.FC<Props> = ({ peripheralId }) => {
                             disabled={!isRunning}
 
                         >
-                            <Icon name="stop" size={18} color="#fff" type='font-awesome-5' />
+                            <FontAwesome5 name="stop" size={18} color="#fff" />
 
                         </TouchableOpacity>
                         <Text style={[styles.startStopButtonText, { opacity: !isRunning ? 0.3 : 1 }]}>Stop</Text>

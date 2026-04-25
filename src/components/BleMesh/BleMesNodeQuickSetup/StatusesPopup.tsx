@@ -60,7 +60,7 @@ const StatusesPopup: React.FC<ModelSelectionListProps> = ({
                             <Text style={meshStyles.textButton}>Close</Text>
                         </TouchableOpacity>
 
-                        <TouchableOpacity onPress={() => { setIsVisible(false); navigation.navigate('BleMeshConfigureNode', { unicastAddr: unicastAddr, isConnecting: false }) }} style={[meshStyles.button, { alignSelf: 'flex-end', marginTop: 30 }]}>
+                        <TouchableOpacity onPress={() => { setIsVisible(false); navigation.navigate('BleMeshConfigureNode', { unicastAddr: unicastAddr, isConnecting: false }, { pop: true }) }} style={[meshStyles.button, { alignSelf: 'flex-end', marginTop: 30 }]}>
                             <Text style={meshStyles.textButton}>Done</Text>
                         </TouchableOpacity>
                     </View>

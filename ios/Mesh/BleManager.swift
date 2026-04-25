@@ -27,14 +27,44 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
   private var selectedNode: Node!
   public var discoveredProxies: [DiscoveredGattProxy] = []
   public var selectedProvisionedDevice: ProvisionedDevice?
-  
+
+  /// Cache mapping peripheral identifiers to node UUIDs.
+  /// Used when devices advertise with Network Identity (which doesn't contain node-specific info).
+  /// Persisted to UserDefaults to survive app restarts.
+  private var peripheralToNodeUUIDCache: [UUID: UUID] {
+    get {
+      guard let data = UserDefaults.standard.data(forKey: "peripheralToNodeUUIDCache"),
+            let dict = try? JSONDecoder().decode([String: String].self, from: data) else {
+        return [:]
+      }
+      var result: [UUID: UUID] = [:]
+      for (key, value) in dict {
+        if let keyUUID = UUID(uuidString: key), let valueUUID = UUID(uuidString: value) {
+          result[keyUUID] = valueUUID
+        }
+      }
+      return result
+    }
+    set {
+      let dict = newValue.reduce(into: [String: String]()) { result, pair in
+        result[pair.key.uuidString] = pair.value.uuidString
+      }
+      do {
+        let data = try JSONEncoder().encode(dict)
+        UserDefaults.standard.set(data, forKey: "peripheralToNodeUUIDCache")
+        } catch {
+          print("❌ Failed to persist peripheral cache: \(error)")
+      }
+    }
+  }
+
   init(meshModule: MeshModule) {
     super.init()
-    
+
     self.centralManager = CBCentralManager()
     self.centralManager.delegate = self
     self.meshModule = meshModule
-    
+
   }
   
   // MARK: Scan / Connect
@@ -148,11 +178,11 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
   func bearerDidOpen(_ bearer: Bearer) {
     print("bearerDidOpen")
     self.provisioningBearer = bearer as! ProvisioningBearer
-    if let provisioner = AppDelegate.shared.meshNetworkManager.meshNetwork?.localProvisioner {
+    if let provisioner = AppDelegateMesh.shared.meshNetworkManager.meshNetwork?.localProvisioner {
       MeshNetworkManager.instance.proxyFilter.setup(for: provisioner)
     }
     
-    AppDelegate.shared.meshNetworkManager.delegate = self.meshModule.meshRepository
+    AppDelegateMesh.shared.meshNetworkManager.delegate = self.meshModule.meshRepository
     meshModule.sendEvent(withName: "onStateChange", body: "Connected (unprovisioned)")
     meshModule.sendEvent(withName: "onNodeConnected", body: "success")
   }
@@ -160,17 +190,17 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
   func bearer(_ bearer: Bearer, didClose error: Error?) {
     print("BEARER CLOSE", "BleManager")
     
-    guard let meshNetworkManager = AppDelegate.shared.meshNetworkManager else {
+    guard let meshNetworkManager = AppDelegateMesh.shared.meshNetworkManager else {
       NSLog("Error initializing the mesh manager")
       return
     }
     if meshNetworkManager.save() {
-      guard let connection = AppDelegate.shared.connection else {
+      guard let connection = AppDelegateMesh.shared.connection else {
         print("Bearer is nil")
         return
       }
       
-      //      let connection = AppDelegate.shared.connection!
+      //      let connection = AppDelegateMesh.shared.connection!
       func done(reconnect: Bool) {
         if reconnect,
            let pbGattBearer = self.provisioningBearer as? PBGattBearer
@@ -231,9 +261,9 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
   }
   
   func getCompositionData() {
-    AppDelegate.shared.meshNetworkManager.delegate = self
+    AppDelegateMesh.shared.meshNetworkManager.delegate = self
     
-    guard let meshNetworkManager = AppDelegate.shared.meshNetworkManager else {
+    guard let meshNetworkManager = AppDelegateMesh.shared.meshNetworkManager else {
       NSLog("Error initializing the mesh manager")
       return
     }
@@ -257,7 +287,7 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
   }
   
   func getTtl() {
-    guard let meshNetworkManager = AppDelegate.shared.meshNetworkManager else {
+    guard let meshNetworkManager = AppDelegateMesh.shared.meshNetworkManager else {
       NSLog("Error initializing the mesh manager")
       return
     }
@@ -362,7 +392,7 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
       unprovisionedPeripherals[index].rssi[bearerIndex] = rssi
     } else {
       let bearer = PBGattBearer(target: peripheral)
-      bearer.logger = AppDelegate.shared.meshNetworkManager.logger
+      bearer.logger = AppDelegateMesh.shared.meshNetworkManager.logger
       unprovisionedPeripherals[index].bearer.append(bearer)
       unprovisionedPeripherals[index].rssi.append(rssi)
     }
@@ -379,7 +409,7 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
     }
     unprovisionedDevice.name = peripheral.name
     let bearer = PBGattBearer(target: peripheral)
-    bearer.logger = AppDelegate.shared.meshNetworkManager.logger
+    bearer.logger = AppDelegateMesh.shared.meshNetworkManager.logger
     sendScanResultEvent(
       name: peripheral.name, uuid: unprovisionedDevice.uuid, rssi: rssi, bearers: [bearer], identifier: peripheral.identifier)
     unprovisionedPeripherals.append(( device: unprovisionedDevice,
@@ -391,7 +421,7 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
   
   private func handleMeshProxyService(peripheral: CBPeripheral, advertisementData: [String: Any], rssi: NSNumber) {
     // provisioned nodes doesnt expose thier Device UUID
-    let uuid = advDataToUUID(advertisementData);
+    let uuid: UUID? = advDataToUUID(advertisementData, peripheralIdentifier: peripheral.identifier);
     if (uuid == nil){
       print("Could not extract UUID from advertisement data")
     }
@@ -412,37 +442,66 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
   }
     
   
-  /// Converts first 16 bytes of Data into a UUID.
-  private func advDataToUUID(_ advertisementData: [String: Any]) -> UUID? {
-    
-    guard let meshNetwork = AppDelegate.shared.meshNetworkManager.meshNetwork else {
-      return nil
-    }
-    
-    guard let serviceData = advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data],
-             let proxyData = serviceData[MeshProxyService.uuid] else {
-           return nil
-       }
-    
-    // Is it a Network ID or Private Network Identity beacon?
-    if let networkIdentity = advertisementData.networkIdentity {
-      guard meshNetwork.matches(networkIdentity: networkIdentity) else {
-        // A Node from another mesh network.
-        return nil
+  /// Converts advertisement data into a node UUID (if possible).
+  /// Uses a cache to remember peripheral-to-node mappings when Network Identity beacons
+  /// are received (which don't contain node-specific information).
+  private func advDataToUUID(_ advertisementData: [String: Any], peripheralIdentifier: UUID) -> UUID? {
+
+      guard let meshNetwork = AppDelegateMesh.shared.meshNetworkManager.meshNetwork else {
+          print("❌ Mesh network is nil")
+          return nil
       }
-    } else {
-      // Is it a Node Identity or Private Node Identity beacon?
-      guard let nodeIdentity = advertisementData.nodeIdentity,
-            meshNetwork.matches(nodeIdentity: nodeIdentity)
+
+      guard
+          let serviceData = advertisementData[CBAdvertisementDataServiceDataKey] as? [CBUUID: Data],
+          serviceData[MeshProxyService.uuid] != nil
       else {
-        // A Node from another mesh network.
-        return nil
+          print("❌ Mesh Proxy service data missing")
+          return nil
       }
-      return meshNetwork.node(matchingNodeIdentity: nodeIdentity)?.uuid
 
-    }
-    return nil
+      // MARK: - Try Node Identity first (contains node-specific info)
+      if let nodeIdentity = advertisementData.nodeIdentity {
+          guard meshNetwork.matches(nodeIdentity: nodeIdentity) else {
+              print("❌ Foreign mesh node (Node Identity)")
+              return nil
+          }
 
+          guard let node = meshNetwork.node(matchingNodeIdentity: nodeIdentity) else {
+              print("❌ Node Identity matches, but node not found locally")
+              return nil
+          }
+
+        
+          // Cache the mapping only if it's new or changed
+          if peripheralToNodeUUIDCache[peripheralIdentifier] != node.uuid {
+                peripheralToNodeUUIDCache[peripheralIdentifier] = node.uuid
+          }
+          print("🎯 Node UUID resolved via Node Identity:", node.uuid)
+          return node.uuid
+      }
+
+      // MARK: - Fall back to Network Identity (doesn't contain node-specific info)
+      if let networkIdentity = advertisementData.networkIdentity {
+          guard meshNetwork.matches(networkIdentity: networkIdentity) else {
+              print("❌ Foreign mesh network (Network Identity)")
+              return nil
+          }
+
+          // Network Identity matched - this device is part of our mesh network,
+          // but we can't identify which specific node from the beacon alone.
+          // Check the cache for a previously resolved mapping.
+          if let cachedNodeUUID = peripheralToNodeUUIDCache[peripheralIdentifier] {
+              print("🎯 Node UUID resolved via cache (Network Identity):", cachedNodeUUID)
+              return cachedNodeUUID
+          }
+
+          print("⚠️ Network Identity matched but no cached node mapping for peripheral:", peripheralIdentifier)
+          return nil
+      }
+
+      print("❌ No Node Identity or Network Identity in advertisement")
+      return nil
   }
 
   
@@ -495,7 +554,7 @@ class BleManager: NSObject, LoggerDelegate, GattBearerDelegate, CBPeripheralDele
     print("netKey", provisioningManager.networkKey)
     if provisioningManager.networkKey == nil {
       
-      let network = AppDelegate.shared.meshNetworkManager.meshNetwork!
+      let network = AppDelegateMesh.shared.meshNetworkManager.meshNetwork!
       let networkKey = try! network.add(
         networkKey: Data.random128BitKey(), name: "Primary Network Key")
       provisioningManager.networkKey = networkKey

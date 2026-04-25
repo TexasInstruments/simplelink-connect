@@ -5,7 +5,7 @@ export const OadProtocolOpCode = {
     OAD_REQ_GET_SW_VER: 0x07,          // Get software version - This command is used to query the OAD target device for its software version.
     OAD_REQ_GET_OAD_STAT: 0x08,        // Get oad  publiv state machine - This command is used to query the status of the OAD
 
-    //t hese opcodes are not supported yet
+    // these opcodes are not supported yet
     // OAD_REQ_GET_PROF_VER      : 0x09,  // Get profile version - This command is used to query the version of the OAD profile.
     // OAD_REQ_GET_DEV_TYPE      : 0x10,  // Get device type - This command is used to query type of the device the profile is running on.
     // OAD_REQ_GET_IMG_INFO      : 0x11,  // Get image info - This command is used to get the image info structure
@@ -13,6 +13,7 @@ export const OadProtocolOpCode = {
 
     OAD_RSP_BLK_RSP_NOTIF: 0x12,        // Send block request - This command is used to send a block request notification to the peer device.
     OAD_REQ_ERASE_BONDS: 0x13,          // Erase bonds - This command is used to erase all BLE bonding info on the device.
+    OAD_MS_SUPPORTED: 0x14,             // Response opcode for MS-OAD support query - returned when device supports MS-OAD
     OAD_RSP_CMD_NOT_SUPPORTED: 0xFF,    // Error code returned when an external control command is received with an invalid opcode.
 } as const;
 
@@ -28,3 +29,26 @@ export const OadEvent = {
     OAD_EVT_ENABLE_IMG: 0x04,           // Enable image - This command is used to enable an image after download,  instructing the target to prepare the image to run and then reboot
     OAD_EVT_CANCEL_OAD: 0x05,           // Cancel OAD - This command is used to cancel the OAD process.
 } as const;
+
+// MS-OAD State Machine States
+export const MsOadState = {
+    MS_OAD_UNINITIALIZED: 0,                // MS-OAD module not initialized yet
+    MS_OAD_IDLE: 1,                         // Currently running the most recent image, ready for MS-OAD
+    MS_OAD_WAIT_FIRST_HALF: 2,              // Currently running the original image (first half), waiting for the newer image (first half) - bootable
+    MS_OAD_WAIT_SECOND_HALF: 3,             // Currently running the newer image (first half),  waiting for the newer image (second half) - non-bootable
+    MS_OAD_NEW_IMAGE_READY: 4,              // Fully booted with the new image, waiting for the client to commit (send OAD_MS_OAD_ACK command)
+    MS_OAD_WAIT_FIRST_HALF_REVERT: 5,       // Revert mode: waiting for the older image (first half) - bootable
+    MS_OAD_WAIT_SECOND_HALF_REVERT: 6,      // Revert mode: waiting for the older image (second half) - non-bootable
+    MS_OAD_IMAGE_READY_REVERT: 7,           // Fully booted with the reverted image, waiting for the client to commit (send OAD_MS_OAD_ACK command), then the device will commit the reverted image.
+    MS_OAD_NUM_STATES: 8.                   // For internal use
+} as const;
+
+// All MS-OAD specific commands are sent via the Extended Control characteristic (0xFFC5).
+export const MsOadSpecificCommands = {
+    OAD_REQ_IS_MS_SUPPORTED: 0x14, // Query if device supports MS-OAD, response: 0 (success) or 0xFF (command not supported)
+    OAD_REQ_INIT_MS_OAD: 0x15,     // Start MS-OAD process (device will reboot), response: None - device reset
+    OAD_REQ_GET_MS_STATE: 0x16,    // Query current MS-OAD state, response: one of the ms-oad public state
+    OAD_MS_OAD_ACK: 0x17,          // Final acknowledgment to commit the update, response: ACK then device commits and resets
+}
+// Type definitions for MS-OAD states
+export type MsOadStateType = typeof MsOadState[keyof typeof MsOadState];

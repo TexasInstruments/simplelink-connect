@@ -1418,6 +1418,18 @@ public class MeshModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
+    public void importNetwork(String networkJson, Promise promise) throws IllegalArgumentException {
+        try {
+            meshRepository.getMeshManagerApi().importMeshNetworkJson(networkJson);
+            promise.resolve("success");
+
+        } catch (Exception e) {
+            promise.reject(e);
+        }
+
+    }
+
+    @ReactMethod
     public void sendVendorModelMessage(int nodeUnicastAddress, int opcode, String parameters, Promise promise) {
         byte[] parameterBytes = hexStringToByteArray(parameters);
         final Element element = meshRepository.getSelectedElement().getValue();

@@ -1,14 +1,18 @@
-import { StyleSheet, TextInput, Platform, SafeAreaView, KeyboardAvoidingView, ScrollView, useWindowDimensions, Alert, InteractionManager, NativeModules, NativeEventEmitter, PermissionsAndroid } from 'react-native';
+import { StyleSheet, TextInput, Platform, KeyboardAvoidingView, ScrollView, EventSubscription, InteractionManager, PermissionsAndroid } from 'react-native';
 import Colors from '../../constants/Colors';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity } from '../Themed';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { EvilIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import BleManager from 'react-native-ble-manager';
-import { convertStringToByteArray, getBytes } from '../../hooks/convert';
+import { convertStringToByteArray } from '../../hooks/convert';
 import { Buffer } from 'buffer';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useBleRangeContext } from '../../context/RangeTestContext';
+import { Snackbar } from 'react-native-paper';
+import { TI_TERMINAL_SERVICE } from '../../constants/uuids';
+import { ActivityIndicator } from 'react-native-paper';
+import Geolocation from 'react-native-geolocation-service';
 
 interface Props {
     peripheralId: string;
@@ -22,7 +26,7 @@ const TestModeOptions =
         { label: 'TX', value: TX },
     ]
 
-const PhyIdOptions =
+const DEFAULT_PHY_ID_OPTIONS =
     [
         { label: 'WiSUN Mode #2b (#default)', value: 0 },
         { label: 'WiSUN Mode #4b ', value: 1 },
@@ -71,9 +75,8 @@ const TxPowerOptions =
 const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
 
     const navigation = useNavigation();
+    const phyValuesSubscription = useRef<EventSubscription | null>(null);
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
     const { targetLocationContext, updateTargetLocation } = useBleRangeContext();
 
     const [phyInput, setPhyInput] = useState<number>(0);
@@ -84,7 +87,19 @@ const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
     const [numberOfPacketsInput, setNumberOfPackets] = useState<string>('');
     const [packetsLenInput, setPacketsLen] = useState<string>('');
     const [testMode, setTestMode] = useState<number>();
+    const [visibleSnackBar, setVisibleSnackBar] = useState(false);
+    const [snackBarData, setSnackBarData] = useState<{ message: string, color: string }>({ message: '', color: "white" });
+    const [phyIdOptions, setPhyIdOptions] = useState<{ label: string, value: number }[]>(DEFAULT_PHY_ID_OPTIONS);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isGettingLocation, setIsGettingLocation] = useState(false);
 
+    const phyIdResponseBuffer = useRef<string>('');
+    const phyIdResponseTimeout = useRef<NodeJS.Timeout | null>(null);
+    const phyOptionsLoaded = useRef<boolean>(false);
+    const phyLoadTimeout = useRef<NodeJS.Timeout | null>(null);
+
+    const successColor = "#00FF91"
+    const failureColor = "#FF5F5F"
 
     const PhyIdUUID = 'f202'
     const FrequencyUUID = 'f203'
@@ -95,137 +110,479 @@ const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
 
     const ServiceUuid = 'f200'
 
-
     useEffect(() => {
 
-        getCurrentConfig()
+        const task = InteractionManager.runAfterInteractions(async () => {
+            // Set up notification listener for data_out_char
+            phyValuesSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handlePhyIdNotification);
+
+            // Start notifications on data_out_char
+            try {
+                await BleManager.startNotification(peripheralId, TI_TERMINAL_SERVICE.uuid, TI_TERMINAL_SERVICE.data_out_char);
+                console.log('Started notifications on data_out_char');
+
+                // First, get available PHY IDs
+                await getAvailablePhyIds();
+
+                // Set a timeout in case PHY response never comes
+                phyLoadTimeout.current = setTimeout(() => {
+                    if (!phyOptionsLoaded.current) {
+                        console.log('PHY load timeout - proceeding with defaults');
+                        setPhyIdOptions(DEFAULT_PHY_ID_OPTIONS);
+                        stopPhyIdNotifications();
+                        loadCurrentConfig();
+                    }
+                }, 5000); // 5 second timeout
+
+            } catch (error) {
+                console.error('Failed to start notifications:', error);
+                showSnackBar("Failed to start notifications: " + error, failureColor);
+                setIsLoading(false);
+            }
+        });
 
         return () => {
+            task.cancel();
+
+            // Clear timeouts if exist
+            if (phyIdResponseTimeout.current) {
+                clearTimeout(phyIdResponseTimeout.current);
+            }
+            if (phyLoadTimeout.current) {
+                clearTimeout(phyLoadTimeout.current);
+            }
+
+            phyValuesSubscription.current?.remove();
+            BleManager.stopNotification(peripheralId, TI_TERMINAL_SERVICE.uuid, TI_TERMINAL_SERVICE.data_out_char)
+                .catch((error) => console.error('Failed to stop notifications:', error));
         }
+
     }, []);
 
+    useEffect(() => {
+        if (targetLocationContext) {
+            setTargetLatitude(targetLocationContext.latitude.toString())
+            setTargetLongitude(targetLocationContext.longitude.toString())
+        }
+    }, [targetLocationContext])
+
+
+    const handlePhyIdNotification = ({ value, characteristic }: any) => {
+        if (characteristic.toLowerCase() === TI_TERMINAL_SERVICE.data_out_char.toLowerCase() && value) {
+            try {
+                const notificationData = Buffer.from(value);
+                // Try to decode as UTF-8
+                let responseText: string;
+                try {
+                    responseText = notificationData.toString('utf8');
+                    // Verify it's valid UTF-8 by checking for replacement characters
+                    if (responseText.includes('\uFFFD')) {
+                        throw new Error('Invalid UTF-8 sequence detected');
+                    }
+                } catch (utf8Error) {
+                    console.error('Failed to decode notification as UTF-8:', utf8Error);
+                    showSnackBar("Failed to decode PHY data: Invalid format", failureColor);
+                    setPhyIdOptions(DEFAULT_PHY_ID_OPTIONS);
+                    phyIdResponseBuffer.current = '';
+                    if (phyIdResponseTimeout.current) {
+                        clearTimeout(phyIdResponseTimeout.current);
+                    }
+                    return;
+                }
+
+                // Clean the response by removing non-printable characters except newlines
+                responseText = responseText.replace(/[^\x20-\x7E\n\r]/g, '');
+
+                // Accumulate the response
+                phyIdResponseBuffer.current += responseText;
+
+                // Clear existing timeout
+                if (phyIdResponseTimeout.current) {
+                    clearTimeout(phyIdResponseTimeout.current);
+                }
+
+                // Set a new timeout - parse after no new data for 500ms
+                phyIdResponseTimeout.current = setTimeout(() => {
+                    const completeResponse = phyIdResponseBuffer.current;
+                    console.log('Complete PHY ID response:', completeResponse);
+                    parsePhyIdResponse(completeResponse);
+
+                    // Reset buffer
+                    phyIdResponseBuffer.current = '';
+                }, 500); // Wait 500ms after last chunk
+
+            } catch (error) {
+                console.error('Error handling PHY ID notification:', error);
+                showSnackBar("Error processing PHY data", failureColor);
+                setPhyIdOptions(DEFAULT_PHY_ID_OPTIONS);
+            }
+        }
+    };
+
+    const stopPhyIdNotifications = () => {
+        phyValuesSubscription.current?.remove();
+        BleManager.stopNotification(peripheralId, TI_TERMINAL_SERVICE.uuid, TI_TERMINAL_SERVICE.data_out_char)
+            .then(() => console.log('Stopped PHY ID notifications'))
+            .catch((error) => console.error('Failed to stop PHY ID notifications:', error));
+    };
 
     const getCurrentConfig = async () => {
-        let phy = await BleManager.read(peripheralId, ServiceUuid, PhyIdUUID);
-        setPhyInput(Buffer.from(phy).readInt8())
+        try {
+            const phy = await BleManager.read(peripheralId, ServiceUuid, PhyIdUUID);
+            setPhyInput(Buffer.from(phy).readInt8());
 
-        let txPower = await BleManager.read(peripheralId, ServiceUuid, OutputPowerUUID);
-        setTxPowerInput(Buffer.from(txPower).toString('utf8'))
+            const txPower = await BleManager.read(peripheralId, ServiceUuid, OutputPowerUUID);
+            setTxPowerInput(Buffer.from(txPower).toString('utf8'));
 
-        let frequency = await BleManager.read(peripheralId, ServiceUuid, FrequencyUUID);
-        setFrequencyInput(Buffer.from(frequency).toString('utf8'));
+            const frequency = await BleManager.read(peripheralId, ServiceUuid, FrequencyUUID);
+            setFrequencyInput(Buffer.from(frequency).toString('utf8'));
 
-        let testMode = await BleManager.read(peripheralId, ServiceUuid, TestModeUUID);
-        setTestMode(Buffer.from(testMode).readInt8());
+            const testMode = await BleManager.read(peripheralId, ServiceUuid, TestModeUUID);
+            setTestMode(Buffer.from(testMode).readInt8());
 
-        let packetsLen = await BleManager.read(peripheralId, ServiceUuid, PacketLenUUID);
-        setPacketsLen(Buffer.from(packetsLen).toString('utf8'));
+            const packetsLen = await BleManager.read(peripheralId, ServiceUuid, PacketLenUUID);
+            setPacketsLen(Buffer.from(packetsLen).toString('utf8'));
 
-        let numOfPackets = await BleManager.read(peripheralId, ServiceUuid, PacketNumUUID);
-        setNumberOfPackets(Buffer.from(numOfPackets).toString('utf8'));
+            const numOfPackets = await BleManager.read(peripheralId, ServiceUuid, PacketNumUUID);
+            setNumberOfPackets(Buffer.from(numOfPackets).toString('utf8'));
+
+        } catch (e) {
+            showSnackBar("Getting configuration failed: " + e, failureColor)
+        }
+    }
+
+    const loadCurrentConfig = async () => {
+        try {
+            await getCurrentConfig();
+            showSnackBar("Configuration loaded successfully", successColor);
+        } catch (e) {
+            console.error('Error loading current config:', e);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    const parsePhyIdResponse = async (response: string) => {
+        try {
+            // Parse the response to extract PHY entries
+            // Expected format: "PHY <value>: <description>\nPHY <value>: <description>\n..."
+            const phyLines = response.split('\n').filter(line => line.trim().startsWith('PHY'));
+            if (phyLines.length === 0) {
+                console.log('No PHY entries found in response');
+                setPhyIdOptions(DEFAULT_PHY_ID_OPTIONS);
+                stopPhyIdNotifications();
+                // Continue to load current config even if PHY parsing failed
+                await loadCurrentConfig();
+                return;
+            }
+
+            const phyIds = phyLines.map(line => {
+                // Extract PHY value and description
+                // Format: "PHY <value>: <description>"
+                const match = line.match(/PHY\s+(\d+):\s*(.+)/);
+                if (match) {
+                    const phyValue = parseInt(match[1], 10);
+                    let description = match[2].trim();
+
+                    // Clean up the description - remove "Available ONLY ON TRX CC1407:" prefix if present
+                    description = description.replace(/Available ONLY ON TRX CC\d+:\s*/i, '');
+
+                    // Remove PhySettings and other metadata
+                    description = description.replace(/,\s*PhySettings_.*/i, '');
+                    description = description.replace(/,\s*PhySettings.*/i, '');
+
+                    return {
+                        label: `PHY ${phyValue}: ${description}`,
+                        value: phyValue
+                    };
+                }
+                return null;
+            }).filter((item): item is { label: string, value: number } => item !== null);
+
+            if (phyIds.length > 0) {
+                console.log('Parsed PHY IDs:', phyIds);
+                setPhyIdOptions(phyIds);
+            } else {
+                console.log('Failed to parse PHY IDs, using defaults');
+                setPhyIdOptions(DEFAULT_PHY_ID_OPTIONS);
+            }
+
+            // Stop notifications after processing PHY data
+            stopPhyIdNotifications();
+
+            // Mark PHY options as loaded and proceed to get current config
+            phyOptionsLoaded.current = true;
+
+            // Clear the timeout since we got the response
+            if (phyLoadTimeout.current) {
+                clearTimeout(phyLoadTimeout.current);
+            }
+
+            await loadCurrentConfig();
+
+        } catch (error) {
+            console.error('Error parsing PHY ID response:', error);
+            showSnackBar("Error parsing PHY configurations", failureColor);
+            // Fall back to default options if parsing fails
+            setPhyIdOptions(DEFAULT_PHY_ID_OPTIONS);
+            stopPhyIdNotifications();
+
+            // Clear the timeout since we're handling the error
+            if (phyLoadTimeout.current) {
+                clearTimeout(phyLoadTimeout.current);
+            }
+
+            // Continue to load current config even if PHY parsing failed
+            await loadCurrentConfig();
+        }
+    };
+
+    async function getAvailablePhyIds() {
+        try {
+            const writeCommand = "ATPPN?";
+            const writeBytes = convertStringToByteArray(writeCommand);
+
+            console.log('Requesting available PHY IDs with command:', writeCommand);
+            await BleManager.write(
+                peripheralId,
+                TI_TERMINAL_SERVICE.uuid,
+                TI_TERMINAL_SERVICE.data_in_char,
+                Array.from(writeBytes),
+                writeBytes.length
+            );
+            console.log('PHY ID request sent successfully');
+        } catch (error) {
+            console.error('Failed to request PHY IDs:', error);
+            showSnackBar("Failed to get available PHY IDs: " + error, failureColor);
+        }
     }
 
     async function handleConfig() {
+        showSnackBar("Applying configuration...", "white")
 
-        // config phy
-        let writeByteArray = [phyInput]
-        let writeBytes = Array.from(writeByteArray);
         try {
-            console.log('write phy:', writeBytes, 'to characteristic:', PhyIdUUID)
-            await BleManager.write(peripheralId, ServiceUuid, PhyIdUUID, writeBytes, writeBytes.length);
-            console.log('write phy: succeed')
-        }
-        catch (err) {
-            console.error('write phy failed:', err);
-            return;
-        }
+            let writeByteArray: number[] = []
+            let writeBytes = Array.from(writeByteArray);
 
-        if (testMode == TX) {
+            // config phy
+            if (phyInput != undefined) {
+                writeByteArray = [phyInput]
+                writeBytes = Array.from(writeByteArray);
+
+                try {
+                    console.log('write phy:', writeBytes, 'to characteristic:', PhyIdUUID)
+                    await BleManager.write(peripheralId, ServiceUuid, PhyIdUUID, writeBytes, writeBytes.length);
+                    console.log('write phy: succeed')
+                }
+                catch (err) {
+                    console.error('write phy failed:', err);
+                    showSnackBar("Failed to write PHY: " + err, failureColor);
+                    return;
+                }
+            }
+
             // config tx power
-            writeByteArray = convertStringToByteArray(txPowerInput);
-            writeBytes = Array.from(writeByteArray);
-            try {
-                console.log('write tx power:', writeBytes, 'to characteristic:', OutputPowerUUID)
-                await BleManager.write(peripheralId, ServiceUuid, OutputPowerUUID, writeBytes, writeBytes.length);
-                console.log('write tx power: succeed')
-            }
-            catch (err) {
-                console.error('write tx power failed:', err);
-                return;
-            }
-            // config num of packets
-            writeByteArray = convertStringToByteArray(numberOfPacketsInput);
-            writeBytes = Array.from(writeByteArray);
-            try {
-                console.log('write numberOfPacketsInput:', writeBytes, 'to characteristic:', PacketNumUUID)
-                await BleManager.write(peripheralId, ServiceUuid, PacketNumUUID, writeBytes, writeBytes.length);
-                console.log('write numberOfPacketsInput: succeed')
-            }
-            catch (err) {
-                console.error('write numberOfPacketsInput failed:', err);
+            if (testMode == TX) {
+                if (txPowerInput != '' && txPowerInput != undefined) {
+                    writeByteArray = convertStringToByteArray(txPowerInput);
+                    writeBytes = Array.from(writeByteArray);
+                    try {
+                        console.log('write tx power:', writeBytes, 'to characteristic:', OutputPowerUUID)
+                        await BleManager.write(peripheralId, ServiceUuid, OutputPowerUUID, writeBytes, writeBytes.length);
+                        console.log('write tx power: succeed')
+                    }
+                    catch (err) {
+                        console.error('write tx power failed:', err);
+                        showSnackBar("Failed to write TX power: " + err, failureColor);
+                        return;
+                    }
+                }
+
+                // config num of packets
+                if (numberOfPacketsInput != '' && numberOfPacketsInput != undefined) {
+                    writeByteArray = convertStringToByteArray(numberOfPacketsInput);
+                    writeBytes = Array.from(writeByteArray);
+                    try {
+                        console.log('write numberOfPacketsInput:', writeBytes, 'to characteristic:', PacketNumUUID)
+                        await BleManager.write(peripheralId, ServiceUuid, PacketNumUUID, writeBytes, writeBytes.length);
+                        console.log('write numberOfPacketsInput: succeed')
+                    }
+                    catch (err) {
+                        console.error('write numberOfPacketsInput failed:', err);
+                        showSnackBar("Failed to write number of packets: " + err, failureColor);
+                        return;
+                    }
+                }
+
+                // config packets length
+                if (packetsLenInput != '' && packetsLenInput != undefined) {
+                    writeByteArray = convertStringToByteArray(packetsLenInput);
+                    writeBytes = Array.from(writeByteArray);
+                    try {
+                        console.log('write packetsLenInput:', packetsLenInput, 'to characteristic:', PacketLenUUID)
+                        await BleManager.write(peripheralId, ServiceUuid, PacketLenUUID, writeBytes, writeBytes.length);
+                        console.log('write packetsLenInput: succeed')
+                    }
+                    catch (err) {
+                        console.error('write packetsLenInput failed:', err);
+                        showSnackBar("Failed to write packet length: " + err, failureColor);
+                        return;
+                    }
+                }
+
             }
 
-
-            // config packets length
-            writeByteArray = convertStringToByteArray(packetsLenInput);
-            writeBytes = Array.from(writeByteArray);
-            try {
-                console.log('write packetsLenInput:', packetsLenInput, 'to characteristic:', PacketLenUUID)
-                await BleManager.write(peripheralId, ServiceUuid, PacketLenUUID, writeBytes, writeBytes.length);
-                console.log('write packetsLenInput: succeed')
+            // config frequency
+            if (frequencyInput != '' && packetsLenInput != undefined) {
+                writeByteArray = convertStringToByteArray(frequencyInput);
+                writeBytes = Array.from(writeByteArray);
+                try {
+                    console.log('write frequency:', frequencyInput, 'to characteristic:', FrequencyUUID)
+                    await BleManager.write(peripheralId, ServiceUuid, FrequencyUUID, writeBytes, writeBytes.length);
+                    console.log('write frequency: succeed')
+                }
+                catch (err) {
+                    console.error('write frequency failed:', err);
+                    showSnackBar("Failed to write frequency: " + err, failureColor);
+                    return;
+                }
             }
-            catch (err) {
-                console.error('write packetsLenInput failed:', err);
+
+            // config test mode
+            if (testMode != undefined) {
+                writeByteArray = [testMode]
+                console.log(writeByteArray)
+
+                writeBytes = Array.from(writeByteArray);
+
+                try {
+                    console.log('write testMode:', writeBytes, 'to characteristic:', TestModeUUID)
+                    await BleManager.write(peripheralId, ServiceUuid, TestModeUUID, writeBytes, writeBytes.length);
+                    console.log('write testMode: succeed')
+                }
+                catch (err) {
+                    console.error('write testMode failed:', err);
+                    showSnackBar("Failed to write test mode: " + err, failureColor);
+                    return;
+                }
             }
 
+            // target distance
+            updateTargetLocation(
+                parseFloat(targetLatitude || "0"), parseFloat(targetLongitude || "0")
+            )
+            showSnackBar("Configuration done!", successColor)
+            //  get current config
+            getCurrentConfig()
+
+        } catch (error) {
+            console.error('Configuration error:', error);
+            showSnackBar("Configuration failed: " + error, failureColor);
         }
-
-        // config frequency
-        writeByteArray = convertStringToByteArray(frequencyInput);
-        writeBytes = Array.from(writeByteArray);
-        try {
-            console.log('write frequency:', frequencyInput, 'to characteristic:', FrequencyUUID)
-            await BleManager.write(peripheralId, ServiceUuid, FrequencyUUID, writeBytes, writeBytes.length);
-            console.log('write frequency: succeed')
-        }
-        catch (err) {
-            console.error('write frequency failed:', err);
-        }
-
-        // config test mode
-        console.log(testMode)
-        writeByteArray = [testMode]
-        console.log(writeByteArray)
-
-        writeBytes = Array.from(writeByteArray);
-
-        try {
-            console.log('write testMode:', writeBytes, 'to characteristic:', TestModeUUID)
-            await BleManager.write(peripheralId, ServiceUuid, TestModeUUID, writeBytes, writeBytes.length);
-            console.log('write testMode: succeed')
-        }
-        catch (err) {
-            console.error('write testMode failed:', err);
-        }
-
-        // target distance
-        updateTargetLocation(
-            parseFloat(targetLatitude || "0"), parseFloat(targetLongitude || "0")
-        )
-
-        //  get current config
-        getCurrentConfig()
-
     }
 
     function onCancel() {
         navigation.goBack();
     }
 
+    const showSnackBar = (message: string, color: string) => {
+        setVisibleSnackBar(true);
+        setSnackBarData({
+            message: message,
+            color: color
+        })
+    };
+
+    const closeSnackBar = () => setVisibleSnackBar(false);
+
+    const requestLocationPermission = async (): Promise<boolean> => {
+        if (Platform.OS === 'android') {
+            try {
+                const granted = await PermissionsAndroid.request(
+                    PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+                    {
+                        title: 'Location Permission',
+                        message: 'This app needs access to your location to populate GPS coordinates.',
+                        buttonNeutral: 'Ask Me Later',
+                        buttonNegative: 'Cancel',
+                        buttonPositive: 'OK',
+                    }
+                );
+                return granted === PermissionsAndroid.RESULTS.GRANTED;
+            } catch (err) {
+                console.error('Permission request error:', err);
+                return false;
+            }
+        } else if (Platform.OS === 'ios') {
+            try {
+                const status = await Geolocation.requestAuthorization('whenInUse');
+                return status === 'granted';
+            } catch (err) {
+                console.error('iOS permission request error:', err);
+                return false;
+            }
+        }
+        return false;
+    };
+
+    const getCurrentLocation = async () => {
+        setIsGettingLocation(true);
+        showSnackBar("Getting current location...", "white");
+
+        const hasPermission = await requestLocationPermission();
+        if (!hasPermission) {
+            showSnackBar("Location permission denied", failureColor);
+            setIsGettingLocation(false);
+            return;
+        }
+
+        Geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setTargetLatitude(latitude.toString());
+                setTargetLongitude(longitude.toString());
+                showSnackBar("Location updated successfully", successColor);
+                setIsGettingLocation(false);
+            },
+            (error) => {
+                console.error('Location error:', error);
+                let errorMessage = "Failed to get location";
+                switch (error.code) {
+                    case 1:
+                        errorMessage = "Location permission denied";
+                        break;
+                    case 2:
+                        errorMessage = "Location unavailable";
+                        break;
+                    case 3:
+                        errorMessage = "Location request timeout";
+                        break;
+                    default:
+                        errorMessage = `Failed to get location: ${error.message}`;
+                }
+                showSnackBar(errorMessage, failureColor);
+                setIsGettingLocation(false);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 10000,
+            }
+        );
+    };
+
     return (
-        <SafeAreaView style={{ backgroundColor: Colors.lightGray, flex: 1, }}>
-            <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                <View style={{ backgroundColor: Colors.lightGray, marginBottom: 30 }}>
+        <View style={{ backgroundColor: Colors.lightGray, flex: 1, }}>
+            {isLoading && (
+                <View style={styles.loadingOverlay}>
+                    <View style={styles.loadingContainer}>
+                        <ActivityIndicator size="large" color={Colors.blue} />
+                        <Text style={styles.loadingText}>Initializing...</Text>
+                    </View>
+                </View>
+            )}
+            <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                <View style={{ backgroundColor: Colors.lightGray, marginBottom: 20 }}>
                     <View style={styles.sectionHeader}>
                         <Ionicons name="cog" size={28} style={styles.icon} />
                         <Text style={styles.sectionTitle} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Config Parameters</Text>
@@ -261,7 +618,7 @@ const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
                                 style={[styles.dropdown]}
                                 placeholderStyle={styles.placeholderStyle}
                                 selectedTextStyle={styles.selectedTextStyle}
-                                data={PhyIdOptions}
+                                data={phyIdOptions}
                                 placeholder='Choose PHY'
                                 value={phyInput}
                                 onChange={(v: any) => {
@@ -337,10 +694,24 @@ const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
                             />
                         </View>
 
-
-
                         {/* Set Target Location */}
-                        <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Target Location</Text>
+                        <View style={styles.targetLocationHeader}>
+                            <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Target Location</Text>
+                            <TouchableOpacity
+                                style={styles.locationButton}
+                                onPress={getCurrentLocation}
+                                disabled={isGettingLocation}
+                            >
+                                {isGettingLocation ? (
+                                    <ActivityIndicator size="small" color={Colors.blue} />
+                                ) : (
+                                    <Ionicons name="location" size={20} color={Colors.blue} />
+                                )}
+                                <Text style={styles.locationButtonText}>
+                                    {isGettingLocation ? 'Getting...' : 'Use Phone Location'}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                         <View style={styles.targetLocationContainer}>
                             {/* Latitude Input */}
                             <View style={styles.targetInputGroup}>
@@ -349,7 +720,7 @@ const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
                                     editable
                                     placeholderTextColor={Colors.gray}
                                     style={[styles.textInput, { marginRight: 5 }]}
-                                    placeholder="Latitude"
+                                    placeholder="e.g. 61.55xxxxx"
                                     value={targetLatitude}
                                     onChangeText={(value) => {
                                         setTargetLatitude(value)
@@ -365,7 +736,7 @@ const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
                                     editable
                                     placeholderTextColor={Colors.gray}
                                     style={[styles.textInput, { marginLeft: 5 }]}
-                                    placeholder="Longitude"
+                                    placeholder="e.g. 9.39xxxxx"
                                     value={targetLongitude}
                                     onChangeText={(value) => {
                                         setTargetLongitude(value)
@@ -373,7 +744,11 @@ const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
                                     keyboardType="numeric"
                                 />
                             </View>
+
                         </View>
+                        <Text style={styles.helperText}>
+                            Coordinates must be in decimal format
+                        </Text>
                     </View>
 
 
@@ -386,18 +761,63 @@ const BLERangeTestConfig: React.FC<Props> = ({ peripheralId }) => {
                     <TouchableOpacity
                         style={[styles.buttonWrapper]}
                         onPress={handleConfig}
-                        accessibilityLabel="connectButton"
-                        testID="connectButton"
                     >
                         <Text style={{ color: Colors.blue, fontSize: 18 }}>Config</Text>
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
-        </SafeAreaView >
+            <Snackbar
+                visible={visibleSnackBar}
+                onDismiss={closeSnackBar}
+                duration={5000}
+                style={{ backgroundColor: 'black' }}
+                elevation={5}
+            >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'black' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: 'black' }}>
+                        <FontAwesome5 name={"info-circle"} size={20} color={snackBarData.color} />
+                        <Text allowFontScaling adjustsFontSizeToFit numberOfLines={3} style={{ marginLeft: 8, color: snackBarData.color, fontWeight: 'bold' }}>{snackBarData.message}</Text>
+                    </View>
+                    <TouchableOpacity onPress={closeSnackBar}>
+                        <EvilIcons name="close" size={20} color="white" />
+                    </TouchableOpacity>
+                </View>
+            </Snackbar>
+
+        </View >
     );
 };
 
 const styles = StyleSheet.create({
+    loadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 1000,
+    },
+    loadingContainer: {
+        backgroundColor: 'white',
+        padding: 30,
+        borderRadius: 15,
+        alignItems: 'center',
+        minWidth: 200,
+    },
+    loadingText: {
+        marginTop: 15,
+        fontSize: 16,
+        color: 'black',
+        fontWeight: '500',
+    },
+    helperText: {
+        fontSize: 12,
+        color: Colors.gray,
+        marginTop: 4,
+    },
     dropdown: {
         alignContent: 'center',
         alignSelf: 'center',
@@ -429,7 +849,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         backgroundColor: Colors.lightGray,
         justifyContent: 'space-evenly',
-        marginBottom: 20
+        marginBottom: 40
     },
     sectionTitle: {
         fontSize: 22,
@@ -451,12 +871,33 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
     },
+    targetLocationHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: Colors.lightGray,
+        marginBottom: 5,
+    },
+    locationButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.lightGray,
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 8,
+        gap: 4,
+    },
+    locationButtonText: {
+        color: Colors.blue,
+        fontSize: 14,
+        fontWeight: '500',
+    },
     targetLocationContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         gap: 10,
         marginTop: 5,
-        marginBottom: 10,
+        backgroundColor: Colors.lightGray
     },
     targetInputGroup: {
         flex: 1,

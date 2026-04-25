@@ -33,11 +33,11 @@
 import { View } from 'react-native';
 import React from 'react';
 import ScannedDevicesList from './ScannedDevicesList';
-import BleManager from 'react-native-ble-manager';
+import { Peripheral } from 'react-native-ble-manager';
 import Separator from '../../Separator';
 
 interface Props {
-  peripherals: BleManager.Peripheral[] | [];
+  peripherals: Peripheral[] | [];
   requestConnect: (peripheralId: string) => void;
 }
 

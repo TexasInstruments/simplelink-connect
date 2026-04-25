@@ -26,7 +26,7 @@ const ActionButtons: React.FC<Props> = ({
             </TouchableOpacity>
             {!isRunning && (
                 <TouchableOpacity
-                    onPress={() => navigation.navigate('TestResultsScreen', { isGattTestingOnly: isGattTestingOnly })}
+                    onPress={() => navigation.navigate('TestResultsScreen', { isGattTestingOnly: isGattTestingOnly }, { pop: true })}
                     style={[{
                         ...styles.button,
 

@@ -95,7 +95,6 @@ const BleMeshScanner: React.FC<Props> = ({ route }) => {
 
                     // First time asking for permission - need to reload the app
                     const hasAskedPermission = await AsyncStorage.getItem('hasAskedPermission');
-                    console.log("hasAsk!!!!!!!!!!!!!!", hasAskedPermission)
                     if (hasAskedPermission !== 'true') {
                         await AsyncStorage.setItem('hasAskedPermission', 'true');
                         RNRestart.Restart();
@@ -132,7 +131,7 @@ const BleMeshScanner: React.FC<Props> = ({ route }) => {
                 return updatedPeripherals;
             } else {
                 // Add the new peripheral to the list with the current time
-                return [{ ...scanResult, lastSeen: currentTime }, ...prev];
+                return [ ...prev,{ ...scanResult, lastSeen: currentTime }];
             }
         });
     };
@@ -144,13 +143,13 @@ const BleMeshScanner: React.FC<Props> = ({ route }) => {
 
         if (scanProvisionedNodes) {
             await callMeshModuleFunction('selectProvisionedNodeToConnect', peripheral.id, unicastAddr, peripheral.identifier ?? "");
-            navigation.navigate('BleMeshConfigureNode', { unicastAddr: unicastAddr, isConnecting: true })
+            navigation.navigate('BleMeshConfigureNode', { unicastAddr: unicastAddr, isConnecting: true }, { pop: true })
 
         }
         else {
             if (Platform.OS == "android") {
                 callMeshModuleFunction('selectUnprovisionedNode', peripheral.id);
-                navigation.navigate('BleMeshProvisionNode')
+                navigation.navigate('BleMeshProvisionNode', { pop: true })
             }
             else { // ios
                 // if there is more then one bearer - let the user choose the bearer to provision with (use proxy node or gatt bearer)
@@ -161,7 +160,7 @@ const BleMeshScanner: React.FC<Props> = ({ route }) => {
                 else {
                     // use the default bearer
                     callMeshModuleFunction('selectUnprovisionedNode', peripheral.id, 0);
-                    navigation.navigate('BleMeshProvisionNode')
+                    navigation.navigate('BleMeshProvisionNode', { pop: true })
 
                 }
             }
@@ -172,7 +171,7 @@ const BleMeshScanner: React.FC<Props> = ({ route }) => {
     const onBearerSelected = (bearerIndex: number) => {
         console.log("selected bearer:", selectedPeripheral?.bearers[bearerIndex])
         callMeshModuleFunction('selectUnprovisionedNode', selectedPeripheral?.id, bearerIndex);
-        navigation.navigate('BleMeshProvisionNode')
+        navigation.navigate('BleMeshProvisionNode', { pop: true })
     }
 
     const ScannedDevice = ({ peripheral }: { peripheral: ScanResult }) => {

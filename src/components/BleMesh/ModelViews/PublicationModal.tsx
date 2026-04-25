@@ -7,6 +7,7 @@ import { RadioButton, TextInput } from 'react-native-paper';
 import { Dropdown } from 'react-native-element-dropdown';
 import { PublicationSettings } from './GenericModelView';
 import { ActivityIndicator } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
     setModalVisible: any;
@@ -24,6 +25,8 @@ const publishAddresses = [
 ];
 
 export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, unicastAddress, publicationSettings }) => {
+
+    const insets = useSafeAreaInsets();
 
     const [appKeys, setAppKeys] = useState<ApplicationKey[]>();
     const [boundedKeys, setBoundedKeys] = useState<ApplicationKey[]>([]);
@@ -211,7 +214,7 @@ export const PublicationModal: React.FC<Props> = ({ visible, setModalVisible, un
                 style={styles.centeredView}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // Adjust behavior for iOS and Android
             >
-                <View style={styles.modalContainer}>
+                <View style={[styles.modalContainer, { paddingBottom: 10 + insets.bottom }]}>
                     <ScrollView contentContainerStyle={styles.modalView}>
                         <Text style={meshStyles.title}>Set Publication</Text>
                         {/* Address */}
@@ -501,7 +504,6 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 20,
-        paddingBottom: 40,
     },
     modalView: {
         flexGrow: 1,

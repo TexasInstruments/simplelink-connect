@@ -41,7 +41,7 @@ import { FontAwesome5, EvilIcons, FontAwesome } from '@expo/vector-icons';
 import Layout from '../../../constants/Layout';
 import { useState } from 'react';
 import { useEffect } from 'react';
-import { uuidToIcon, uuidToServiceName } from '../../../hooks/uuidToName';
+import { uuidToIcon, uuidToServiceName, getServiceUuid } from '../../../hooks/uuidToName';
 import { useMemo } from 'react';
 import TIcon from '../../TIcon';
 import Colors from '../../../constants/Colors';
@@ -63,20 +63,23 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
     iconName: 'question',
   });
 
+  const serviceUuid = getServiceUuid(service);
+
   let characteristicsCount = useMemo(
-    () => peripheralInfo?.characteristics?.filter((char) => char.service === service.uuid).length,
-    []
+    () => peripheralInfo?.characteristics?.filter((char) => char.service === serviceUuid).length,
+    [serviceUuid]
   );
 
-  let serviceUuidString = service.uuid;
+  let serviceUuidString = serviceUuid;
   if (serviceUuidString.length === 4) {
     serviceUuidString = '0x' + serviceUuidString.toUpperCase();
   }
 
   useEffect(() => {
     let checkIfServiceNameAvailable = async () => {
-      let check = await uuidToServiceName({ uuid: service.uuid, peripheralName: peripheralInfo?.name });
-      let checkIcon = await uuidToIcon({ uuid: service.uuid, peripheralName: peripheralInfo?.name });
+      if (!serviceUuid) return;
+      let check = await uuidToServiceName({ uuid: serviceUuid, peripheralName: peripheralInfo?.name });
+      let checkIcon = await uuidToIcon({ uuid: serviceUuid, peripheralName: peripheralInfo?.name });
       if (check !== undefined) {
         setIcon(checkIcon);
         setServiceName(check);
@@ -84,7 +87,7 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
     };
 
     checkIfServiceNameAvailable();
-  }, []);
+  }, [serviceUuid]);
   const IconComponent = () => {
     if (icon.type === 'svg') {
       return <TIcon name={icon.iconName} />;
@@ -124,13 +127,13 @@ const DeviceService: React.FC<Props> = ({ service, peripheralInfo }) => {
           onPress={() =>
             navigation.navigate('Characteristics', {
               peripheralInfo: peripheralInfo!,
-              serviceUuid: service.uuid,
+              serviceUuid: serviceUuid,
               icon: {
                 type: icon?.type!,
                 iconName: icon?.iconName!,
               },
               serviceName: serviceName,
-            })
+            }, { pop: true })
           }
         >
           <EvilIcons name="chevron-right" size={40} color="black" />

@@ -4,7 +4,8 @@ import Colors from '../../../constants/Colors';
 import { useEffect, useState } from 'react';
 import { callMeshModuleFunction, meshStyles } from '../meshUtils';
 import CheckBox from '@react-native-community/checkbox';
-import { ApplicationKey } from '../BleMeshApplicationKeys';
+import { ApplicationKey } from '../meshUtils';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
     setModalVisible: any;
@@ -20,6 +21,7 @@ export const AddAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
 
     const { MeshModule } = NativeModules;
     const bleMeshEmitter = new NativeEventEmitter(MeshModule);
+    const insets = useSafeAreaInsets();
 
     const [appKeys, setAppKeys] = useState<ExtendedAppKey[]>();
     const [nodeKeys, setNodeKeys] = useState<ApplicationKey[]>([]);
@@ -103,7 +105,7 @@ export const AddAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
                     // color={Colors.active}
                     onValueChange={() => {
                         handleAddAppKey(appKey);
-                    }} 
+                    }}
                     accessibilityLabel={appKey.name} />
                 <Text style={[styles.keyText]}>{appKey.name}</Text>
             </View>
@@ -118,7 +120,7 @@ export const AddAppKeyModal: React.FC<Props> = ({ visible, setModalVisible, unic
                 setModalVisible(!visible);
             }}>
             <View style={[styles.centeredView]}>
-                <View style={styles.modalView}>
+                <View style={[styles.modalView, { paddingBottom: 10 + insets.bottom }]}>
                     <Text style={meshStyles.title}>Application Keys </Text>
                     {
                         (!appKeys || appKeys.length == 0) &&

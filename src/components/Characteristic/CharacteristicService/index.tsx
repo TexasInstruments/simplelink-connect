@@ -32,14 +32,13 @@
 
 import {
   View,
-  NativeEventEmitter,
-  NativeModules,
   NativeSyntheticEvent,
   Switch,
   TextInputSubmitEditingEventData,
   StyleSheet,
   InteractionManager,
-  Alert
+  Alert,
+  EventSubscription
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { Text } from '../../Themed';
@@ -108,8 +107,7 @@ const CharacteristicService: React.FC<Props> = ({
   const [notificationSwitch, setNotificationSwitch] = useState<boolean>(false);
   const [indicationsSwitch, setIndicationsSwitch] = useState<boolean>(false);
 
-  const BleManagerModule = NativeModules.BleManager;
-  const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+  const charValueSubscription = useRef<EventSubscription | null>(null);
 
   const [readResponse, setReadResponse] = useState<Response[]>([]);
   const [writeResponse, setWriteResponse] = useState<Response[]>([]);
@@ -141,9 +139,8 @@ const CharacteristicService: React.FC<Props> = ({
         }
 
         console.log('CharacteristicService: addListener')
-        bleManagerEmitter.addListener(
-          'BleManagerDidUpdateValueForCharacteristic',
-          ({ value, peripheral, characteristic, service }) => {
+        charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(
+          ({ value, peripheral, characteristic, service }: { value: number[]; peripheral: string; characteristic: string; service: string }) => {
             console.log('notification: ', value);
             let hexString = ''
             if (selectedFormat === 'UTF-8') {
@@ -151,7 +148,7 @@ const CharacteristicService: React.FC<Props> = ({
               console.log('notification: converted to UTF-8 ', hexString);
             }
             else if (selectedFormat === 'Dec') {
-              hexString = value;
+              hexString = value.toString();
               console.log('notification: converted to Dec ', hexString);
             }
             else { // must be hex
@@ -159,7 +156,7 @@ const CharacteristicService: React.FC<Props> = ({
               console.log('notification: converted to Hex ', hexString);
             }
 
-            /* Check include string and not dirrect match to ork around issue 
+            /* Check include string and not dirrect match to ork around issue
                switching between SimplePeripheral and PersistantApp */
             if (characteristic.toLowerCase().includes(char.characteristic.toLowerCase())) {
               setNotifyResponse((prev) => [
@@ -174,7 +171,7 @@ const CharacteristicService: React.FC<Props> = ({
       return () => {
         task.cancel();
         console.log('CharacteristicService: removeAllListeners')
-        bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+        charValueSubscription.current?.remove();
         if (Object.values(char.properties).indexOf('Notify') > -1 || Object.values(char.properties).indexOf('Indicate') > -1) {
           //Cleaning up notification
           BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
@@ -386,62 +383,62 @@ const CharacteristicService: React.FC<Props> = ({
 
   return (
     <View>
-      <View style={[styles.charContainer]}>
-        <Text style={{ fontWeight: 'bold', fontSize: charNameSize }}>{charName}</Text>
-        <View
-          style={[
-            {
-              alignItems: 'flex-start',
-              paddingTop: 10,
-              paddingLeft: 10,
-              flexDirection: 'column',
-            },
-          ]}
-        >
-          {(charName != charUuidString) &&
-            <Text style={[{}]}>UUID: {charUuidString}</Text>
-          }
-          <Text style={[{ fontWeight: '200', paddingTop: 5 }]}>Properties: {propertiesString}</Text>
+        <View style={[styles.charContainer]}>
+          <Text style={{ fontWeight: 'bold', fontSize: charNameSize }}>{charName}</Text>
+          <View
+            style={[
+              {
+                alignItems: 'flex-start',
+                paddingTop: 10,
+                paddingLeft: 10,
+                flexDirection: 'column',
+              },
+            ]}
+          >
+            {(charName != charUuidString) &&
+              <Text style={[{}]}>UUID: {charUuidString}</Text>
+            }
+            <Text style={[{ fontWeight: '200', paddingTop: 5 }]}>Properties: {propertiesString}</Text>
+          </View>
         </View>
-      </View>
-      {(checkWrite || checkWriteWithoutRsp) && (
-        <View style={{ ...Layout.separators }}>
-          <View style={[styles.container]}>
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                paddingBottom: 0,
-              }}
-            >
-              <TouchableOpacity onPress={handleWriteButton} style={[styles.readWriteButton]}>
-                <Text style={[{ fontWeight: 'bold' }]}>Write</Text>
-              </TouchableOpacity>
-              <Input
-                ref={(input) => { writeTextInputRef[char.characteristic] = input; }}
-                value={writeInput}
-                containerStyle={{
-                  display: 'flex',
+        {(checkWrite || checkWriteWithoutRsp) && (
+          <View style={{ ...Layout.separators }}>
+            <View style={[styles.container]}>
+              <View
+                style={{
                   flexDirection: 'row',
-                  borderWidth: 0,
-                  borderBottomWidth: 0,
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  paddingBottom: 0,
                 }}
-                inputContainerStyle={{
-                  borderWidth: 0,
-                  borderBottomWidth: 0,
-                }}
-                inputStyle={[styles.inputStyles]}
-                onChangeText={(text) => handleWrite(text)}
-                onSubmitEditing={(e) => handleWriteSubmit(e)}
-              />
+              >
+                <TouchableOpacity onPress={handleWriteButton} style={[styles.readWriteButton]}>
+                  <Text style={[{ fontWeight: 'bold' }]}>Write</Text>
+                </TouchableOpacity>
+                <Input
+                  ref={(input) => { writeTextInputRef[char.characteristic] = input; }}
+                  value={writeInput}
+                  containerStyle={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    borderWidth: 0,
+                    borderBottomWidth: 0,
+                  }}
+                  inputContainerStyle={{
+                    borderWidth: 0,
+                    borderBottomWidth: 0,
+                  }}
+                  inputStyle={[styles.inputStyles]}
+                  onChangeText={(text) => handleWrite(text)}
+                  onSubmitEditing={(e) => handleWriteSubmit(e)}
+                />
+              </View>
+            </View>
+            <View style={{ paddingLeft: 25, paddingBottom: 20 }}>
+              <ServiceResponse responseArray={writeResponse} />
             </View>
           </View>
-          <View style={{ paddingLeft: 25, paddingBottom: 20 }}>
-            <ServiceResponse responseArray={writeResponse} />
-          </View>
-        </View>
-      )}
+        )}
       {checkRead && (
         <View style={{ ...Layout.separators }}>
           <View style={[styles.container]}>

@@ -55,7 +55,7 @@ class MeshRepository: NSObject, LoggerDelegate {
   }
   
   func getMeshManager() -> MeshNetworkManager {
-    return AppDelegate.shared.meshNetworkManager
+    return AppDelegateMesh.shared.meshNetworkManager
   }
   
   func getMeshNetwork() -> MeshNetwork? {
@@ -168,7 +168,7 @@ class MeshRepository: NSObject, LoggerDelegate {
   func createNewMeshNetwork() throws -> MeshNetwork {
     
     NSLog("createNewMeshNetwork")
-    let meshNetwork = AppDelegate.shared.createNewMeshNetwork()
+    let meshNetwork = AppDelegateMesh.shared.createNewMeshNetwork()
     print(
       "New Mesh Network created: \(meshNetwork.meshName),primary network key: \(meshNetwork.networkKeys.first?.key.hex)"
     )
@@ -494,7 +494,7 @@ class MeshRepository: NSObject, LoggerDelegate {
     })
     
     if peripheralUUID == nil, peripheralIdentifier == nil{
-      return AppDelegate.shared.connection.isOpen
+      return AppDelegateMesh.shared.connection.isOpen
     }
     
     // Retrieve peripherals and check if any match
@@ -502,14 +502,14 @@ class MeshRepository: NSObject, LoggerDelegate {
     
     // if there are no peripheral with such uuid, then check if proxy is connected
     if (peripherals.isEmpty){
-      return AppDelegate.shared.connection.isOpen
+      return AppDelegateMesh.shared.connection.isOpen
     }
-    return !peripherals.isEmpty && AppDelegate.shared.connection.isOpen
+    return !peripherals.isEmpty && AppDelegateMesh.shared.connection.isOpen
   }
   
 
   func disconnectFromProvisionedNode() {
-      guard let connection = AppDelegate.shared.connection else {
+      guard let connection = AppDelegateMesh.shared.connection else {
           return
       }
 
@@ -850,9 +850,9 @@ class MeshRepository: NSObject, LoggerDelegate {
       modelList.append(selectedModel)
     }
     
-    AppDelegate.shared.meshNetworkManager.delegate = self.quickSetupNode
+    AppDelegateMesh.shared.meshNetworkManager.delegate = self.quickSetupNode
     self.quickSetupNode.bindAppKeyToListModels(node: node, applicationKey: selectedAppKey, models: modelList) { results in
-      AppDelegate.shared.meshNetworkManager.delegate = self.meshModule.meshRepository
+      AppDelegateMesh.shared.meshNetworkManager.delegate = self.meshModule.meshRepository
       self.meshModule.sendEvent(withName: "onBindAppKeysDone", body: results)
     }
   }
@@ -1339,9 +1339,9 @@ class MeshRepository: NSObject, LoggerDelegate {
       return
     }
     
-    AppDelegate.shared.meshNetworkManager.delegate = self.quickSetupNode
+    AppDelegateMesh.shared.meshNetworkManager.delegate = self.quickSetupNode
     self.quickSetupNode.subscribeToListModels(node: node, group: group, models: modelList ){ results in
-      AppDelegate.shared.meshNetworkManager.delegate = self.meshModule.meshRepository
+      AppDelegateMesh.shared.meshNetworkManager.delegate = self.meshModule.meshRepository
       self.meshModule.sendEvent(withName: "onSubscriptionDone", body: results)
     }
     
@@ -1450,10 +1450,10 @@ class MeshRepository: NSObject, LoggerDelegate {
       retransmit: retransmit
       )
     
-    AppDelegate.shared.meshNetworkManager.delegate = self.quickSetupNode
+    AppDelegateMesh.shared.meshNetworkManager.delegate = self.quickSetupNode
     
     self.quickSetupNode.setPublicationToListModels(node: node, models: modelList, pubish: publish, applicationKey: appKey ){ results in
-      AppDelegate.shared.meshNetworkManager.delegate = self.meshModule.meshRepository
+      AppDelegateMesh.shared.meshNetworkManager.delegate = self.meshModule.meshRepository
       self.meshModule.sendEvent(withName: "onPublicationDone", body: results)
     }
     
@@ -1553,7 +1553,7 @@ extension MeshRepository: ProvisioningDelegate {
       case .complete:
         print("Provisioning completed Successfully!")
         self.meshModule.sendEvent(withName: "onProgressUpdate", body: "0.70")
-        //AppDelegate.shared.meshNetworkDidChange()
+        //AppDelegateMesh.shared.meshNetworkDidChange()
         self.bleManager.closeBearer()
         let deviceUuid = self.bleManager.selectedUnprovisionedNode.uuid
         self.bleManager.setSelectedProvisionedDevice(
@@ -1726,7 +1726,7 @@ extension MeshRepository: MeshNetworkDelegate{
     let status = ConfigAppKeyStatus(parameters: parameters)
     print("ConfigAppKeyStatus:", status)
     if status?.status == .success {
-      //      AppDelegate.shared.meshNetworkDidChange()
+      //      AppDelegateMesh.shared.meshNetworkDidChange()
       self.pendingAppKeyCallback?(true, nil)
       self.pendingAppKeyCallback = nil
     } else {
@@ -1820,7 +1820,7 @@ extension MeshRepository: MeshNetworkDelegate{
     let status = ConfigModelSubscriptionStatus(parameters: parameters)
     print("ConfigModelPublicationStatus:", status)
     if status?.status == .success {
-      //      AppDelegate.shared.meshNetworkDidChange()
+      //      AppDelegateMesh.shared.meshNetworkDidChange()
       self.pendingSubscriptionGetCallback?(status?.address, nil)
       self.pendingSubscriptionGetCallback = nil
     } else {
@@ -1857,7 +1857,7 @@ extension MeshRepository: MeshNetworkDelegate{
     if status?.status == .success {
       
       let addressList: [Int] = status?.addresses.map { Int($0) } ?? []
-      //      AppDelegate.shared.meshNetworkDidChange()
+      //      AppDelegateMesh.shared.meshNetworkDidChange()
       meshModule.sendEvent(
         withName: "onSubscriptionReceived", body: addressList)
       
@@ -1913,7 +1913,7 @@ extension MeshRepository: MeshNetworkDelegate{
     print("ConfigModelAppStatus:", status)
     
     if status?.status == .success {
-      //      AppDelegate.shared.meshNetworkDidChange()
+      //      AppDelegateMesh.shared.meshNetworkDidChange()
       self.pendingBindAppKeyCallback?(true, nil)
       self.pendingBindAppKeyCallback = nil
     } else {
@@ -2007,23 +2007,23 @@ extension MeshRepository: BearerDelegate {
     
     // Safely cast bearer to GattBearer
     if let gattBearer = bearer as? GattBearer {
-      AppDelegate.shared.connection.use(proxy: gattBearer)
+      AppDelegateMesh.shared.connection.use(proxy: gattBearer)
       
     } else if let connectionBearer = bearer as? NetworkConnection {
       if let proxy = try! connectionBearer.proxies.value().first(where: {
         $0.identifier == provisionedDevice.uuid
       }) {
-        AppDelegate.shared.connection.use(proxy: proxy)
+        AppDelegateMesh.shared.connection.use(proxy: proxy)
       }
     } else {
       print("unknown bearer type")
     }
-    AppDelegate.shared.meshNetworkManager.delegate = self
-    AppDelegate.shared.meshNetworkManager.proxyFilter.proxyDidDisconnect()
-    if let provisioner = AppDelegate.shared.meshNetworkManager.meshNetwork?
+    AppDelegateMesh.shared.meshNetworkManager.delegate = self
+    AppDelegateMesh.shared.meshNetworkManager.proxyFilter.proxyDidDisconnect()
+    if let provisioner = AppDelegateMesh.shared.meshNetworkManager.meshNetwork?
       .localProvisioner
     {
-      AppDelegate.shared.meshNetworkManager.proxyFilter.setup(for: provisioner)
+      AppDelegateMesh.shared.meshNetworkManager.proxyFilter.setup(for: provisioner)
     }
     
   }

@@ -1,16 +1,13 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { NativeEventEmitter, NativeModules, Platform, ScrollView, StyleSheet } from 'react-native';
 import { LinearProgress } from '@rneui/base';
 import { Text, TouchableOpacity, View } from '../Themed';
 import Colors from '../../constants/Colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import DocumentPicker from 'react-native-document-picker';
 import { useNavigation } from '@react-navigation/native';
 import { DeviceScreenNavigationProp } from '../../../types';
 import { v4 } from 'uuid';
-import fs from 'react-native-fs';
 import { Buffer } from 'buffer';
-import { decode } from 'base-64';
 import { TextInput, Menu, Divider } from 'react-native-paper';
 import { CustomSnackBar } from '../CustomSnackBar';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -19,6 +16,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import IdleTimerManager from 'react-native-idle-timer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ActivityIndicator } from 'react-native-paper';
+import * as DocumentPicker from 'expo-document-picker';
 
 interface Props {
   peripheralId: string;
@@ -80,6 +78,7 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
   const [status, setStatus] = useState<string>('Idle');
   const [updating, setUpdating] = useState<boolean>(false);
   const updatingRef = useRef<boolean>(false);
+  const resetAfterUpgradeRef = useRef<boolean>(true);
   const [progress, setProgress] = useState<number>(0);
   const [localFileError, setLocalFileError] = useState<'success' | 'error' | 'cancelled' | 'fs' | 'unknownImgType' | null>(null);
   const [snackbarMessage, setSnackbarMessage] = useState<{ message: string, color: string } | null>(null);
@@ -97,6 +96,7 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
   const [deviceImages, setDeviceImages] = useState([])
 
   const [eraseApplication, setEraseApplication] = useState(true)
+  const [resetAfterUpgrade, setResetAfterUpgrade] = useState(true)
   const [swapTime, setSwapTime] = useState<number>(10)
   const [numBuffers, setBufferNum] = useState<number>(4)
   const [memoryAlignment, setMemoryAlignment] = useState<number>(4)
@@ -143,12 +143,27 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
     dfuEmitter.addListener('DFUStateChanged', (data) => {
       console.log('DFUStateChanged', data)
       if (data.state === 'completed') {
-        setStatus('Operation completed!');
         setProgress(1);
-        callDFUModuleFunction('getDeviceImagesList')
         updatingRef.current = false
-
         setStatusColor('green')
+        callDFUModuleFunction('getDeviceImagesList')
+
+        // Automatically reset the device after successful upgrade if enabled
+        if (resetAfterUpgradeRef.current) {
+          setStatus('Upgrade completed! Resetting device...');
+          callDFUModuleFunction('resetDevice')
+            .then(() => {
+              console.log('Device reset command sent successfully');
+              setStatus('Device reset initiated. Reconnect to continue.');
+            })
+            .catch((error) => {
+              console.log('Device reset error:', error);
+              setStatus('Upgrade completed! Reset failed - please manually reset device.');
+              setStatusColor('orange');
+            });
+        } else {
+          setStatus('Upgrade completed!');
+        }
       } else if (data.state === 'aborted') {
         setStatus('Update aborted!');
         setStatusColor('red')
@@ -250,28 +265,6 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
   }, [localFileError]);
 
 
-  function uriToBlob(uri: string): Promise<Blob> {
-    return new Promise((resolve, reject) => {
-
-      const xhr = new XMLHttpRequest();
-
-      xhr.onload = function () {
-        resolve(xhr.response);
-      };
-
-      xhr.onerror = function () {
-        reject(new Error('uriToBlob failed'));
-      };
-      xhr.responseType = 'blob';
-
-      // Initialize the request. The third argument set to 'true' denotes that the request is asynchronous
-      xhr.open('GET', uri, true);
-
-      // Send the request. The 'null' argument means that no body content is given for the request
-      xhr.send(null);
-    });
-  };
-
   function getImgType(imgContent: Uint8Array): ImageType {
     let magicNumber = new Uint8Array(imgContent.buffer.slice(0, 4));
     let hexMagicNumber = Buffer.from(magicNumber).toString('hex');
@@ -287,103 +280,89 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
     }
   }
 
-  const pickFile = () => {
+  const blobToUint8Array = (blob: Blob): Promise<Uint8Array> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) {
+          resolve(new Uint8Array(reader.result as ArrayBuffer));
+        } else {
+          reject(new Error('Failed to convert blob to ArrayBuffer'));
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(blob);
+    });
+  };
+
+  const pickFile = async () => {
     try {
-      DocumentPicker.pickSingle({
-        mode: 'import',
-        copyTo: 'cachesDirectory',
-      })
-        .then(async (pickedFile: { fileCopyUri: any; uri: RequestInfo; name: any; }) => {
-          if (!pickedFile.fileCopyUri) throw Error('File URI error');
-          setStatus('Idle')
-          setStatusColor('black')
-          setLocalFileError('success');
-          // setStatus(`Selected: ${pickedFile.name}`);
-          // setStatusColor('black')
-
-          try {
-            let convert;
-            let binary;
-
-            if (Platform.OS === 'android') {
-              binary = await uriToBlob(pickedFile.uri);
-            } else {
-              //https://github.com/itinance/react-native-fs#readfilefilepath-string-encoding-string-promisestring
-              let base64Data = await fs.readFile(decodeURIComponent(pickedFile.uri), 'base64');
-              convert = await fetch(`data:application/octet-stream;base64,${base64Data}`);
-              binary = await convert.blob();
-            }
-
-            let bytes = binary.slice(0, binary.size);
-
-            const fileReaderInstance = new FileReader();
-            fileReaderInstance.readAsDataURL(bytes);
-            fileReaderInstance.onload = () => {
-              const content = decode(
-                //@ts-ignore
-                fileReaderInstance.result?.substr('data:application/octet-stream;base64,'.length)
-              );
-              const buffer = new ArrayBuffer(content.length);
-              let binaryImage = new Uint8Array(buffer);
-
-              binaryImage.set(Array.from(content).map((c) => c.charCodeAt(0)));
-
-              let imgVersionMajor = binaryImage[20];
-              let imgVersionMinor = binaryImage[21];
-              let imgRevision = binaryImage[22] + (binaryImage[23] << 8);
-              let imgBuildNum =
-                binaryImage[24] +
-                (binaryImage[25] << 8) +
-                (binaryImage[26] << 16) +
-                (binaryImage[27] << 24);
-
-              let buildVersion =
-                imgVersionMajor + '.' + imgVersionMinor + '.' + imgRevision + '.' + imgBuildNum;
-
-              let imageType = getImgType(binaryImage);
-
-              if (imageType === null) {
-                setLocalFileError('unknownImgType');
-                setSelectedFW(undefined);
-                setStatus("Invalid image")
-                setStatusColor('red')
-                return;
-              }
-
-              let uploadedImage = {
-                hwType: 'N/A',
-                imageType: imageType,
-                label: pickedFile.name ?? 'Not specified',
-                version: buildVersion,
-                value: v4(),
-                uri: pickedFile.fileCopyUri || pickedFile.uri,
-                local: true,
-                bytes: binaryImage,
-              };
-
-              setSelectedFW(uploadedImage);
-              console.log('File pushed to the FW array!');
-            };
-          } catch (error) {
-            setLocalFileError('fs');
-            console.error(error, 'react-native-fs');
-            return;
-          }
-        })
-        .catch((error: any) => {
-          if (DocumentPicker.isCancel(error)) {
-            setLocalFileError('cancelled');
-          } else {
-            setLocalFileError('error');
-          }
-        });
-    } catch (error) {
-      if (DocumentPicker.isCancel(error)) {
+      const result = await DocumentPicker.getDocumentAsync({
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (result.canceled) {
         setLocalFileError('cancelled');
-      } else {
-        setLocalFileError('error');
+        return;
       }
+
+      const file = result.assets[0];
+      if (!file?.uri) {
+        throw new Error('File URI is undefined');
+      }
+      setStatus('Idle')
+      setStatusColor('black')
+      setLocalFileError('success');
+
+      // Fetch the file as blob
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
+
+      // Convert blob to Uint8Array using FileReader
+      const bytes = await blobToUint8Array(blob);
+      let imgVersionMajor = bytes[20];
+      let imgVersionMinor = bytes[21];
+      let imgRevision = bytes[22] + (bytes[23] << 8);
+      let imgBuildNum =
+        bytes[24] +
+        (bytes[25] << 8) +
+        (bytes[26] << 16) +
+        (bytes[27] << 24);
+
+      let buildVersion =
+        imgVersionMajor + '.' + imgVersionMinor + '.' + imgRevision + '.' + imgBuildNum;
+
+      let imageType = getImgType(bytes);
+
+      if (imageType === null) {
+        setLocalFileError('unknownImgType');
+        setSelectedFW(undefined);
+        setStatus("Invalid image")
+        setStatusColor('red')
+        return;
+      }
+
+      let uploadedImage = {
+        hwType: 'N/A',
+        imageType: imageType,
+        label: file.name ?? 'Not specified',
+        version: buildVersion,
+        value: v4(),
+        uri: file.uri,
+        local: true,
+        bytes: bytes,
+      };
+
+      setSelectedFW(uploadedImage);
+      console.log('File pushed to the FW array!');
+
     }
+    catch (error) {
+      setLocalFileError('cancelled');
+      console.error(error, 'react-native-fs');
+      return;
+    }
+
   };
 
   const closeSnackBar = () => setSnackbarStatusVisible(false);
@@ -423,6 +402,8 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
 
   const resetToDefaultConfig = () => {
     setEraseApplication(true);
+    setResetAfterUpgrade(true);
+    resetAfterUpgradeRef.current = true;
     setSwapTime(10);
     setMemoryAlignment(4)
     setUpgradeMode('Confirm Only')
@@ -443,17 +424,24 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
 
   const DisplayImage = ({ img, index }: { img: Image; index: number }) => {
     const [visible, setVisible] = useState(false);
+    const [menuKey, setMenuKey] = useState(0);
+
+    const openMenu = () => {
+      setMenuKey(prev => prev + 1);
+      setVisible(true);
+    };
 
     return (
       <View style={styles.imageContainer}>
         {/* Floating menu button */}
         <View style={styles.menuButtonContainer}>
           <Menu
+            key={menuKey}
             contentStyle={{ backgroundColor: 'white' }}
             visible={visible}
             onDismiss={() => setVisible(false)}
             anchor={
-              <TouchableOpacity onPress={() => setVisible(true)} disabled={updating}>
+              <TouchableOpacity onPress={openMenu} disabled={updating}>
                 <MaterialCommunityIcons name="dots-vertical-circle-outline" size={25} color={Colors.blue} />
               </TouchableOpacity>
             }
@@ -558,6 +546,27 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
             Configurations
           </Text>
           <View style={[styles.dataContainer]}>
+            {/* Reset device after upgrade */}
+            <View style={{ marginBottom: 15, opacity: updating ? 0.3 : 1 }}>
+              <CheckBox
+                disabled={updating}
+                checked={resetAfterUpgrade}
+                iconType="material-community"
+                checkedIcon="checkbox-outline"
+                uncheckedIcon="checkbox-blank-outline"
+                checkedColor={Colors.blue}
+                uncheckedColor={Colors.darkGray}
+                onPress={() => {
+                  setResetAfterUpgrade(!resetAfterUpgrade);
+                  resetAfterUpgradeRef.current = !resetAfterUpgrade;
+                }}
+                title={"Reset device after upgrade complete"}
+                containerStyle={{ margin: 0, padding: 0, left: -10 }}
+                textStyle={{ color: 'black', fontWeight: 'normal', fontSize: 16 }}
+                center={false}
+                right={false}
+              />
+            </View>
             {/* Erase application settings */}
             <View style={{ marginBottom: 15, opacity: updating ? 0.3 : 1 }}>
               <CheckBox
@@ -576,6 +585,7 @@ const ZephyrDFUModal: React.FC<Props> = ({ peripheralId }: any) => {
                 right={false}
               />
             </View>
+
             {/* swap time */}
             <TextInput
               disabled={updating}

@@ -1,4 +1,4 @@
-import { StyleSheet, TextInput, Pressable, Platform, SafeAreaView, KeyboardAvoidingView, ScrollView, useWindowDimensions } from 'react-native';
+import { StyleSheet, TextInput, Pressable, Platform, KeyboardAvoidingView, ScrollView, useWindowDimensions } from 'react-native';
 import Colors from '../constants/Colors';
 import { useEffect, useState } from 'react';
 import * as Keychain from 'react-native-keychain';
@@ -161,166 +161,164 @@ const ConfigRepositoryUrlScreen: React.FC<Props> = () => {
   };
 
   return (
-    <SafeAreaView style={{ backgroundColor: Colors.lightGray, flex: 1 }}>
-      <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {/* Header */}
-        <View style={{ backgroundColor: Colors.lightGray }}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="git-network" size={24} style={styles.icon} />
-            <Text style={styles.sectionTitle} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Config OAD Repository</Text>
-          </View>
+    <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* Header */}
+      <View style={{ backgroundColor: Colors.lightGray }}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name="git-network" size={24} style={styles.icon} />
+          <Text style={styles.sectionTitle} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Config OAD Repository</Text>
+        </View>
+      </View>
+
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+
+        <View style={[styles.switchContainer]}>
+          <Text style={[styles.title]}>Use GitHub server</Text>
+          <Switch
+            style={{ marginLeft: 15 }}
+            color={Colors.active}
+            value={useGitHubServer}
+            onValueChange={(value) => {
+              setUseGitHubServer(value);
+              initiateStates();
+            }}
+          />
         </View>
 
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        {useGitHubServer && (
+          <>
+            <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Repository Owner</Text>
+            <View style={[styles.optionBox]}>
+              <TextInput
+                editable
+                style={[styles.textInput]}
+                placeholder="Enter Repository Owner"
+                value={repoOwner}
+                onChangeText={(owner) => { setRepoOwner(owner.trim()); initiateStates(); }}
+              />
+            </View>
 
-          <View style={[styles.switchContainer]}>
-            <Text style={[styles.title]}>Use GitHub server</Text>
-            <Switch
-              style={{ marginLeft: 15 }}
-              color={Colors.active}
-              value={useGitHubServer}
-              onValueChange={(value) => {
-                setUseGitHubServer(value);
-                initiateStates();
-              }}
-            />
-          </View>
+            <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Repository Name</Text>
+            <View style={[styles.optionBox]}>
+              <TextInput
+                editable
+                style={[styles.textInput]}
+                placeholder="Enter Repository Name"
+                value={repoName}
+                onChangeText={(name) => { setRepoName(name.trim()); initiateStates(); }}
+              />
+            </View>
 
-          {useGitHubServer && (
-            <>
-              <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Repository Owner</Text>
-              <View style={[styles.optionBox]}>
-                <TextInput
-                  editable
-                  style={[styles.textInput]}
-                  placeholder="Enter Repository Owner"
-                  value={repoOwner}
-                  onChangeText={(owner) => { setRepoOwner(owner.trim()); initiateStates(); }}
-                />
-              </View>
+            <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Repository Visibility</Text>
+            <View style={[styles.optionBox]}>
+              <Dropdown
+                style={[styles.dropdown]}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                data={visibilityOptions}
+                placeholder='Repository Visibility'
+                value={repoVisibility}
+                onChange={(v: any) => {
+                  setRepoVisibility(v.value);
+                }}
+                labelField="label"
+                valueField="value"
+              />
+            </View>
 
-              <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Repository Name</Text>
-              <View style={[styles.optionBox]}>
-                <TextInput
-                  editable
-                  style={[styles.textInput]}
-                  placeholder="Enter Repository Name"
-                  value={repoName}
-                  onChangeText={(name) => { setRepoName(name.trim()); initiateStates(); }}
-                />
-              </View>
-
-              <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Repository Visibility</Text>
-              <View style={[styles.optionBox]}>
-                <Dropdown
-                  style={[styles.dropdown]}
-                  placeholderStyle={styles.placeholderStyle}
-                  selectedTextStyle={styles.selectedTextStyle}
-                  data={visibilityOptions}
-                  placeholder='Repository Visibility'
-                  value={repoVisibility}
-                  onChange={(v: any) => {
-                    setRepoVisibility(v.value);
-                  }}
-                  labelField="label"
-                  valueField="value"
-                />
-              </View>
-
-              {repoVisibility === 'private' && (
-                <>
-                  <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Access Token</Text>
-                  <View style={[styles.optionBox]}>
-                    <View style={[styles.accessTokenContainer]}>
-                      <TextInput
-                        secureTextEntry={!showToken}
-                        editable
-                        style={[styles.textInput, { shadowOpacity: 0, elevation: 0 }]}
-                        value={accessToken}
-                        onChangeText={(token) => { setAccessToken(token); initiateStates(); }}
-                      />
-                      <MaterialCommunityIcons
-                        style={styles.icon}
-                        name={showToken ? 'eye-off' : 'eye'}
-                        size={24}
-                        color="gray"
-                        onPress={() => setShowToken(!showToken)}
-                      />
-                    </View>
+            {repoVisibility === 'private' && (
+              <>
+                <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Access Token</Text>
+                <View style={[styles.optionBox]}>
+                  <View style={[styles.accessTokenContainer]}>
+                    <TextInput
+                      secureTextEntry={!showToken}
+                      editable
+                      style={[styles.textInput, { shadowOpacity: 0, elevation: 0 }]}
+                      value={accessToken}
+                      onChangeText={(token) => { setAccessToken(token); initiateStates(); }}
+                    />
+                    <MaterialCommunityIcons
+                      style={styles.icon}
+                      name={showToken ? 'eye-off' : 'eye'}
+                      size={24}
+                      color="gray"
+                      onPress={() => setShowToken(!showToken)}
+                    />
                   </View>
-                </>
-              )}
-            </>
-          )}
-
-          {!useGitHubServer && (
-            <>
-              <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Server URL</Text>
-              <View style={[styles.optionBox]}>
-                <TextInput
-                  editable
-                  style={[styles.textInput]}
-                  placeholder="Enter Server URL"
-                  value={url}
-                  onChangeText={(url) => { setUrl(url.trim()); initiateStates(); }}
-                />
-              </View>
-            </>
-          )}
-        </ScrollView>
-
-        <View style={{ backgroundColor: Colors.lightGray }}>
-          <Text style={[styles.title, { fontSize: 14 / fontScale, marginBottom: 5 },]}>Final URL:{' '}
-            {
-              useGitHubServer && (
-                <Text style={[styles.sectionDescription]}>
-                  https://github.com/{repoOwner ? repoOwner : '___'}/{repoName ? repoName : '___'}
-                </Text>
-              )
-            }
-            {
-              !useGitHubServer && (
-                <Text style={[styles.sectionDescription, { fontSize: 14 / fontScale }]}>
-                  {url || ' ___'}
-                </Text>
-              )
-            }
-          </Text>
-          <Pressable
-            onPress={handleConnect}
-            disabled={(useGitHubServer && (!repoOwner || !repoName || loading || !repoVisibility || (repoVisibility === 'private' && !accessToken)) || (!useGitHubServer && (!url || loading)))}
-            style={[styles.button, {
-              height: 40,
-              backgroundColor: buttonColor,
-              borderColor: buttonColor,
-              opacity: (useGitHubServer && (!repoOwner || !repoName || loading || !repoVisibility || (repoVisibility === 'private' && !accessToken)) || (!useGitHubServer && (!url || loading))) ? 0.4 : 1,
-            }]}
-          >
-            <Text style={[styles.text, { fontSize: 16 / fontScale }]}>{buttonText}</Text>
-          </Pressable>
-          <View style={{ minHeight: 37, backgroundColor: Colors.lightGray }}>
-            {errorMessage.show && (
-              <Text numberOfLines={2} style={{ color: Colors.primary, fontSize: 14 / fontScale, flex: 1 }}>
-                {errorMessage.text}
-              </Text>
+                </View>
+              </>
             )}
-          </View>
+          </>
+        )}
 
-          <View style={{ flexDirection: 'row', backgroundColor: Colors.lightGray, justifyContent: 'space-evenly', marginBottom: Platform.OS === 'ios' ? 60 : 0 }}>
-            <TouchableOpacity style={styles.buttonWrapper} onPress={() => navigation.goBack()}>
-              <Text style={{ color: Colors.blue, fontSize: 16 }}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.buttonWrapper, { opacity: !isValid() ? 0.6 : 1 }]}
-              onPress={handleSave}
-              disabled={!isValid()}
-            >
-              <Text style={{ color: Colors.blue, fontSize: 16 }}>Save</Text>
-            </TouchableOpacity>
-          </View>
+        {!useGitHubServer && (
+          <>
+            <Text style={[styles.title]} allowFontScaling adjustsFontSizeToFit numberOfLines={1}>Server URL</Text>
+            <View style={[styles.optionBox]}>
+              <TextInput
+                editable
+                style={[styles.textInput]}
+                placeholder="Enter Server URL"
+                value={url}
+                onChangeText={(url) => { setUrl(url.trim()); initiateStates(); }}
+              />
+            </View>
+          </>
+        )}
+      </ScrollView>
+
+      <View style={{ backgroundColor: Colors.lightGray }}>
+        <Text style={[styles.title, { fontSize: 14 / fontScale, marginBottom: 5 },]}>Final URL:{' '}
+          {
+            useGitHubServer && (
+              <Text style={[styles.sectionDescription]}>
+                https://github.com/{repoOwner ? repoOwner : '___'}/{repoName ? repoName : '___'}
+              </Text>
+            )
+          }
+          {
+            !useGitHubServer && (
+              <Text style={[styles.sectionDescription, { fontSize: 14 / fontScale }]}>
+                {url || ' ___'}
+              </Text>
+            )
+          }
+        </Text>
+        <Pressable
+          onPress={handleConnect}
+          disabled={(useGitHubServer && (!repoOwner || !repoName || loading || !repoVisibility || (repoVisibility === 'private' && !accessToken)) || (!useGitHubServer && (!url || loading)))}
+          style={[styles.button, {
+            height: 40,
+            backgroundColor: buttonColor,
+            borderColor: buttonColor,
+            opacity: (useGitHubServer && (!repoOwner || !repoName || loading || !repoVisibility || (repoVisibility === 'private' && !accessToken)) || (!useGitHubServer && (!url || loading))) ? 0.4 : 1,
+          }]}
+        >
+          <Text style={[styles.text, { fontSize: 16 / fontScale }]}>{buttonText}</Text>
+        </Pressable>
+        <View style={{ minHeight: 37, backgroundColor: Colors.lightGray }}>
+          {errorMessage.show && (
+            <Text numberOfLines={2} style={{ color: Colors.primary, fontSize: 14 / fontScale, flex: 1 }}>
+              {errorMessage.text}
+            </Text>
+          )}
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+
+        <View style={{ flexDirection: 'row', backgroundColor: Colors.lightGray, justifyContent: 'space-evenly', marginBottom: Platform.OS === 'ios' ? 60 : 0 }}>
+          <TouchableOpacity style={styles.buttonWrapper} onPress={() => navigation.goBack()}>
+            <Text style={{ color: Colors.blue, fontSize: 16 }}>Cancel</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.buttonWrapper, { opacity: !isValid() ? 0.6 : 1 }]}
+            onPress={handleSave}
+            disabled={!isValid()}
+          >
+            <Text style={{ color: Colors.blue, fontSize: 16 }}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 };
 

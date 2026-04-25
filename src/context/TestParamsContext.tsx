@@ -1,7 +1,11 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TestParams, PHY_OPTIONS, data_stream, TEST_CASE, TestData } from '../components/StressTests/testsUtils';
-
+import {
+    CUSTOM_SERVICE_UUID,
+    CUSTOM_WRITE_CHAR_UUID,
+    CUSTOM_NOTIFY_CHAR_UUID
+} from '../constants/uuids';
 
 interface StressTestContextProps {
     testParametersContext: TestParams | null,
@@ -19,6 +23,9 @@ const initialState: TestParams = {
     gatt_data_testing: true,
     mtu_size: 100,
     supported_service: data_stream,
+    custom_service_uuid: CUSTOM_SERVICE_UUID,
+    custom_write_char_uuid: CUSTOM_WRITE_CHAR_UUID,
+    custom_notify_char_uuid: CUSTOM_NOTIFY_CHAR_UUID,
     test_case: TEST_CASE.WRITE_NOTIFY,
     num_loops_gatt_test: 3,
     delay_between_gatt_tests: 3000,

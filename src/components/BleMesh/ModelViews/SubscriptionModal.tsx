@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { callMeshModuleFunction, Group, meshStyles } from '../meshUtils';
 import { RadioButton, TextInput } from 'react-native-paper';
 import { Dropdown } from 'react-native-element-dropdown';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface Props {
     setModalVisible: any;
@@ -23,6 +24,7 @@ const SubscriptionAddresses = [
 
 export const SubscriptionModal: React.FC<Props> = ({ visible, setModalVisible, unicastAddress }) => {
 
+    const insets = useSafeAreaInsets();
     const [selectedAddressType, setSelectedAddressType] = useState(SubscriptionAddresses[0]);
     const [selectedAddress, setAddress] = useState<number>(SubscriptionAddresses[0].value);
     const [useExistingGroup, setUseExistingGroup] = useState<boolean>(true);
@@ -91,7 +93,7 @@ export const SubscriptionModal: React.FC<Props> = ({ visible, setModalVisible, u
             <KeyboardAvoidingView
                 style={styles.centeredView}
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'} >
-                <View style={styles.modalContainer}>
+                <View style={[styles.modalContainer, { paddingBottom: 10 + insets.bottom }]}>
                     <ScrollView contentContainerStyle={styles.scrollContent}>
                         <Text style={[meshStyles.title, { marginBottom: 0 }]}>Subscribe</Text>
                         <Text style={[meshStyles.text, { marginBottom: 20 }]}> Subscription address for this model</Text>
@@ -233,10 +235,10 @@ export const SubscriptionModal: React.FC<Props> = ({ visible, setModalVisible, u
                         {/* Actions Buttons */}
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 }}>
                             <TouchableOpacity onPress={() => setModalVisible(!visible)} accessibilityLabel="close">
-                                <Text style={{ textAlign: 'center', color: Colors.blue }}>Close</Text>
+                                <Text style={[meshStyles.modalTextButton]}>Close</Text>
                             </TouchableOpacity>
                             <TouchableOpacity onPress={handleApply} accessibilityLabel="apply">
-                                <Text style={{ textAlign: 'center', color: Colors.blue }}>Apply</Text>
+                                <Text style={[meshStyles.modalTextButton]}>Apply</Text>
                             </TouchableOpacity>
                         </View>
 
@@ -263,7 +265,6 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         padding: 35,
-        paddingBottom: 50,
     },
     scrollContent: {
         // paddingBottom: 40,

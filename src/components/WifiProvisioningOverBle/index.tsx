@@ -1,4 +1,5 @@
-import { StyleSheet, TextInput, Platform, SafeAreaView, KeyboardAvoidingView, ScrollView, useWindowDimensions, Alert, InteractionManager, NativeModules, NativeEventEmitter } from 'react-native';
+import { StyleSheet, TextInput, Platform, KeyboardAvoidingView, ScrollView, useWindowDimensions, Alert, InteractionManager, EventSubscription } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Colors from '../../constants/Colors';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Dropdown } from 'react-native-element-dropdown';
@@ -24,8 +25,7 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
     const { specificScreenConfig } = useSpecificScreenConfigContext();
     const navigation = useNavigation();
 
-    const BleManagerModule = NativeModules.BleManager;
-    const bleManagerEmitter = new NativeEventEmitter(BleManagerModule);
+    const charValueSubscription = useRef<EventSubscription | null>(null);
 
     const [ssidInput, setSsidInput] = useState<string>('');
     const [password, setPassword] = useState<string>('');
@@ -54,8 +54,7 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
         useCallback(() => {
             const task = InteractionManager.runAfterInteractions(async () => {
                 if (!isLinuxDevice) {
-                    bleManagerEmitter.addListener(
-                        'BleManagerDidUpdateValueForCharacteristic', handleConnectionNotifications);
+                    charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(handleConnectionNotifications);
 
                     BleManager.startNotification(peripheralId, ServiceUuid, ConnectionCharUuid);
                     console.log('notification enabled')
@@ -74,7 +73,7 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
                 task.cancel();
 
                 if (!isLinuxDevice) {
-                    bleManagerEmitter.removeAllListeners('BleManagerDidUpdateValueForCharacteristic');
+                    charValueSubscription.current?.remove();
 
                     // Stop notifications
                     BleManager.stopNotification(peripheralId, ServiceUuid, ConnectionCharUuid);
@@ -150,15 +149,15 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
         if (isLinuxDevice) {
             let writeByteArray;
             if (isWPA3Available) {
-                writeByteArray = convertStringToByteArray(ssidInput + ',' + password + ',' + security);
+                writeByteArray = convertStringToByteArray(ssidInput.trim() + ',' + password + ',' + security);
             }
             else {
-                writeByteArray = convertStringToByteArray(ssidInput + ',' + password);
+                writeByteArray = convertStringToByteArray(ssidInput.trim() + ',' + password);
             }
 
             // @ts-ignore
             let writeBytes = Array.from(writeByteArray);
-            console.log('write ssid:', ssidInput, ' and password:', password, 'to characteristic:', ConnectionCharLinux)
+            console.log('write ssid:', ssidInput.trim(), ' and password:', password, 'to characteristic:', ConnectionCharLinux)
             await BleManager.writeWithoutResponse(peripheralId, ServiceUuidLinux, ConnectionCharLinux, writeBytes, writeBytes.length);
 
             // Assume connection succeeded
@@ -171,17 +170,17 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
 
 
         // Write ssid to char 1
-        let writeByteArray = convertStringToByteArray(ssidInput);
+        let writeByteArray = convertStringToByteArray(ssidInput.trim());
         let writeBytes = Array.from(writeByteArray);
         try {
-            console.log('write ssid:', ssidInput, 'to characteristic:', SsidUuid)
+            console.log('write ssid:', ssidInput.trim(), 'to characteristic:', SsidUuid)
             await BleManager.write(peripheralId, ServiceUuid, SsidUuid, writeBytes, writeBytes.length);
             console.log('write ssid: succeed')
-            setLog({ color: 'black', text: `write SSID: ${ssidInput} to characteristic ${SsidUuid} succeed!` })
+            setLog({ color: 'black', text: `write SSID: ${ssidInput.trim()} to characteristic ${SsidUuid} succeed!` })
         }
         catch (err) {
             console.error('write ssid failed:', err);
-            setLog({ color: 'red', text: `write SSID: ${ssidInput} to characteristic ${SsidUuid} failed!` })
+            setLog({ color: 'red', text: `write SSID: ${ssidInput.trim()} to characteristic ${SsidUuid} failed!` })
             setLoading(false);
             return;
         }
@@ -273,7 +272,7 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
     }
 
     return (
-        <SafeAreaView style={{ backgroundColor: Colors.lightGray, flex: 1, }}>
+        <SafeAreaView style={{ backgroundColor: Colors.lightGray, flex: 1, }} edges={Platform.OS == "ios" ? ['left', 'right', 'bottom'] : ['left', 'right']}>
             <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                 <ScrollView style={{ flex: 1 }}>
                     {/* Header */}
@@ -293,7 +292,7 @@ const WifiProvisioningOverBLEScreen: React.FC<Props> = ({ peripheralId, isLinuxD
                                 style={[styles.textInput]}
                                 placeholder="Enter WiFi SSID"
                                 value={ssidInput}
-                                onChangeText={(owner) => { setSsidInput(owner.trim()); }}
+                                onChangeText={(ssid) => { setSsidInput(ssid); }}
                                 accessibilityLabel="ssidInput"
                                 testID="ssidInput"
                             />

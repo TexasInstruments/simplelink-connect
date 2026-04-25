@@ -35,6 +35,18 @@ interface ServiceNameProps {
   peripheralName?: string;
 }
 
+/**
+ * Extracts the UUID string from a service object.
+ * Handles both Android (service.uuid is a string) and iOS (service.uuid is {uuid: string}) formats.
+ */
+export const getServiceUuid = (service: any): string => {
+  if (!service) return '';
+  const uuid = service.uuid;
+  if (typeof uuid === 'string') return uuid;
+  if (uuid && typeof uuid === 'object' && typeof uuid.uuid === 'string') return uuid.uuid;
+  return '';
+};
+
 type ServiceSpecificScreenType = {
   serviceName: string;
   serviceUuid: string;
@@ -48,6 +60,7 @@ type ServiceSpecificScreenType = {
 export const uuidToServiceName = async ({
   uuid, peripheralName
 }: ServiceNameProps): Promise<string | undefined> => {
+  if (!uuid) return undefined;
   let data = await import('../assets/services');
   if (peripheralName?.toLocaleLowerCase() === 'cc33xxble' && uuid.toLocaleLowerCase() === '180d') {
     return 'Wi-Fi Provisioning Over BLE'
@@ -64,6 +77,7 @@ export const uuidToIcon = async ({
 }: ServiceNameProps): Promise<
   { type: 'font-awesome' | 'svg' | 'font-awesome-5'; iconName: string } | undefined
 > => {
+  if (!uuid) return undefined;
   if (peripheralName?.toLocaleLowerCase() === 'cc33xxble' && uuid.toLocaleLowerCase() === '180d') {
     return { type: 'font-awesome-5', iconName: 'wifi', }
   }
@@ -93,6 +107,7 @@ export const serviceNameToIcon = async (
 export const uuidToServiceSpecificScreen = async ({
   uuid, peripheralName
 }: ServiceNameProps): Promise<ServiceSpecificScreenType | undefined> => {
+  if (!uuid) return undefined;
   let data = await import('../assets/services');
   if (peripheralName?.toLocaleLowerCase() === 'cc33xxble' && uuid.toLocaleLowerCase() === '180d') {
     return {
@@ -115,6 +130,7 @@ export const uuidToServiceSpecificScreen = async ({
 
 export const uuidToCharacteristicName =
   (uuid: string, knownUuids: any) => {
+    if (!uuid) return undefined;
     let characteristic = knownUuids.filter(
       (characteristic: any) => {
         return characteristic.uuid.toLowerCase() === uuid.toLowerCase()

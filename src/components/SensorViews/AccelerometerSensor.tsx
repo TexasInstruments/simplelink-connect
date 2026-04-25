@@ -36,7 +36,7 @@ import SensorPresentation from './SensorPresentation';
 import { ACCELEROMETER_SERVICE } from '../../constants/SensorTag';
 import { Text } from '@rneui/themed';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LineChart } from 'react-native-charts-wrapper';
+import { LineChart, LineData, xAxis } from 'react-native-charts-wrapper';
 import bleManager from 'react-native-ble-manager';
 import Legend from './Legend';
 import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
@@ -137,6 +137,7 @@ const AccelerometerSensor: React.FC<Props> = ({ accelerometerData, peripheralId,
       left: {
         drawGridLines: true,
         drawLabels: true,
+        textColor: processColor('#000'),
       },
       right: {
         enabled: false,
@@ -180,6 +181,7 @@ const AccelerometerSensor: React.FC<Props> = ({ accelerometerData, peripheralId,
               granularity: 1,
               drawLabels: true,
               position: 'BOTTOM',
+              textColor: processColor('#000'),
             }}
             yAxis={chartConfig.yAxis}
             legend={chartConfig.legend}

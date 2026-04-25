@@ -60,14 +60,14 @@ const BleMesh: React.FC = () => {
             Alert.alert('Error', 'Please add at least one application key to network before provisioning node.', [
                 {
                     text: 'OK',
-                    onPress: async () => navigation.navigate('BleMeshApplicationKeys'),
+                    onPress: async () => navigation.navigate('BleMeshApplicationKeys', { pop: true }),
                     style: 'destructive',
                 },
                 { text: 'Cancel', onPress: () => console.log('Cancel Pressed') },
             ]);
         }
         else {
-            navigation.navigate('BleMeshScanner', { scanProvisionedNodes: false, unicastAddr: undefined })
+            navigation.navigate('BleMeshScanner', { scanProvisionedNodes: false, unicastAddr: undefined }, { pop: true })
         }
     }
 
@@ -150,7 +150,7 @@ const BleMesh: React.FC = () => {
                     <FAB
                         icon="arrow-right"
                         style={[styles.button, { width: 40, alignSelf: 'flex-end' }]}
-                        onPress={() => navigation.navigate('BleMeshConfigureNode', { unicastAddr: node.unicastAddress, isConnecting: false })}
+                        onPress={() => navigation.navigate('BleMeshConfigureNode', { unicastAddr: node.unicastAddress, isConnecting: false }, { pop: true })}
                         size={'small'}
                         color='black'
                         accessibilityLabel={"right_arrow_" + node.unicastAddress.toString(16).toLocaleUpperCase()}
