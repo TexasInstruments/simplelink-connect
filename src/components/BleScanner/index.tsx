@@ -530,9 +530,14 @@ const BleScanner: React.FC<Props> = () => {
       if (Platform.OS === 'android') {
         scanConfig.phy = scanOptions.scanPhy;
       }
-      BleManager.scan(scanConfig);
+      BleManager.scan(scanConfig).catch(error => {
+        console.warn('Could not start BLE scan:', error);
+        setScanEnable(false);
+      });
     } else {
-      BleManager.stopScan();
+      BleManager.stopScan().catch(error => {
+        console.warn('Could not stop BLE scan:', error);
+      });
     }
   }
 

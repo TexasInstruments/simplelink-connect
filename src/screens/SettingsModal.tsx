@@ -41,10 +41,12 @@ import { DrawerContentComponentProps } from '@react-navigation/drawer';
 import Colors from '../constants/Colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Divider } from 'react-native-paper';
+import { useSpotflow } from '../context/SpotflowContext';
 interface Props extends DrawerContentComponentProps { }
 
 const SettingsModal: React.FC<Props> = ({ navigation }) => {
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
+  const spotflow = useSpotflow();
 
   const { fontScale } = useWindowDimensions();
 
@@ -123,6 +125,39 @@ const SettingsModal: React.FC<Props> = ({ navigation }) => {
             </TouchableOpacity>
             <Divider />
 
+            {spotflow.supported && (
+              <>
+                <View style={styles.spotflowRow}>
+                  <View style={styles.spotflowText}>
+                    <Text style={{ fontSize: 16 / fontScale }}>Spotflow Gateway</Text>
+                    <Text>Send diagnostics from compatible devices to Spotflow.</Text>
+                    {spotflow.storageError === 'load' && (
+                      <Text accessibilityLiveRegion="polite">Could not load the Spotflow setting.</Text>
+                    )}
+                    {spotflow.storageError === 'enable' && (
+                      <Text accessibilityLiveRegion="polite">Could not save the setting. Spotflow is still off.</Text>
+                    )}
+                    {spotflow.storageError === 'disable' && (
+                      <>
+                        <Text accessibilityLiveRegion="polite">Spotflow is off for this session. Save this choice to keep it off after restarting.</Text>
+                        <TouchableOpacity accessibilityRole="button" onPress={() => spotflow.setEnabled(false)}>
+                          <Text style={styles.spotflowRetry}>Retry saving</Text>
+                        </TouchableOpacity>
+                      </>
+                    )}
+                  </View>
+                  <Switch
+                    accessibilityLabel="Spotflow Gateway"
+                    testID="spotflowSwitch"
+                    disabled={spotflow.loading}
+                    value={spotflow.enabled}
+                    onValueChange={spotflow.setEnabled}
+                  />
+                </View>
+                <Divider />
+              </>
+            )}
+
             <View style={[styles.menuItem]} >
               <Text style={{ fontSize: 16 / fontScale }}>Skip tutorial at start:</Text>
               <View style={{ marginLeft: 'auto' }}>
@@ -186,6 +221,19 @@ const styles = StyleSheet.create({
   menuText: {
     color: Colors.blue,
     marginLeft: 10,
+  },
+  spotflowRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 15,
+  },
+  spotflowText: {
+    flex: 1,
+    marginRight: 12,
+  },
+  spotflowRetry: {
+    color: Colors.blue,
+    paddingVertical: 8,
   },
   icon: {
     width: 30,

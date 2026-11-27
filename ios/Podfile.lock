@@ -1802,7 +1802,7 @@ PODS:
     - React-utils (= 0.81.5)
     - ReactNativeDependencies
   - ReactNativeDependencies (0.81.5)
-  - RNBleManager (12.4.5):
+  - RNBleManager (12.6.1):
     - hermes-engine
     - RCTRequired
     - RCTTypeSafety
@@ -2583,7 +2583,7 @@ SPEC CHECKSUMS:
   ReactCodegen: 4c44b74b77fc41ae25b9e2c7e9bd6e2bc772c23f
   ReactCommon: e6e232202a447d353e5531f2be82f50f47cbaa9a
   ReactNativeDependencies: 71ce9c28beb282aa720ea7b46980fff9669f428a
-  RNBleManager: a5008f4956e3d0cea844abba0c36ccf1970e9479
+  RNBleManager: 2c929bb5d8d13f227e42831799aa9115ae843de9
   RNCAsyncStorage: e85a99325df9eb0191a6ee2b2a842644c7eb29f4
   RNCCheckbox: 471ebdc33884c084f362615c1ef3507496cc07f1
   RNDeviceInfo: 59344c19152c4b2b32283005f9737c5c64b42fba

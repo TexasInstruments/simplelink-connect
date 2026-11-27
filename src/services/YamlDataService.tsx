@@ -1,8 +1,9 @@
 import axios from 'axios';
 import yaml from 'js-yaml';
+import { GattProfile } from '@spotflow/react-native-ble-gateway';
 import mappedServices from '../assets/services';
 
-const TI_CHAR = [
+const LOCAL_CHARACTERISTICS = [
     { name: 'Characteristic 1', uuid: 'FFF1', },
     { name: 'Characteristic 2', uuid: 'FFF2', },
     { name: 'Characteristic 3', uuid: 'FFF3', },
@@ -65,6 +66,14 @@ const TI_CHAR = [
     { name: 'Packet Length', uuid: 'f205' },
     { name: 'Output Power', uuid: 'f206' },
     { name: 'Test Mode', uuid: 'f207' },
+
+    // Spotflow Observability
+    { name: 'Capabilities', uuid: GattProfile.CAPABILITIES },
+    { name: 'Device ID', uuid: GattProfile.DEVICE_ID },
+    { name: 'Session Metadata', uuid: GattProfile.SESSION_METADATA },
+    { name: 'TX Stream', uuid: GattProfile.TX_STREAM },
+    { name: 'RX Stream', uuid: GattProfile.RX_STREAM },
+    { name: 'Ingest Key', uuid: GattProfile.INGEST_KEY },
 ]
 
 
@@ -105,14 +114,14 @@ export const fetchCharacteristicData = async () => {
 
         const yamlData = yaml.load(response.data);
 
-        const yamlDataAsHex = [...TI_CHAR, ...yamlData.uuids.map((characteristic: any) => ({ ...characteristic, uuid: characteristic.uuid.toString(16) }))]
+        const yamlDataAsHex = [...LOCAL_CHARACTERISTICS, ...yamlData.uuids.map((characteristic: any) => ({ ...characteristic, uuid: characteristic.uuid.toString(16) }))]
         CHARACTERISTIC_LIST = yamlDataAsHex;
 
         return yamlDataAsHex;
     } catch (error) {
         console.error('Error fetching YAML file:', error);
         let data = await import('../assets/characteristics');
-        CHARACTERISTIC_LIST = [...TI_CHAR, ...data.default]
+        CHARACTERISTIC_LIST = [...LOCAL_CHARACTERISTICS, ...data.default]
         return CHARACTERISTIC_LIST
     }
 };

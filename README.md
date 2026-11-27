@@ -12,6 +12,7 @@ Features include device scanning, filtering, connecting, and managing device con
 - [Setup](#setup)  
 - [Install Node Packages](#install-node-packages)  
 - [Configure and Run Android App](#configure-and-run-android-app)  
+- [Spotflow BLE relay (Android)](#spotflow-ble-relay-android)
 - [Configure and Run iOS App](#configure-and-run-ios-app)  
 
 ---
@@ -116,6 +117,22 @@ adb devices
 adb reverse tcp:8081 tcp:8081
 npm run android
 ```
+
+To install alongside the store app as **SimpleLink Connect (Dev)**:
+
+```bash
+ORG_GRADLE_PROJECT_simplelinkSideBySide=true npm run android -- --device --app-id com.ti.connectivity.simplelinkconnect.dev
+```
+
+## Spotflow BLE relay (Android)
+
+To relay, turn on **Settings → Spotflow Gateway** and open a trusted device with the **Spotflow Observability** service. If the device isn’t paired yet, the app requests Android pairing once per visit. If you cancel or pairing fails, tap **Pair** in the relay status row to try again. The device firmware must require encryption for ingest-key reads.
+
+Check relay status on the **Services** screen. Backgrounding the app or turning off the gateway stops relaying without disconnecting BLE.
+
+Before relaying, the app requests ATT MTU 247 once per BLE connection unless an exchange is already known. It uses the negotiated value, or MTU 23 if no exchange succeeds.
+
+Run `npm test`. On hardware, verify that telemetry reaches Spotflow, relaying resumes after reconnecting, and turning off the gateway leaves BLE connected.
 
 ## Configure and Run iOS App
 
