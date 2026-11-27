@@ -42,6 +42,8 @@ import { getIconByPeripheralInfo } from '../../hooks/uuidToBrand';
 import { useServiceViewContext } from '../../context/ServiceViewContext';
 import { useSpecificScreenConfigContext } from '../../context/SpecificScreenOptionsContext';
 import { ScanOptionsState } from '../../context/ScanOptionsContext';
+import { SpotflowRelayStatus } from '../../spotflow/SpotflowRelayStatus';
+import { useSpotflowDiscovery } from '../../spotflow/useSpotflowDiscovery';
 
 interface BleDeviceProps {
   peripheralId: string;
@@ -60,6 +62,7 @@ const initialState: BleDevicePropsState = {
 
 const BleDevice: React.FC<BleDeviceProps> = ({ peripheralId, ...props }) => {
   const [state, setState] = useState<BleDevicePropsState>(initialState);
+  const beginSpotflowDiscovery = useSpotflowDiscovery(peripheralId);
   const { specificScreenConfig } = useSpecificScreenConfigContext();
   const disconnectInInterval = useRef<boolean>(specificScreenConfig.disconnectInInterval);
 
@@ -82,26 +85,23 @@ const BleDevice: React.FC<BleDeviceProps> = ({ peripheralId, ...props }) => {
     console.log("discovering services")
 
     setState(prev => ({ ...prev, deviceState: 'Discovering' }));
+    const reportSpotflow = beginSpotflowDiscovery(id);
 
     try {
       const peripheralInfo = await BleManager.retrieveServices(id);
-      const parsedServices =
-        Platform.OS === 'ios'
-          ? peripheralInfo.services?.map((uuid: string) => ({ uuid }))
-          : peripheralInfo.services;
-
+      reportSpotflow(peripheralInfo);
       if (!peripheralInfo.name) peripheralInfo.name = 'Unknown';
       const infoWithIcon = getIconByPeripheralInfo(peripheralInfo);
 
       setState(prev => ({
         ...prev,
         deviceState: 'Connected',
-        peripheralInfo: { ...infoWithIcon, services: parsedServices },
+        peripheralInfo: infoWithIcon,
       }));
     } catch (error) {
       console.log('retrieveServices error:', error);
     }
-  }, []);
+  }, [beginSpotflowDiscovery]);
 
   // --- Handle a single connection ---
   const handleConnection = (id: string) => {
@@ -266,7 +266,7 @@ const BleDevice: React.FC<BleDeviceProps> = ({ peripheralId, ...props }) => {
           bondSubscription.current?.remove();
         }
       };
-    }, [peripheralId])
+    }, [peripheralId, discover])
   );
 
   useEffect(() => {
@@ -287,6 +287,7 @@ const BleDevice: React.FC<BleDeviceProps> = ({ peripheralId, ...props }) => {
         discover={discover}
         connect={connect}
         {...props} />
+      <SpotflowRelayStatus key={peripheralId} peripheralId={peripheralId} />
       <DeviceServices peripheralInfo={state.peripheralInfo} />
       {state.deviceState !== 'Connected' && <DeviceServiceSkeleton />}
     </ScrollView>

@@ -49,6 +49,7 @@ import { ServiceViewProvider } from './src/context/ServiceViewContext';
 import Colors from './src/constants/Colors';
 import { BleRangeProvider } from './src/context/RangeTestContext';
 import AdvertiserProvider from './src/context/AdvertiserContext';
+import { SpotflowProvider } from './src/context/SpotflowContext';
 
 function AppContent({ colorScheme }: { colorScheme: string }) {
   return (
@@ -93,7 +94,9 @@ export default function App() {
 
       <SafeAreaProvider>
         <PaperProvider theme={Colors.lightTheme}>
-          <AppContent colorScheme={colorScheme} />
+          <SpotflowProvider>
+            <AppContent colorScheme={colorScheme} />
+          </SpotflowProvider>
         </PaperProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

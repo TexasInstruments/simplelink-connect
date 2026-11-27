@@ -21,6 +21,16 @@ def reactNativeAndroidDir = new File(
   "../android"
 )
 
+// Expo builds with --configure-on-demand. Register the bundled AAR here so :app can resolve it
+// before Gradle evaluates the Spotflow library project and its own repository declaration.
+def spotflowAndroidMavenDir = new File(
+    providers.exec {
+        workingDir(rootDir)
+        commandLine('node', '--print', "require.resolve('@spotflow/react-native-ble-gateway/package.json')")
+    }.standardOutput.asText.get().trim(),
+    '../android/maven'
+).canonicalFile
+
 // def REACT_NATIVE_VERSION = new File(['node', '--print',"JSON.parse(require('fs').readFileSync(require.resolve('react-native/package.json'), 'utf-8')).version"].execute(null, rootDir).text.trim())
 
 allprojects {
@@ -28,6 +38,12 @@ allprojects {
         maven {
         // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
         url(reactNativeAndroidDir)
+        }
+
+        maven {
+            name = 'spotflowVendored'
+            url = spotflowAndroidMavenDir
+            content { includeModule('io.spotflow', 'spotflow-ble-gateway') }
         }
     
         google()

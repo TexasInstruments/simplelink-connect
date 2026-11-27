@@ -53,6 +53,7 @@ import { uuidToCharacteristicName } from '../../../hooks/uuidToName';
 import ServiceResponse from './ServiceResponse';
 import { useCharacteristicContext } from '../../../context/CharacteristicContext';
 import { convertStringToByteArray } from '../../../hooks/convert';
+import { useSpotflowInspector } from '../../../spotflow/useSpotflowInspector';
 
 interface Props {
   peripheralId: string;
@@ -106,6 +107,9 @@ const CharacteristicService: React.FC<Props> = ({
 
   const [notificationSwitch, setNotificationSwitch] = useState<boolean>(false);
   const [indicationsSwitch, setIndicationsSwitch] = useState<boolean>(false);
+  const { isStream, isRx, isManaged, isWriteBlocked, viewNotifications, showNotificationControls, matchesNotification } = useSpotflowInspector(
+    peripheralId, serviceUuid, char.characteristic, (checkNotify && notificationSwitch) || (checkIndicate && indicationsSwitch));
+  const showWriteControls = (checkWrite || checkWriteWithoutRsp) && !(isRx && isManaged);
 
   const charValueSubscription = useRef<EventSubscription | null>(null);
 
@@ -130,6 +134,8 @@ const CharacteristicService: React.FC<Props> = ({
 
   useFocusEffect(
     useCallback(() => {
+      // For a managed TX stream, only listen to events the relay already receives.
+      if (!viewNotifications) return;
       const task = InteractionManager.runAfterInteractions(() => {
         if (initialFocus.current) {
           console.log('initial focuse');
@@ -141,29 +147,22 @@ const CharacteristicService: React.FC<Props> = ({
         console.log('CharacteristicService: addListener')
         charValueSubscription.current = BleManager.onDidUpdateValueForCharacteristic(
           ({ value, peripheral, characteristic, service }: { value: number[]; peripheral: string; characteristic: string; service: string }) => {
-            console.log('notification: ', value);
+            if (!matchesNotification(peripheral, service, characteristic)) return;
             let hexString = ''
             if (selectedFormat === 'UTF-8') {
               hexString = Buffer.from(value).toString('utf8');
-              console.log('notification: converted to UTF-8 ', hexString);
             }
             else if (selectedFormat === 'Dec') {
               hexString = value.toString();
-              console.log('notification: converted to Dec ', hexString);
             }
             else { // must be hex
               hexString = Buffer.from(value).toString('hex');
-              console.log('notification: converted to Hex ', hexString);
             }
 
-            /* Check include string and not dirrect match to ork around issue
-               switching between SimplePeripheral and PersistantApp */
-            if (characteristic.toLowerCase().includes(char.characteristic.toLowerCase())) {
-              setNotifyResponse((prev) => [
-                { data: hexString, time: new Date().toTimeString().split(' ')[0] },
-                ...prev.slice(0, 4),
-              ]);
-            }
+            setNotifyResponse((prev) => [
+              { data: hexString, time: new Date().toTimeString().split(' ')[0] },
+              ...prev.slice(0, 4),
+            ]);
           }
         );
       });
@@ -172,12 +171,12 @@ const CharacteristicService: React.FC<Props> = ({
         task.cancel();
         console.log('CharacteristicService: removeAllListeners')
         charValueSubscription.current?.remove();
-        if (Object.values(char.properties).indexOf('Notify') > -1 || Object.values(char.properties).indexOf('Indicate') > -1) {
+        if (!isStream && (checkNotify || checkIndicate)) {
           //Cleaning up notification
           BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
         }
       }
-    }, [, selectedFormat])
+    }, [selectedFormat, viewNotifications, isStream, peripheralId, serviceUuid, char.characteristic, matchesNotification, checkNotify, checkIndicate])
   );
 
   useEffect(() => {
@@ -207,6 +206,7 @@ const CharacteristicService: React.FC<Props> = ({
   }, [notificationSwitch, selectedFormat]);
 
   useEffect(() => {
+    if (isStream) return;
     if (Object.values(char.properties).indexOf('Notify') > -1) {
       if (notificationSwitch) {
         // To enable BleManagerDidUpdateValueForCharacteristic listener
@@ -215,9 +215,10 @@ const CharacteristicService: React.FC<Props> = ({
         BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
       }
     }
-  }, [notificationSwitch, selectedFormat]);
+  }, [notificationSwitch, selectedFormat, isStream]);
 
   useEffect(() => {
+    if (isStream) return;
     if (Object.values(char.properties).indexOf('Indicate') > -1) {
       if (indicationsSwitch) {
         // To enable BleManagerDidUpdateValueForCharacteristic listener
@@ -226,7 +227,7 @@ const CharacteristicService: React.FC<Props> = ({
         BleManager.stopNotification(peripheralId, serviceUuid, char.characteristic);
       }
     }
-  }, [indicationsSwitch, selectedFormat]);
+  }, [indicationsSwitch, selectedFormat, isStream]);
 
 
   const [writeBytes, setWriteBytes] = useState<Uint8Array | string>();
@@ -244,15 +245,15 @@ const CharacteristicService: React.FC<Props> = ({
 
   const handleWriteSubmit = useCallback(
     (e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) => {
-
-      if ((!checkWrite) && (checkWriteWithoutRsp)) {
+      if (isWriteBlocked()) return;
+      if (!isRx && !checkWrite && checkWriteWithoutRsp) {
         console.log('handleWriteSubmit: error write and writeWithoutRsp not supported')
         return;
       }
 
-      let writeFunction = checkWrite
-        ? BleManager.write
-        : BleManager.writeWithoutResponse;
+      const writeFunction = (isRx && checkWriteWithoutRsp) || !checkWrite
+        ? BleManager.writeWithoutResponse
+        : BleManager.write;
 
       //let properteisString = writeWithResponseSwitch ? 'Write' : 'WriteWithoutResponse';
 
@@ -322,10 +323,11 @@ const CharacteristicService: React.FC<Props> = ({
         .catch((error) => {
           // Failure code
           console.log('write error: ', error);
-          Alert.alert('Write Failed', error)
+          const message = typeof error === 'string' ? error : error?.message;
+          Alert.alert('Write Failed', typeof message === 'string' ? message : 'Could not write to the characteristic.');
         });
     },
-    [writeWithResponseSwitch, selectedFormat]
+    [writeWithResponseSwitch, selectedFormat, isRx, isWriteBlocked, checkWrite, checkWriteWithoutRsp, peripheralId, serviceUuid, char.characteristic]
   );
 
   const handleWriteWithResponseSwitch = useCallback(() => {
@@ -399,9 +401,17 @@ const CharacteristicService: React.FC<Props> = ({
               <Text style={[{}]}>UUID: {charUuidString}</Text>
             }
             <Text style={[{ fontWeight: '200', paddingTop: 5 }]}>Properties: {propertiesString}</Text>
+            {isManaged && (
+              <Text style={{ paddingTop: 5 }}>
+                Managed by: <Text style={{ fontWeight: 'bold' }}>Spotflow Gateway</Text>
+              </Text>
+            )}
           </View>
         </View>
-        {(checkWrite || checkWriteWithoutRsp) && (
+        {isRx && isManaged && (
+          <Text style={styles.managedWriteWarning}>Turn off Spotflow Gateway to write to this stream manually.</Text>
+        )}
+        {showWriteControls && (
           <View style={{ ...Layout.separators }}>
             <View style={[styles.container]}>
               <View
@@ -460,7 +470,7 @@ const CharacteristicService: React.FC<Props> = ({
           </View>
         </View>
       )}
-      {checkNotify && (
+      {showNotificationControls && checkNotify && (
         <View>
           <View style={[styles.container, { alignContent: 'center', justifyContent: 'space-between', flexDirection: 'row' }]}>
             <View style={{ flexDirection: 'row' }}>
@@ -480,7 +490,7 @@ const CharacteristicService: React.FC<Props> = ({
         </View>
       )}
       {
-        checkIndicate && (
+        showNotificationControls && checkIndicate && (
           <View>
             <View style={[styles.container, { alignContent: 'center', justifyContent: 'space-between', flexDirection: 'row' }]}>
               <View style={{ flexDirection: 'row' }}>
@@ -536,6 +546,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.lightGray,
     borderWidth: 0,
     borderBottomWidth: 0,
+  },
+  managedWriteWarning: {
+    color: Colors.gray,
+    marginHorizontal: 20,
+    paddingBottom: 10,
   },
   writeWrapper: {
     flexDirection: 'row',

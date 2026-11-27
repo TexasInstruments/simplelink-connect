@@ -4,6 +4,7 @@ import BleManager, { PeripheralInfo } from 'react-native-ble-manager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNRestart from 'react-native-restart';
 import { getServiceUuid } from '../hooks/uuidToName';
+import { useSpotflow } from './SpotflowContext';
 
 interface ServiceViewContextProps {
     hasOadOption: boolean;
@@ -18,7 +19,8 @@ interface ServiceViewContextProps {
 
 const ServiceViewContext = createContext<ServiceViewContextProps | undefined>(undefined);
 
-export const ServiceViewProvider = ({ children }) => {
+export const ServiceViewProvider = ({ children }: React.PropsWithChildren) => {
+    const { controller } = useSpotflow();
     const [hasOadOption, setHasOadOption] = useState<boolean>(false);
     const [hasDfuOption, setHasDfuOption] = useState<boolean>(false);
     const [peripheralInfo, setPeripheralInfo] = useState<PeripheralInfo | undefined>();
@@ -130,7 +132,10 @@ export const ServiceViewProvider = ({ children }) => {
 
     const handleRequestMTU = async (mtu: number) => {
         if (peripheralInfo && Platform.OS === 'android') {
+            // BLE Manager doesn't publish MTU changes; keep the relay's frame size in sync with this request.
+            const reportMtu = controller.mtuReporter(peripheralInfo.id);
             let mtuAfterRequest = await BleManager.requestMTU(peripheralInfo?.id, mtu);
+            reportMtu(mtuAfterRequest);
             Alert.alert('MTU Request', `MTU after exchange: ${mtuAfterRequest}`)
         }
     }
@@ -144,7 +149,8 @@ export const ServiceViewProvider = ({ children }) => {
 
     const handleRemoveBond = async () => {
         if (peripheralInfo && Platform.OS === 'android') {
-            await BleManager.removeBond(peripheralInfo?.id);
+            await BleManager.removeBond(peripheralInfo.id);
+            controller.unbonded(peripheralInfo.id);
             console.log('Bond Removed');
         }
     }

@@ -30,6 +30,8 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import { GattProfile } from '@spotflow/react-native-ble-gateway';
+
 export type MappedService = {
   serviceName: string;
   serviceUuid: string;
@@ -202,6 +204,15 @@ export default [
       iconName: 'tv',
     },
     serviceSpecificScreen: 'TerminalServiceModel',
+  },
+  /* Known Vendor Services */
+  {
+    serviceName: 'Spotflow Observability',
+    serviceUuid: GattProfile.SERVICE,
+    icon: {
+      type: 'font-awesome-5',
+      iconName: 'chart-area',
+    },
   },
   /* Known Standard Services */
   {
